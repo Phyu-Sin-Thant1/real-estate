@@ -1,6 +1,9 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const ServiceGrid = () => {
+  const navigate = useNavigate()
+  
   const propertyTypes = [
     {
       id: 1,
@@ -62,7 +65,8 @@ const ServiceGrid = () => {
           {propertyTypes.map((property) => (
             <div
               key={property.id}
-              className="category-card hover:scale-105 transform transition-all duration-200 relative overflow-hidden"
+              onClick={() => navigate(`/category/${encodeURIComponent(property.title)}`)}
+              className="category-card hover:scale-105 transform transition-all duration-200 relative overflow-hidden cursor-pointer"
             >
               {property.isNew && (
                 <div className="absolute top-4 right-4 bg-dabang-accent text-white px-3 py-1 rounded-full text-sm font-medium">
@@ -82,7 +86,13 @@ const ServiceGrid = () => {
                 {property.description}
               </p>
               
-              <button className="text-dabang-primary font-medium hover:text-dabang-primary/80 transition-colors">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigate(`/category/${encodeURIComponent(property.title)}`)
+                }}
+                className="text-dabang-primary font-medium hover:text-dabang-primary/80 transition-colors"
+              >
                 매물 보러가기 →
               </button>
             </div>

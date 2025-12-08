@@ -10,6 +10,7 @@ import AgentSignUpPage from './pages/AgentSignUpPage'
 import ListPropertyPage from './pages/ListPropertyPage'
 import AdminDashboardPage from './pages/AdminDashboardPage'
 import NewsManagementPage from './pages/NewsManagementPage'
+import CategoryPage from './pages/CategoryPage'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/interest-list" element={<InterestListPage />} />
         <Route path="/agent-signup" element={<AgentSignUpPage />} />
         <Route path="/list-property" element={<ListPropertyPage />} />
+        <Route path="/category/:categoryName" element={<CategoryPage />} />
         <Route
           path="/admin"
           element={
