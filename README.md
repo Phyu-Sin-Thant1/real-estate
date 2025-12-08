@@ -66,6 +66,23 @@ A premium Korean real estate portal built with modern web technologies, featurin
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 
+## 🔐 Admin Access
+
+The admin dashboard (`/admin`) is protected by a lightweight client-side auth layer tailored for demos and local development.
+
+1. **Create a `.env.local` file** at the project root (next to `package.json`) and set your preferred admin credentials:
+   ```bash
+   VITE_ADMIN_EMAIL=admin@tofu.com
+   VITE_ADMIN_PASSWORD=Admin123!
+   VITE_ADMIN_NAME=TOFU Admin
+   ```
+   If these variables are not provided, the values shown above are used as the defaults.
+2. **Start the dev server** with `npm run dev`.
+3. **Log in at `/login`** with the email and password you configured. You will be redirected to the dashboard once authenticated.
+4. Your session persists in the browser's `localStorage`. Use the `로그아웃` button in the dashboard header or the site header to end the session.
+
+> ⚠️ This demo auth layer is not meant for production. Integrate a proper backend identity provider before deploying.
+
 ## 🏗️ Project Structure
 
 ```

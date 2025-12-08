@@ -8,6 +8,9 @@ import PresalesPage from './pages/PresalesPage'
 import InterestListPage from './pages/InterestListPage'
 import AgentSignUpPage from './pages/AgentSignUpPage'
 import ListPropertyPage from './pages/ListPropertyPage'
+import AdminDashboardPage from './pages/AdminDashboardPage'
+import NewsManagementPage from './pages/NewsManagementPage'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 
 function App() {
   return (
@@ -21,6 +24,22 @@ function App() {
         <Route path="/interest-list" element={<InterestListPage />} />
         <Route path="/agent-signup" element={<AgentSignUpPage />} />
         <Route path="/list-property" element={<ListPropertyPage />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/news"
+          element={
+            <ProtectedRoute>
+              <NewsManagementPage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   )
