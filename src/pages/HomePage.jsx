@@ -1,9 +1,9 @@
 import React from 'react'
-import Header from '../components/Header'
-import SearchHero from '../components/SearchHero'
-import ServiceGrid from '../components/ServiceGrid'
-import MarketFeed from '../components/MarketFeed'
-import Footer from '../components/Footer'
+import Header from '../components/layout/Header'
+import SearchHero from '../features/home/SearchHero'
+import ServiceGrid from '../features/home/ServiceGrid'
+import MarketFeed from '../features/home/MarketFeed'
+import Footer from '../components/layout/Footer'
 
 const HomePage = () => {
   return (

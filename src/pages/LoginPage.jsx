@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
-import { useAuth } from '../context/AuthContext.jsx'
+import Header from '../components/layout/Header'
+import { useAuth } from '../context/AuthContext'
 
 const LoginPage = () => {
   const navigate = useNavigate()

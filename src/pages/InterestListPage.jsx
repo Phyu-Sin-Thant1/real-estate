@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
-import Header from '../components/Header'
+import Header from '../components/layout/Header'
+import Footer from '../components/layout/Footer'
+
 import { useNavigate } from 'react-router-dom'
 
 const InterestListPage = () => {
@@ -15,7 +17,7 @@ const InterestListPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-        
+        <Footer />
         <main className="flex-1 flex items-center justify-center py-16">
           <div className="max-w-md w-full mx-4 text-center">
             <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -40,7 +42,7 @@ const InterestListPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
-      
+      <Footer />
       <main className="flex-1 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Page Header */}

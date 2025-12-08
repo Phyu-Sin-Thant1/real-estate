@@ -1,5 +1,4 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-@import url('https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 @import 'leaflet/dist/leaflet.css';
 
@@ -9,58 +8,47 @@
 
 @layer base {
   :root {
-    --admin-color-primary: #0075C9;
-    --admin-color-primary-hover: #006CA6;
-    --admin-color-accent: #E2E8F0;
-    --admin-color-success: #16A34A;
-    --admin-color-warning: #F59E0B;
-    --admin-color-danger: #DC2626;
-    --admin-surface: #FFFFFF;
-    --admin-surface-muted: #F8FAFC;
-    --admin-border: #CBD5E1;
-    --admin-text: #1E293B;
-    --admin-text-muted: #64748B;
+    --dabang-primary: #1A237E; /* Deep Royal Blue */
+    --dabang-secondary: #FF6F00; /* Vibrant Orange */
+    --dabang-accent: #00BCD4; /* Soft Teal */
+    --dabang-background: #f8fafc;
+    --dabang-surface: #FFFFFF;
+    --dabang-border: #CBD5E1;
+    --dabang-text: #1E293B;
+    --dabang-text-muted: #64748B;
     color-scheme: light;
   }
 
   html {
-    font-family: 'Inter', system-ui, sans-serif;
-    background-color: var(--admin-surface-muted);
-    color: var(--admin-text);
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    background-color: var(--dabang-background);
+    color: var(--dabang-text);
   }
 
   body {
-    background-color: var(--admin-surface-muted);
-    color: var(--admin-text);
-  }
-
-  html[data-theme='dark'] {
-    --admin-color-primary: #3B82F6;
-    --admin-color-primary-hover: #2563EB;
-    --admin-color-accent: #1E293B;
-    --admin-color-success: #22C55E;
-    --admin-color-warning: #FACC15;
-    --admin-color-danger: #EF4444;
-    --admin-surface: #111827;
-    --admin-surface-muted: #0F172A;
-    --admin-border: #1E293B;
-    --admin-text: #F8FAFC;
-    --admin-text-muted: #94A3B8;
-    color-scheme: dark;
+    background-color: var(--dabang-background);
+    color: var(--dabang-text);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-dabang-primary hover:bg-dabang-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+    @apply bg-dabang-primary hover:bg-dabang-primary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-dabang-primary focus:ring-offset-2;
   }
   
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors;
+    @apply bg-dabang-secondary hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-dabang-secondary focus:ring-offset-2;
+  }
+  
+  .btn-outline {
+    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-dabang-primary focus:ring-offset-2;
   }
   
   .search-input {
-    @apply w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-dabang-primary focus:border-transparent;
+    @apply w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-dabang-primary focus:border-transparent font-body;
   }
   
   .search-bar-pill {
@@ -79,32 +67,73 @@
   .category-card {
     @apply bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 cursor-pointer border border-gray-100;
   }
-
+  
   .admin-card {
     @apply rounded-2xl bg-white shadow-xl shadow-slate-200/50 border border-admin-border/60 transition-all duration-300;
   }
-
+  
   .admin-card:hover {
     @apply shadow-admin-soft;
   }
-
-  html[data-theme='dark'] .admin-card {
-    @apply bg-slate-900 border-slate-700 shadow-slate-950/40;
-  }
-
+  
   .admin-table {
     @apply w-full text-sm text-left text-slate-600;
   }
-
+  
   .admin-table thead {
     @apply text-xs uppercase text-slate-500 bg-slate-100/60;
   }
-
+  
   html[data-theme='dark'] .admin-table {
     @apply text-slate-200;
   }
-
+  
   html[data-theme='dark'] .admin-table thead {
     @apply text-slate-400 bg-slate-800/60;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .font-display {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    font-weight: 700;
+  }
+  
+  .font-body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    font-weight: 400;
+  }
+  
+  .bg-dabang-background {
+    background-color: var(--dabang-background);
+  }
+  
+  .bg-dabang-primary {
+    background-color: var(--dabang-primary);
+  }
+  
+  .bg-dabang-secondary {
+    background-color: var(--dabang-secondary);
+  }
+  
+  .text-dabang-primary {
+    color: var(--dabang-primary);
+  }
+  
+  .text-dabang-secondary {
+    color: var(--dabang-secondary);
+  }
+  
+  .border-dabang-primary {
+    border-color: var(--dabang-primary);
   }
 }
