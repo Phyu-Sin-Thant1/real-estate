@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import { useUserAuth } from '../context/UserAuthContext'
@@ -7,231 +7,233 @@ import { useFavorites } from '../hooks/useFavorites'
 
 const MyPage = () => {
   const navigate = useNavigate()
-  const { user, isAuthenticated, updateUser } = useUserAuth()
-  const { getFavoriteProperties } = useFavorites()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { user, isAuthenticated } = useUserAuth()
+  const { getFavoriteProperties, toggleFavorite, isFavorite } = useFavorites()
   
-  const [isEditing, setIsEditing] = useState(false)
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    phone: user?.phone || ''
-  })
-
+  // Get active tab from URL or default to 'profile'
+  const activeTab = searchParams.get('tab') || 'profile'
+  
+  // Validate tab
+  const validTabs = ['profile', 'favorites', 'recent', 'settings']
+  const currentTab = validTabs.includes(activeTab) ? activeTab : 'profile'
+  
+  // Tab configuration
+  const tabs = [
+    { key: 'profile', label: '프로필' },
+    { key: 'favorites', label: '관심목록' },
+    { key: 'recent', label: '최근 본 매물' },
+    { key: 'settings', label: '설정' }
+  ]
+  
+  // Handle tab change
+  const handleTabChange = (tabKey) => {
+    setSearchParams({ tab: tabKey })
+  }
+  
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     navigate('/login')
     return null
   }
-
-  // Get favorite properties
-  const favoriteProperties = getFavoriteProperties().slice(0, 6)
-
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
-
-  const handleSave = () => {
-    // Update user data in context and localStorage
-    updateUser({
-      ...user,
-      name: formData.name,
-      phone: formData.phone
-    })
-    setIsEditing(false)
-  }
-
-  const handleCancel = () => {
-    // Reset form data to current user values
-    setFormData({
-      name: user?.name || '',
-      phone: user?.phone || ''
-    })
-    setIsEditing(false)
-  }
-
-  const handleViewAllFavorites = () => {
-    navigate('/interest-list')
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">내 프로필</h1>
-            
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                안녕하세요, {user?.name || '사용자'}님
-              </h2>
-              <p className="text-gray-600">
-                TOFU에 오신 것을 환영합니다. 프로필 정보를 관리하고 관심있는 매물을 확인해보세요.
-              </p>
+  
+  // Profile tab content
+  const ProfileTab = () => (
+    <div className="mt-6">
+      <div className="bg-white rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">기본 정보</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+            <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+              {user?.name || '-'}
             </div>
-            
-            {/* Profile Info Section */}
-            <div className="border-b border-gray-200 pb-8 mb-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">프로필 정보</h2>
-                {!isEditing ? (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-dabang-primary hover:bg-dabang-primary/90 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    수정하기
-                  </button>
-                ) : (
-                  <div className="space-x-2">
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2 bg-dabang-primary hover:bg-dabang-primary/90 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                      저장
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-                    >
-                      취소
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    이메일
-                  </label>
-                  <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
-                    {user?.email || '-'}
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    이름
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-dabang-primary focus:border-dabang-primary"
-                    />
-                  ) : (
-                    <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
-                      {user?.name || '-'}
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    휴대폰 번호
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-dabang-primary focus:border-dabang-primary"
-                    />
-                  ) : (
-                    <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
-                      {user?.phone || '-'}
-                    </div>
-                  )}
-                </div>
-              </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+            <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+              {user?.email || '-'}
             </div>
-            
-            {/* Favorites Section */}
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">관심매물</h2>
-                {favoriteProperties.length > 0 && (
-                  <button
-                    onClick={handleViewAllFavorites}
-                    className="text-dabang-primary hover:text-dabang-primary/80 text-sm font-medium"
-                  >
-                    전체 보기 →
-                  </button>
-                )}
-              </div>
-              
-              {favoriteProperties.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-5xl mb-4">🤍</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">관심목록이 비어있어요</h3>
-                  <p className="text-gray-600 mb-6">
-                    마음에 드는 매물을 발견하면 하트 버튼을 눌러 저장해보세요
-                  </p>
-                  <button
-                    onClick={() => navigate('/map')}
-                    className="bg-dabang-primary hover:bg-dabang-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                  >
-                    매물 찾아보기
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {favoriteProperties.map((property) => (
-                    <div 
-                      key={property.id}
-                      onClick={() => navigate(`/property/${property.id}`)}
-                      className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                    >
-                      <div className="relative">
-                        <img 
-                          src={property.image} 
-                          alt={property.title}
-                          className="w-full h-40 object-cover"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-medium text-gray-900 mb-1 truncate">
-                          {property.title}
-                        </h3>
-                        <p className="text-dabang-primary font-medium mb-2">
-                          {property.price}
-                        </p>
-                        <p className="text-sm text-gray-600 truncate">
-                          {property.location}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Saved Searches Section (Placeholder) */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">저장된 검색</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                  <h3 className="font-medium text-gray-900">강남 · 원룸 · 월세 50~80</h3>
-                  <p className="text-sm text-gray-600 mt-1">저장일: 2023.11.15</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                  <h3 className="font-medium text-gray-900">홍대 · 투룸 · 전세</h3>
-                  <p className="text-sm text-gray-600 mt-1">저장일: 2023.11.10</p>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
-                  <h3 className="font-medium text-gray-900">송파 · 아파트 · 매매</h3>
-                  <p className="text-sm text-gray-600 mt-1">저장일: 2023.11.05</p>
-                </div>
-              </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">휴대폰 번호</label>
+            <div className="px-4 py-2 bg-gray-50 rounded-lg text-gray-900">
+              {user?.phone || '-'}
             </div>
           </div>
         </div>
-      </main>
+      </div>
+    </div>
+  )
+  
+  // Favorites tab content
+  const FavoritesTab = () => {
+    const favoriteProperties = getFavoriteProperties()
+    
+    return (
+      <div className="mt-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">관심목록</h2>
+          <p className="text-gray-600 mt-1">저장한 매물을 한 번에 확인해보세요.</p>
+        </div>
+        
+        {favoriteProperties.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4">🤍</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">아직 관심 매물이 없습니다.</h3>
+            <p className="text-gray-600 mb-6">
+              마음에 드는 매물을 발견하면 하트 버튼을 눌러 저장해보세요
+            </p>
+            <button
+              onClick={() => navigate('/map')}
+              className="bg-dabang-primary hover:bg-dabang-primary/90 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+            >
+              매물 보러가기
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {favoriteProperties.map((property) => (
+              <div
+                key={property.id}
+                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 group"
+                style={{ borderRadius: '12px' }}
+              >
+                {/* Thumbnail */}
+                <div className="relative h-48 overflow-hidden bg-gray-100">
+                  <img
+                    src={property.image}
+                    alt={property.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  {/* Favorite Heart Button */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavorite(property.id)
+                    }}
+                    className='absolute top-3 right-3 w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-white transition-all shadow-sm'
+                  >
+                    <svg 
+                      className={`w-4 h-4 text-red-500`} 
+                      fill='currentColor' 
+                      stroke='currentColor' 
+                      viewBox='0 0 24 24'
+                    >
+                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' />
+                    </svg>
+                  </button>
+                </div>
+                
+                {/* Content */}
+                <div className="p-4">
+                  {/* Title */}
+                  <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-1">
+                    {property.title}
+                  </h3>
+                  
+                  {/* Price */}
+                  <div className="mb-3">
+                    <span className="text-lg font-bold text-dabang-primary">
+                      {property.price}
+                    </span>
+                  </div>
+                  
+                  {/* Location & Details */}
+                  <div className="flex items-center text-xs text-gray-500 mb-2">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {property.location}
+                  </div>
+                  
+                  <div className="flex items-center text-xs text-gray-500">
+                    <span className="mr-2">{property.size}</span>
+                    <span>{property.rooms}개 방</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+  
+  // Recent tab content (stub)
+  const RecentTab = () => (
+    <div className="mt-6">
+      <div className="bg-white rounded-lg p-8 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">최근 본 매물</h2>
+        <p className="text-gray-600">
+          최근 본 매물 기능은 추후 제공 예정입니다.
+        </p>
+      </div>
+    </div>
+  )
+  
+  // Settings tab content (stub)
+  const SettingsTab = () => (
+    <div className="mt-6">
+      <div className="bg-white rounded-lg p-8 text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">설정</h2>
+        <p className="text-gray-600">
+          알림 및 계정 설정은 추후 제공 예정입니다.
+        </p>
+      </div>
+    </div>
+  )
+  
+  // Render active tab content
+  const renderActiveTab = () => {
+    switch (currentTab) {
+      case 'profile':
+        return <ProfileTab />
+      case 'favorites':
+        return <FavoritesTab />
+      case 'recent':
+        return <RecentTab />
+      case 'settings':
+        return <SettingsTab />
+      default:
+        return <ProfileTab />
+    }
+  }
+  
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      
+      <div className="max-w-5xl mx-auto px-4 py-10">
+        {/* Hero Section */}
+        <div className="mb-6">
+          <div className="text-xs uppercase tracking-wide text-indigo-500 mb-2">마이페이지</div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">내 프로필</h1>
+          <p className="text-gray-600">저장한 매물과 계정 정보를 한 곳에서 관리하세요.</p>
+        </div>
+        
+        {/* Tab Bar */}
+        <div className="mt-6 flex gap-2 border-b border-gray-200">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => handleTabChange(tab.key)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 ${
+                currentTab === tab.key
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-indigo-600 hover:border-gray-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        
+        {/* Tab Content */}
+        {renderActiveTab()}
+      </div>
+      
       <Footer />
     </div>
   )

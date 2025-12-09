@@ -19,172 +19,42 @@ const Header = () => {
     setIsUserDropdownOpen(false)
   }
 
-  const handleInterestListClick = () => {
-    if (!isAuthenticated) {
-      navigate('/login')
-      return
-    }
-    navigate('/interest-list')
-    setIsUserDropdownOpen(false)
-  }
-
   const categories = [
     { name: '원룸/투룸', path: '/category/oneroom' },
     { name: '아파트', path: '/category/apartment' },
     { name: '오피스텔', path: '/category/officetel' },
     { name: '빌라', path: '/category/villa' },
-    { name: '분양/신축', path: '/presales' }
+    { name: '분양/신축', path: '/category/presale' }
   ]
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Left side - Logo and main navigation */}
-          <div className="flex items-center space-x-8">
-            {/* Logo */}
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <div className="bg-dabang-primary w-8 h-8 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
-              <span className="ml-2 text-xl font-bold text-gray-900 hidden sm:block">TOFU</span>
-            </Link>
+      <div className="max-w-7xl mx-auto h-16 px-4 flex items-center justify-between">
+        {/* LEFT group */}
+        <div className="flex items-center gap-8">
+          {/* Logo */}
+          <Link to="/" className="flex-shrink-0 flex items-center">
+            <div className="bg-dabang-primary w-8 h-8 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">T</span>
+            </div>
+            <span className="ml-2 text-xl font-bold text-gray-900 hidden sm:block">TOFU</span>
+          </Link>
 
-            {/* Main Navigation */}
-            <nav className="hidden md:flex space-x-6">
-              <Link to="/" className="text-gray-700 hover:text-dabang-primary font-medium">
-                홈
-              </Link>
-              
-              <Link to="/map" className="text-gray-700 hover:text-dabang-primary font-medium">
-                지도 검색
-              </Link>
-              
-              {/* Category Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                  className="text-gray-700 hover:text-dabang-primary font-medium flex items-center"
-                >
-                  매물 리스트
-                  <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {isCategoryDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                    {categories.map((category) => (
-                      <Link
-                        key={category.path}
-                        to={category.path}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsCategoryDropdownOpen(false)}
-                      >
-                        {category.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <Link to="/presales" className="text-gray-700 hover:text-dabang-primary font-medium">
-                분양/신축
-              </Link>
-              
-              <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium">
-                이사 서비스
-              </Link>
-              
-              <button 
-                onClick={handleInterestListClick}
-                className="text-gray-700 hover:text-dabang-primary font-medium"
-              >
-                관심목록
-              </button>
-            </nav>
-          </div>
-
-          {/* Right side - Auth area */}
-          <div className="flex items-center">
-            <Link 
-              to="/agent-signup" 
-              className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-dabang-primary bg-dabang-secondary hover:bg-dabang-secondary/90 mr-4"
-            >
-              중개사 가입
-            </Link>
-            
-            {!isAuthenticated ? (
-              <div className="flex space-x-3">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  로그인
-                </Link>
-                <Link
-                  to="/signup"
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
-                >
-                  회원가입
-                </Link>
-              </div>
-            ) : (
-              <div className="relative">
-                <button
-                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center text-sm rounded-full focus:outline-none"
-                >
-                  <div className="w-8 h-8 rounded-full bg-dabang-primary flex items-center justify-center text-white font-medium">
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                  <span className="ml-2 text-gray-700 hidden sm:block">{user?.name || '사용자'}</span>
-                  <svg className="ml-1 w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                    <button
-                      onClick={handleProfileClick}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      내 프로필
-                    </button>
-                    <button
-                      onClick={handleInterestListClick}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      관심목록
-                    </button>
-                    <div className="border-t border-gray-100"></div>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      로그아웃
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* Mobile Navigation */}
-        <div className="md:hidden border-t border-gray-200 py-3">
-          <div className="flex space-x-4 overflow-x-auto">
-            <Link to="/" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+            <Link to="/" className="text-gray-700 hover:text-dabang-primary">
               홈
             </Link>
-            <Link to="/map" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            
+            <Link to="/map" className="text-gray-700 hover:text-dabang-primary">
               지도 검색
             </Link>
+            
+            {/* Category Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                className="text-gray-700 hover:text-dabang-primary font-medium flex items-center whitespace-nowrap"
+                className="text-gray-700 hover:text-dabang-primary flex items-center"
               >
                 매물 리스트
                 <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -207,19 +77,119 @@ const Header = () => {
                 </div>
               )}
             </div>
-            <Link to="/presales" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-              분양/신축
-            </Link>
-            <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            
+            <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary">
               이사 서비스
             </Link>
-            <button 
-              onClick={handleInterestListClick}
-              className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap"
+            
+            <Link to="/community" className="text-gray-700 hover:text-dabang-primary">
+              커뮤니티
+            </Link>
+          </nav>
+        </div>
+
+        {/* RIGHT group */}
+        <div className="flex items-center gap-4">
+          <Link 
+            to="/agent-signup" 
+            className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-dabang-primary bg-dabang-secondary hover:bg-dabang-secondary/90"
+          >
+            중개사 가입
+          </Link>
+          
+          {!isAuthenticated ? (
+            <div className="flex space-x-3">
+              <Link
+                to="/login"
+                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                로그인
+              </Link>
+              <Link
+                to="/signup"
+                className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+              >
+                회원가입
+              </Link>
+            </div>
+          ) : (
+            <div className="relative">
+              <button
+                onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                className="flex items-center text-sm rounded-full focus:outline-none"
+              >
+                <div className="w-8 h-8 rounded-full bg-dabang-primary flex items-center justify-center text-white font-medium">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <span className="ml-2 text-gray-700 hidden sm:block">{user?.name || '사용자'}</span>
+                <svg className="ml-1 w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {isUserDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                  <button
+                    onClick={handleProfileClick}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    내 프로필
+                  </button>
+                  <div className="border-t border-gray-100"></div>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Mobile Navigation */}
+      <div className="md:hidden border-t border-gray-200 py-3">
+        <div className="flex space-x-4 overflow-x-auto px-4">
+          <Link to="/" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            홈
+          </Link>
+          <Link to="/map" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            지도 검색
+          </Link>
+          <div className="relative">
+            <button
+              onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+              className="text-gray-700 hover:text-dabang-primary font-medium flex items-center whitespace-nowrap"
             >
-              관심목록
+              매물 리스트
+              <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
+            
+            {isCategoryDropdownOpen && (
+              <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                {categories.map((category) => (
+                  <Link
+                    key={category.path}
+                    to={category.path}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsCategoryDropdownOpen(false)}
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
+          <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            이사 서비스
+          </Link>
+          <Link to="/community" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            커뮤니티
+          </Link>
         </div>
       </div>
     </header>

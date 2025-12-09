@@ -4,7 +4,6 @@ import HomePage from '../pages/HomePage'
 import LoginPage from '../pages/LoginPage'
 import SignUpPage from '../pages/SignUpPage'
 import MapPage from '../pages/MapPage'
-import PresalesPage from '../pages/PresalesPage'
 import InterestListPage from '../pages/InterestListPage'
 import AgentSignUpPage from '../pages/AgentSignUpPage'
 import ListPropertyPage from '../pages/ListPropertyPage'
@@ -29,6 +28,7 @@ import MovingServicePage from '../pages/MovingServicePage'
 import NewsListPage from '../pages/NewsListPage'
 import NewsDetailPage from '../pages/NewsDetailPage'
 import CommunityLandingPage from '../pages/CommunityLandingPage'
+import PriceTrendsPage from '../pages/PriceTrendsPage'
 
 const AppRouter = () => {
   return (
@@ -38,7 +38,6 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/presales" element={<PresalesPage />} />
         <Route path="/interest-list" element={<InterestListPage />} />
         <Route path="/agent-signup" element={<AgentSignUpPage />} />
         <Route path="/list-property" element={<ListPropertyPage />} />
@@ -46,6 +45,7 @@ const AppRouter = () => {
         <Route path="/property/:id" element={<PropertyDetailPage />} />
         <Route path="/moving-service" element={<MovingServicePage />} />
         <Route path="/community" element={<CommunityLandingPage />} />
+        <Route path="/price-trends" element={<PriceTrendsPage />} />
         
         {/* News routes */}
         <Route path="/news" element={<NewsListPage />} />

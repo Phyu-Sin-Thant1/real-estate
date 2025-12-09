@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const SearchHero = () => {
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTag, setActiveTag] = useState(null)
 
@@ -37,7 +39,7 @@ const SearchHero = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(26, 35, 126, 0.6)), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxOTIwIiBoZWlnaHQ9IjEwODAiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDBfbGluZWFyXzFfMSIgeDE9IjAiIHkxPSIwIiB4Mj0iMTkyMCIgeTI9IjEwODAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBzdG9wLWNvbG9yPSIjMUEyMzdFIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMzc0MUE5Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PC9zdmc+')`
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.4), rgba(26, 35, 126, 0.6)), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSIxMDgwIiB2aWV3Qm94PSIwIDAgMTkyMCAxMDgwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxOTIwIiBoZWlnaHQ9IjEwODAiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJncmFkaWVudDBfbGluZWFyXzFfMSIgeDE9IjAiIHkxPSIwIiB4Mj0iMTkyMCIgeTI9IjEwODAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj48c3RvcCBzdG9wLWNvbG9yPSIjMUEyMzdFIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMzc0MUE5Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PC9zdmc+")`
         }}
       />
       
@@ -183,7 +185,10 @@ const SearchHero = () => {
 
               {/* Action Button */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <button className="w-full bg-dabang-primary hover:bg-dabang-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors font-body">
+                <button 
+                  onClick={() => navigate("/price-trends")}
+                  className="w-full bg-dabang-primary hover:bg-dabang-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors font-body"
+                >
                   시세 더보기
                 </button>
               </div>

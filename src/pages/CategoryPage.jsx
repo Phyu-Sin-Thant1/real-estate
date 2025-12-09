@@ -14,6 +14,15 @@ const CategoryPage = () => {
   const { isAuthenticated } = useUserAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
   
+  // Category tabs configuration
+  const CATEGORY_TABS = [
+    { key: "oneroom", label: "원룸/투룸" },
+    { key: "apartment", label: "아파트" },
+    { key: "officetel", label: "오피스텔" },
+    { key: "villa", label: "빌라" },
+    { key: "presale", label: "분양/신축" },
+  ];
+  
   // Slug to property type mapping
   const categoryMapping = {
     'oneroom': '원룸',
@@ -150,6 +159,24 @@ const CategoryPage = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {displayCategory}
           </h1>
+          <p className="text-sm text-gray-500">원하는 매물 유형을 바로 선택해보세요.</p>
+        </div>
+        
+        {/* Category Tab Bar */}
+        <div className="mt-4 flex flex-wrap gap-2 mb-6">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => navigate(`/category/${tab.key}`)}
+              className={
+                tab.key === categoryName
+                  ? "px-4 py-2 rounded-full text-sm font-medium bg-indigo-600 text-white border border-indigo-600 shadow-sm"
+                  : "px-4 py-2 rounded-full text-sm font-medium bg-white text-gray-600 border border-gray-200 hover:border-indigo-400 hover:text-indigo-600"
+              }
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
         
         {/* Category Menu Buttons (Naver-style) */}
