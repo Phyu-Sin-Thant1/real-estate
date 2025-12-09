@@ -33,16 +33,17 @@ const createPriceMarker = (property) => {
       background-color: ${accentColor};
       color: white;
       font-weight: 700;
-      padding: 8px 12px;
+      padding: 6px 12px;
       border-radius: 20px;
       white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-size: 13px;
       font-family: 'Pretendard', system-ui, -apple-system, sans-serif;
       border: 2px solid white;
       text-align: center;
-      min-width: 60px;
-    ">
+      min-width: 50px;
+      transition: all 0.2s ease;
+    " onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';">
       ${priceText}
     </div>
   `
@@ -50,9 +51,9 @@ const createPriceMarker = (property) => {
   return L.divIcon({
     className: 'custom-price-marker',
     html: htmlContent,
-    iconSize: [80, 36],
-    iconAnchor: [40, 36],
-    popupAnchor: [0, -36]
+    iconSize: [70, 32],
+    iconAnchor: [35, 32],
+    popupAnchor: [0, -32]
   })
 }
 

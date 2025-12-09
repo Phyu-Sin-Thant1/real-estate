@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const ServiceGrid = () => {
   const navigate = useNavigate()
@@ -99,7 +99,7 @@ const ServiceGrid = () => {
           ))}
 
           {/* Additional Service Banner */}
-          <div className="category-card bg-gradient-to-br from-dabang-secondary to-orange-600 text-white col-span-1 md:col-span-2 lg:col-span-1">
+          <Link to="/moving-service" className="category-card bg-gradient-to-br from-dabang-secondary to-orange-600 text-white col-span-1 md:col-span-2 lg:col-span-1 hover:scale-105 transform transition-all duration-200 relative overflow-hidden cursor-pointer">
             <div className="flex items-center space-x-4">
               <div className="text-4xl">🚛</div>
               <div>
@@ -110,7 +110,7 @@ const ServiceGrid = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Community/News Section */}
@@ -123,28 +123,43 @@ const ServiceGrid = () => {
               <p className="text-gray-600 mb-6">
                 지역 주민들이 공유하는 이야기를 확인해보세요! 지역 인사이트, 로컬 팁, 동네 이야기로 현명한 결정을 내리세요.
               </p>
-              <button className="btn-primary">
+              <button 
+                className="btn-primary"
+                onClick={() => navigate("/community?tab=reviews")}
+              >
                 커뮤니티 탐색
               </button>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-lg p-4">
+              <div 
+                className="bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => navigate("/community?tab=news")}
+              >
                 <div className="text-2xl mb-2">📰</div>
                 <h4 className="font-medium text-gray-900 mb-1">지역 뉴스</h4>
                 <p className="text-sm text-gray-600">동네 개발 소식을 업데이트하세요</p>
               </div>
-              <div className="bg-white rounded-lg p-4">
+              <div 
+                className="bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => navigate("/community?tab=chat")}
+              >
                 <div className="text-2xl mb-2">💬</div>
                 <h4 className="font-medium text-gray-900 mb-1">커뮤니티 채팅</h4>
                 <p className="text-sm text-gray-600">이웃과 지역 주민들과 소통하세요</p>
               </div>
-              <div className="bg-white rounded-lg p-4">
+              <div 
+                className="bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => navigate("/community?tab=reviews")}
+              >
                 <div className="text-2xl mb-2">⭐</div>
                 <h4 className="font-medium text-gray-900 mb-1">리뷰</h4>
                 <p className="text-sm text-gray-600">주민들의 실제 경험담</p>
               </div>
-              <div className="bg-white rounded-lg p-4">
+              <div 
+                className="bg-white rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => navigate("/community?tab=tips")}
+              >
                 <div className="text-2xl mb-2">📍</div>
                 <h4 className="font-medium text-gray-900 mb-1">로컬 팁</h4>
                 <p className="text-sm text-gray-600">숨겨진 명소와 추천 장소</p>

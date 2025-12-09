@@ -1,38 +1,12 @@
-import React from 'react'
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { newsData } from '../../mock/newsData';
 
 const MarketFeed = () => {
-  const newsItems = [
-    {
-      id: 1,
-      title: '서울 아파트 전세가 3개월 연속 상승',
-      time: '2시간 전',
-      icon: '📈'
-    },
-    {
-      id: 2,
-      title: '강남 재건축 단지 분양가 상한제 적용',
-      time: '4시간 전',
-      icon: '🏗️'
-    },
-    {
-      id: 3,
-      title: '정부, 부동산 규제 완화 방안 검토',
-      time: '6시간 전',
-      icon: '📋'
-    },
-    {
-      id: 4,
-      title: '경기도 신도시 개발 계획 발표',
-      time: '8시간 전',
-      icon: '🌆'
-    },
-    {
-      id: 5,
-      title: '금리 인하로 주택담보대출 증가세',
-      time: '12시간 전',
-      icon: '🏦'
-    }
-  ]
+  // Get the first 5 news items sorted by newest first
+  const newsItems = [...newsData]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
 
   const marketStats = [
     {
@@ -67,7 +41,22 @@ const MarketFeed = () => {
       isPositive: false,
       icon: '📋'
     }
-  ]
+  ];
+
+  const navigate = useNavigate();
+
+  // Format date to relative time (hardcoded for mock data)
+  const formatRelativeTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return '방금 전';
+    if (diffInHours < 24) return `${diffInHours}시간 전`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) return `${diffInDays}일 전`;
+    return `${Math.floor(diffInDays / 30)}달 전`;
+  };
 
   return (
     <section className="py-16 bg-white border-t border-gray-200">
@@ -87,15 +76,20 @@ const MarketFeed = () => {
                 <div
                   key={item.id}
                   className="flex items-start p-4 bg-white rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/news/${item.id}`)}
                 >
-                  <div className="text-2xl mr-4 mt-1">{item.icon}</div>
-                  <div className="flex-1">
-                    <h4 className="font-medium text-gray-900 mb-1 hover:text-dabang-primary transition-colors">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-dabang-primary/10 flex items-center justify-center mr-4 mt-1">
+                    <svg className="w-5 h-5 text-dabang-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-900 mb-1 hover:text-dabang-primary transition-colors truncate">
                       {item.title}
                     </h4>
-                    <p className="text-sm text-gray-500">{item.time}</p>
+                    <p className="text-sm text-gray-500">{formatRelativeTime(item.createdAt)}</p>
                   </div>
-                  <div className="text-gray-400">
+                  <div className="flex-shrink-0 text-gray-400 ml-2">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
@@ -104,7 +98,10 @@ const MarketFeed = () => {
               ))}
             </div>
             
-            <button className="mt-6 text-dabang-primary font-medium hover:text-dabang-primary/80 transition-colors">
+            <button 
+              className="mt-6 text-dabang-primary font-medium hover:text-dabang-primary/80 transition-colors"
+              onClick={() => navigate('/community?tab=news')}
+            >
               모든 뉴스 보기 →
             </button>
           </div>

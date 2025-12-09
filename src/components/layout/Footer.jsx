@@ -58,6 +58,11 @@ const Footer = () => {
                   1:1 문의
                 </Link>
               </li>
+              <li>
+                <Link to="/moving-service" className="text-gray-400 hover:text-white text-sm">
+                  이사 서비스
+                </Link>
+              </li>
             </ul>
           </div>
 

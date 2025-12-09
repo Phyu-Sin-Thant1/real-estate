@@ -92,6 +92,10 @@ const Header = () => {
                 분양/신축
               </Link>
               
+              <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium">
+                이사 서비스
+              </Link>
+              
               <button 
                 onClick={handleInterestListClick}
                 className="text-gray-700 hover:text-dabang-primary font-medium"
@@ -205,6 +209,9 @@ const Header = () => {
             </div>
             <Link to="/presales" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
               분양/신축
+            </Link>
+            <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+              이사 서비스
             </Link>
             <button 
               onClick={handleInterestListClick}

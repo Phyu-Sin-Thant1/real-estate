@@ -25,6 +25,10 @@ import ContactPage from '../pages/ContactPage'
 import TermsPage from '../pages/TermsPage'
 import PrivacyPage from '../pages/PrivacyPage'
 import MyPage from '../pages/MyPage'
+import MovingServicePage from '../pages/MovingServicePage'
+import NewsListPage from '../pages/NewsListPage'
+import NewsDetailPage from '../pages/NewsDetailPage'
+import CommunityLandingPage from '../pages/CommunityLandingPage'
 
 const AppRouter = () => {
   return (
@@ -40,6 +44,12 @@ const AppRouter = () => {
         <Route path="/list-property" element={<ListPropertyPage />} />
         <Route path="/category/:categoryName" element={<CategoryPage />} />
         <Route path="/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/moving-service" element={<MovingServicePage />} />
+        <Route path="/community" element={<CommunityLandingPage />} />
+        
+        {/* News routes */}
+        <Route path="/news" element={<NewsListPage />} />
+        <Route path="/news/:id" element={<NewsDetailPage />} />
         
         {/* New pages */}
         <Route path="/about" element={<AboutPage />} />
