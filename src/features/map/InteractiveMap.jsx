@@ -214,7 +214,7 @@ const InteractiveMap = ({
                   </p>
                   
                   {/* Property Details Grid */}
-                  <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                  <div className="bg-white rounded-lg p-3 mb-4">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="flex items-center space-x-2">
                         <span className="text-lg">📏</span>

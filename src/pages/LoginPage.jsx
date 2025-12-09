@@ -2,24 +2,30 @@ import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import { useAuth } from '../context/AuthContext'
+import { useUserAuth } from '../context/UserAuthContext'
 
 const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, isAuthenticated } = useAuth()
+  const { login: adminLogin, isAuthenticated: isAdminAuthenticated } = useAuth()
+  const { login: userLogin, isAuthenticated: isUserAuthenticated } = useUserAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [userType, setUserType] = useState('user') // 'user' or 'admin'
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isUserAuthenticated) {
+      const redirectTarget = location.state?.from || '/'
+      navigate(redirectTarget, { replace: true })
+    } else if (isAdminAuthenticated) {
       const redirectTarget = location.state?.from || '/admin'
       navigate(redirectTarget, { replace: true })
     }
-  }, [isAuthenticated, location.state, navigate])
+  }, [isUserAuthenticated, isAdminAuthenticated, location.state, navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -55,17 +61,31 @@ const LoginPage = () => {
     setError(null)
     setLoading(true)
 
-    const result = await login(formData)
+    if (userType === 'admin') {
+      // Admin login
+      const result = await adminLogin(formData)
+      setLoading(false)
 
-    setLoading(false)
+      if (!result.success) {
+        setError(result.error || '로그인에 실패했습니다.')
+        return
+      }
 
-    if (!result.success) {
-      setError(result.error || '로그인에 실패했습니다.')
-      return
+      const redirectTarget = location.state?.from || '/admin'
+      navigate(redirectTarget, { replace: true })
+    } else {
+      // User login
+      const result = await userLogin(formData)
+      setLoading(false)
+
+      if (!result.success) {
+        setError(result.error || '로그인에 실패했습니다.')
+        return
+      }
+
+      const redirectTarget = location.state?.from || '/'
+      navigate(redirectTarget, { replace: true })
     }
-
-    const redirectTarget = location.state?.from || '/admin'
-    navigate(redirectTarget, { replace: true })
   }
 
   const goToSignUp = () => {
@@ -86,6 +106,30 @@ const LoginPage = () => {
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-2 font-display">로그인</h1>
               <p className="text-gray-600 font-body">두부에 오신 것을 환영합니다</p>
+            </div>
+
+            {/* User Type Toggle */}
+            <div className="flex mb-6 bg-white rounded-lg p-1">
+              <button
+                onClick={() => setUserType('user')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  userType === 'user'
+                    ? 'bg-white text-dabang-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                일반 사용자
+              </button>
+              <button
+                onClick={() => setUserType('admin')}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                  userType === 'admin'
+                    ? 'bg-white text-dabang-primary shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                관리자
+              </button>
             </div>
 
             <div className="mb-8">
@@ -223,4 +267,3 @@ const LoginPage = () => {
 }
 
 export default LoginPage
-

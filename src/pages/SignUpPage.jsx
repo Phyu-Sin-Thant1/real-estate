@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
+import { useUserAuth } from '../context/UserAuthContext'
 
 const SignUpPage = () => {
   const navigate = useNavigate()
+  const { signup } = useUserAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -13,6 +15,8 @@ const SignUpPage = () => {
     agreeTerms: false,
     agreePrivacy: false
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -22,10 +26,39 @@ const SignUpPage = () => {
     }))
   }
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault()
-    console.log('Sign up attempt:', formData)
-    // Handle sign up logic here
+    
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError('비밀번호가 일치하지 않습니다.')
+      return
+    }
+    
+    if (!formData.agreeTerms || !formData.agreePrivacy) {
+      setError('이용약관과 개인정보 처리방침에 모두 동의해야 합니다.')
+      return
+    }
+    
+    setLoading(true)
+    setError(null)
+    
+    const result = await signup({
+      email: formData.email,
+      password: formData.password,
+      name: formData.name,
+      phone: formData.phone
+    })
+    
+    setLoading(false)
+    
+    if (!result.success) {
+      setError(result.error || '회원가입에 실패했습니다.')
+      return
+    }
+    
+    // Redirect to home page after successful signup
+    navigate('/', { replace: true })
   }
 
   const checkEmailDuplicate = () => {
@@ -188,12 +221,19 @@ const SignUpPage = () => {
                 </label>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-600 border border-rose-200">
+                  {error}
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={!formData.agreeTerms || !formData.agreePrivacy}
+                disabled={loading || !formData.agreeTerms || !formData.agreePrivacy}
                 className="w-full bg-dabang-primary hover:bg-dabang-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors font-body"
               >
-                회원가입 완료
+                {loading ? '처리 중...' : '회원가입 완료'}
               </button>
             </form>
 

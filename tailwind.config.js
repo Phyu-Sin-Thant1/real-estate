@@ -25,9 +25,16 @@ export default {
         'admin-background': '#F8FAFC',
       },
       fontFamily: {
-        'sans': ['Pretendard', 'Spoqa Han Sans', 'Noto Sans KR', 'Inter', 'system-ui', 'sans-serif'],
-        'display': ['Spoqa Han Sans', 'Pretendard', 'system-ui', 'sans-serif'],
-        'body': ['Nanum Gothic', 'Noto Sans KR', 'Pretendard', 'system-ui', 'sans-serif'],
+        'sans': ['Pretendard Variable', 'ui-sans-serif', 'system-ui'],
+        'display': ['Pretendard Variable', 'ui-sans-serif', 'system-ui'],
+        'body': ['Pretendard Variable', 'ui-sans-serif', 'system-ui'],
+      },
+      fontSize: {
+        base: "15px",
+        lg: "17px",
+        xl: "20px",
+        "2xl": "24px",
+        "3xl": "32px",
       },
       fontWeight: {
         'normal': '400',

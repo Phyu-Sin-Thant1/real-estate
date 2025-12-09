@@ -86,7 +86,7 @@ const MarketFeed = () => {
               {newsItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="flex items-start p-4 bg-white rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <div className="text-2xl mr-4 mt-1">{item.icon}</div>
                   <div className="flex-1">
@@ -122,7 +122,7 @@ const MarketFeed = () => {
               {marketStats.map((stat) => (
                 <div
                   key={stat.id}
-                  className="bg-gray-50 rounded-xl p-6 hover:shadow-md transition-all duration-200"
+                  className="bg-white rounded-xl p-6 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="text-2xl">{stat.icon}</div>

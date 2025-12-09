@@ -129,22 +129,22 @@ const ServiceGrid = () => {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4">
                 <div className="text-2xl mb-2">📰</div>
                 <h4 className="font-medium text-gray-900 mb-1">지역 뉴스</h4>
                 <p className="text-sm text-gray-600">동네 개발 소식을 업데이트하세요</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4">
                 <div className="text-2xl mb-2">💬</div>
                 <h4 className="font-medium text-gray-900 mb-1">커뮤니티 채팅</h4>
                 <p className="text-sm text-gray-600">이웃과 지역 주민들과 소통하세요</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4">
                 <div className="text-2xl mb-2">⭐</div>
                 <h4 className="font-medium text-gray-900 mb-1">리뷰</h4>
                 <p className="text-sm text-gray-600">주민들의 실제 경험담</p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-white rounded-lg p-4">
                 <div className="text-2xl mb-2">📍</div>
                 <h4 className="font-medium text-gray-900 mb-1">로컬 팁</h4>
                 <p className="text-sm text-gray-600">숨겨진 명소와 추천 장소</p>

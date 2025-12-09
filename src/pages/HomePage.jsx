@@ -7,7 +7,7 @@ import Footer from '../components/layout/Footer'
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-dabang-background">
+    <div className="min-h-screen bg-white">
       <Header />
       <SearchHero />
       <ServiceGrid />
