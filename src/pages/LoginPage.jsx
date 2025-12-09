@@ -17,15 +17,22 @@ const LoginPage = () => {
   const [error, setError] = useState(null)
   const [userType, setUserType] = useState('user') // 'user' or 'admin'
 
+  // Only redirect if the user just logged in (not on page load)
+  const [justLoggedIn, setJustLoggedIn] = useState(false)
+
   useEffect(() => {
-    if (isUserAuthenticated) {
-      const redirectTarget = location.state?.from || '/'
-      navigate(redirectTarget, { replace: true })
-    } else if (isAdminAuthenticated) {
-      const redirectTarget = location.state?.from || '/admin'
-      navigate(redirectTarget, { replace: true })
+    // Redirect logic only when user just logged in
+    if (justLoggedIn) {
+      if (userType === 'user' && isUserAuthenticated) {
+        const redirectTarget = location.state?.from || '/'
+        navigate(redirectTarget, { replace: true })
+      } else if (userType === 'admin' && isAdminAuthenticated) {
+        const redirectTarget = location.state?.from || '/admin'
+        navigate(redirectTarget, { replace: true })
+      }
+      setJustLoggedIn(false)
     }
-  }, [isUserAuthenticated, isAdminAuthenticated, location.state, navigate])
+  }, [justLoggedIn, isUserAuthenticated, isAdminAuthenticated, location.state, navigate, userType])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -71,8 +78,7 @@ const LoginPage = () => {
         return
       }
 
-      const redirectTarget = location.state?.from || '/admin'
-      navigate(redirectTarget, { replace: true })
+      setJustLoggedIn(true)
     } else {
       // User login
       const result = await userLogin(formData)
@@ -83,8 +89,7 @@ const LoginPage = () => {
         return
       }
 
-      const redirectTarget = location.state?.from || '/'
-      navigate(redirectTarget, { replace: true })
+      setJustLoggedIn(true)
     }
   }
 

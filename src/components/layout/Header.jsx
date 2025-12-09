@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUserAuth } from '../../context/UserAuthContext'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n'
 
 const Header = () => {
   const navigate = useNavigate()
+  const { t, i18n: translationInstance } = useTranslation('common')
   const { user, isAuthenticated, logout } = useUserAuth()
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
@@ -17,6 +20,10 @@ const Header = () => {
   const handleProfileClick = () => {
     navigate('/mypage')
     setIsUserDropdownOpen(false)
+  }
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng)
   }
 
   const categories = [
@@ -43,11 +50,11 @@ const Header = () => {
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link to="/" className="text-gray-700 hover:text-dabang-primary">
-              홈
+              {t('nav.home')}
             </Link>
             
             <Link to="/map" className="text-gray-700 hover:text-dabang-primary">
-              지도 검색
+              {t('nav.mapSearch')}
             </Link>
             
             {/* Category Dropdown */}
@@ -56,7 +63,7 @@ const Header = () => {
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                 className="text-gray-700 hover:text-dabang-primary flex items-center"
               >
-                매물 리스트
+                {t('nav.listings')}
                 <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -79,17 +86,41 @@ const Header = () => {
             </div>
             
             <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary">
-              이사 서비스
+              {t('nav.moving')}
             </Link>
             
             <Link to="/community" className="text-gray-700 hover:text-dabang-primary">
-              커뮤니티
+              {t('nav.community')}
             </Link>
           </nav>
         </div>
 
         {/* RIGHT group */}
         <div className="flex items-center gap-4">
+          {/* Language Switcher */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => changeLanguage('ko')}
+              className={`px-3 py-1 text-sm rounded-md ${
+                translationInstance.language === 'ko' 
+                  ? 'bg-dabang-primary text-white' 
+                  : 'text-gray-600 hover:text-dabang-primary'
+              }`}
+            >
+              KO
+            </button>
+            <button
+              onClick={() => changeLanguage('en')}
+              className={`px-3 py-1 text-sm rounded-md ${
+                translationInstance.language === 'en' 
+                  ? 'bg-dabang-primary text-white' 
+                  : 'text-gray-600 hover:text-dabang-primary'
+              }`}
+            >
+              EN
+            </button>
+          </div>
+          
           <Link 
             to="/agent-signup" 
             className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-dabang-primary bg-dabang-secondary hover:bg-dabang-secondary/90"
@@ -153,17 +184,17 @@ const Header = () => {
       <div className="md:hidden border-t border-gray-200 py-3">
         <div className="flex space-x-4 overflow-x-auto px-4">
           <Link to="/" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            홈
+            {t('nav.home')}
           </Link>
           <Link to="/map" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            지도 검색
+            {t('nav.mapSearch')}
           </Link>
           <div className="relative">
             <button
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
               className="text-gray-700 hover:text-dabang-primary font-medium flex items-center whitespace-nowrap"
             >
-              매물 리스트
+              {t('nav.listings')}
               <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -185,10 +216,10 @@ const Header = () => {
             )}
           </div>
           <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            이사 서비스
+            {t('nav.moving')}
           </Link>
           <Link to="/community" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            커뮤니티
+            {t('nav.community')}
           </Link>
         </div>
       </div>

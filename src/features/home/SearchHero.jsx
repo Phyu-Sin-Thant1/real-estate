@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const SearchHero = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation('common')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTag, setActiveTag] = useState(null)
 
@@ -50,19 +52,19 @@ const SearchHero = () => {
             {/* New Top Tagline */}
             <div className="text-left">
               <p className="text-lg text-white/80 font-normal font-body mb-4">
-                복잡한 부동산 정보, 이제 그만.
+                {t('home.hero.eyebrow')}
               </p>
             </div>
 
             {/* Main Title */}
             <div className="text-left">
               <h1 className="text-4xl md:text-5xl lg:text-5xl font-extrabold text-white mb-4 font-display leading-tight">
-                당신에게 꺼 맞는 집을 찾으세요!
+                {t('home.hero.title')}
               </h1>
               
               {/* Subtitle */}
               <p className="text-xl md:text-2xl text-white/90 mb-6 font-normal font-body leading-relaxed">
-                빅데이터 기반의 추천과 실시간 시세 정보로 스마트하게 결정하세요.
+                {t('home.hero.subtitle')}
               </p>
             </div>
 
@@ -86,7 +88,7 @@ const SearchHero = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="지역, 지하철, 대학, 단지명 또는 매물번호를 입력해주세요"
+                  placeholder={t('home.searchPlaceholder')}
                   className="w-full pl-6 pr-16 py-3 text-base text-gray-700 placeholder-gray-400 focus:outline-none bg-transparent focus:ring-0 text-left placeholder:text-left font-normal font-body"
                 />
               </div>
@@ -189,7 +191,7 @@ const SearchHero = () => {
                   onClick={() => navigate("/price-trends")}
                   className="w-full bg-dabang-primary hover:bg-dabang-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-colors font-body"
                 >
-                  시세 더보기
+                  {t('home.priceMore')}
                 </button>
               </div>
             </div>

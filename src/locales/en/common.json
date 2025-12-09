@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "home": "Home",
+    "mapSearch": "Map Search",
+    "listings": "Property Listings",
+    "moving": "Moving Services",
+    "community": "Community"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "No more complicated real estate information.",
+      "title": "Find the perfect home for you!",
+      "subtitle": "Make smart decisions with big data recommendations and real-time market information."
+    },
+    "searchPlaceholder": "Enter region, subway, university, complex name or property number",
+    "priceMore": "View More Prices"
+  }
+}
