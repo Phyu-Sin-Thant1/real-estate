@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 import { getPropertyById, getSimilarProperties } from '../mock/properties'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -20,7 +20,7 @@ L.Icon.Default.mergeOptions({
 const PropertyDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isAuthenticated } = useUserAuth()
+  const { isAuthenticated } = useUnifiedAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
   const [property, setProperty] = useState(null)
   const [similarProperties, setSimilarProperties] = useState([])

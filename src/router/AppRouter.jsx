@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import HomePage from '../pages/HomePage'
 import LoginPage from '../pages/LoginPage'
 import SignUpPage from '../pages/SignUpPage'
@@ -12,8 +12,9 @@ import AdminDashboardPage from '../pages/AdminDashboardPage'
 import NewsManagementPage from '../pages/NewsManagementPage'
 import ProfilePage from '../pages/ProfilePage'
 import PropertyDetailPage from '../pages/PropertyDetailPage'
-import ProtectedRoute from '../components/layout/ProtectedRoute'
-import UserProtectedRoute from '../components/layout/UserProtectedRoute'
+import UnifiedProtectedRoute from '../components/layout/UnifiedProtectedRoute'
+import RoleProtectedRoute from '../components/layout/RoleProtectedRoute'
+import UserProtectedRoute from './UserProtectedRoute'
 
 // New pages
 import AboutPage from '../pages/AboutPage'
@@ -30,19 +31,18 @@ import NewsListPage from '../pages/NewsListPage'
 import NewsDetailPage from '../pages/NewsDetailPage'
 import CommunityLandingPage from '../pages/CommunityLandingPage'
 import PriceTrendsPage from '../pages/PriceTrendsPage'
-import RequireBusinessAuth from '../components/layout/RequireBusinessAuth'
 import BusinessDashboardLayout from '../layouts/BusinessDashboardLayout'
 import OverviewPage from '../pages/business/OverviewPage'
-import CalendarPage from '../pages/business/CalendarPage'
-import CustomersPage from '../pages/business/CustomersPage'
-import SettlementsPage from '../pages/business/SettlementsPage'
-import ListingsPage from '../pages/business/realEstate/ListingsPage'
-import InquiriesPage from '../pages/business/realEstate/InquiriesPage'
-import ViewingsPage from '../pages/business/realEstate/ViewingsPage'
-import DealsPage from '../pages/business/realEstate/DealsPage'
-import RequestsPage from '../pages/business/delivery/RequestsPage'
-import JobsPage from '../pages/business/delivery/JobsPage'
-import PricingPage from '../pages/business/delivery/PricingPage'
+// New business dashboard pages
+import BusinessContractsPage from '../pages/business/contracts/BusinessContractsPage'
+import BusinessPropertiesPage from '../pages/business/properties/BusinessPropertiesPage'
+import BusinessAdsPage from '../pages/business/ads/BusinessAdsPage'
+import BusinessStatsPage from '../pages/business/stats/BusinessStatsPage'
+import BusinessMovingRequestsPage from '../pages/business/moving/BusinessMovingRequestsPage'
+import BusinessDeliveryOrdersPage from '../pages/business/delivery/BusinessDeliveryOrdersPage'
+import BusinessSchedulePage from '../pages/business/schedule/BusinessSchedulePage'
+import BusinessCustomersPage from '../pages/business/customers/BusinessCustomersPage'
+import BusinessSettingsPage from '../pages/business/settings/BusinessSettingsPage'
 
 const AppRouter = () => {
   return (
@@ -78,7 +78,7 @@ const AppRouter = () => {
         
         {/* My Page - Protected Route */}
         <Route path="/mypage" element={
-          <UserProtectedRoute>
+          <UserProtectedRoute allowedRoles={["USER", "BUSINESS_REAL_ESTATE", "BUSINESS_DELIVERY", "ADMIN"]}>
             <MyPage />
           </UserProtectedRoute>
         } />
@@ -86,39 +86,45 @@ const AppRouter = () => {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={['ADMIN']}>
               <AdminDashboardPage />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
         <Route
           path="/admin/news"
           element={
-            <ProtectedRoute>
+            <RoleProtectedRoute allowedRoles={['ADMIN']}>
               <NewsManagementPage />
-            </ProtectedRoute>
+            </RoleProtectedRoute>
           }
         />
-
-        {/* Business Dashboard Routes */}
-        <Route element={<RequireBusinessAuth />}>
-          <Route path="/business" element={<BusinessDashboardLayout />}>
-            <Route path="dashboard" element={<OverviewPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="customers" element={<CustomersPage />} />
-            {/* Real Estate Routes */}
-            <Route path="listings" element={<ListingsPage />} />
-            <Route path="inquiries" element={<InquiriesPage />} />
-            <Route path="viewings" element={<ViewingsPage />} />
-            <Route path="deals" element={<DealsPage />} />
-            {/* Delivery Routes */}
-            <Route path="requests" element={<RequestsPage />} />
-            <Route path="jobs" element={<JobsPage />} />
-            <Route path="pricing" element={<PricingPage />} />
-            {/* Sprint 2 - Settlements */}
-            {/* <Route path="settlements" element={<SettlementsPage />} /> */}
-          </Route>
+        
+        {/* Business Dashboard Route - Single route for all business users */}
+        <Route
+          path="/business"
+          element={
+            <UserProtectedRoute allowedRoles={["BUSINESS_REAL_ESTATE", "BUSINESS_DELIVERY", "ADMIN"]}>
+              <BusinessDashboardLayout />
+            </UserProtectedRoute>
+          }
+        >
+          <Route index element={<OverviewPage />} />
+          <Route path="dashboard" element={<OverviewPage />} />
+          <Route path="contracts" element={<BusinessContractsPage />} />
+          <Route path="properties" element={<BusinessPropertiesPage />} />
+          <Route path="ads" element={<BusinessAdsPage />} />
+          <Route path="stats" element={<BusinessStatsPage />} />
+          <Route path="moving-requests" element={<BusinessMovingRequestsPage />} />
+          <Route path="delivery-orders" element={<BusinessDeliveryOrdersPage />} />
+          <Route path="schedule" element={<BusinessSchedulePage />} />
+          <Route path="customers" element={<BusinessCustomersPage />} />
+          <Route path="settings" element={<BusinessSettingsPage />} />
         </Route>
+        
+        {/* Redirects for old dashboard URLs */}
+        <Route path="/dashboard/real-estate" element={<Navigate to="/business" replace />} />
+        <Route path="/dashboard/delivery" element={<Navigate to="/business" replace />} />
       </Routes>
     </Router>
   )

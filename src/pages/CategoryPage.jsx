@@ -4,7 +4,7 @@ import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import { usePropertySearch } from '../hooks/usePropertySearch'
 import { useFavorites } from '../hooks/useFavorites'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 
 const CategoryPage = () => {
   const { categoryName } = useParams()

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 import { mockProperties } from '../mock/properties'
 
 const FAVORITES_STORAGE_PREFIX = 'tofu-favorites'
@@ -10,7 +10,7 @@ const FAVORITES_STORAGE_PREFIX = 'tofu-favorites'
  * @returns {Object} Favorites management functions and state
  */
 export const useFavorites = () => {
-  const { user, isAuthenticated } = useUserAuth()
+  const { user, isAuthenticated } = useUnifiedAuth()
   const [favorites, setFavorites] = useState([])
   
   // Generate storage key based on user ID

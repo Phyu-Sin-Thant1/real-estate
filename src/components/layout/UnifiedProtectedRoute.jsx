@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUnifiedAuth } from '../../context/UnifiedAuthContext';
 
-const ProtectedRoute = ({ children }) => {
+const UnifiedProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useUnifiedAuth();
   const location = useLocation();
 
@@ -13,4 +13,4 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-export default ProtectedRoute;
+export default UnifiedProtectedRoute;

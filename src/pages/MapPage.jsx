@@ -4,7 +4,7 @@ import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import InteractiveMap from '../features/map/InteractiveMap'
 import MapErrorBoundary from '../components/MapErrorBoundary'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 import { usePropertySearch } from '../hooks/usePropertySearch'
 import { useFavorites } from '../hooks/useFavorites'
 
@@ -444,7 +444,7 @@ const MapPage = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   
-  const { isAuthenticated } = useUserAuth()
+  const { isAuthenticated } = useUnifiedAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
   
   // State for map

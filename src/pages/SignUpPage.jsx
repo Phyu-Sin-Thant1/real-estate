@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 
 const SignUpPage = () => {
   const navigate = useNavigate()
-  const { signup } = useUserAuth()
+  const { signup } = useUnifiedAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',

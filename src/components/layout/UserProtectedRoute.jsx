@@ -1,12 +1,17 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useUserAuth } from '../../context/UserAuthContext';
+import { useUnifiedAuth } from '../../context/UnifiedAuthContext';
 
 const UserProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useUserAuth();
+  const { isAuthenticated, isUser } = useUnifiedAuth();
   const location = useLocation();
 
-  if (!isAuthenticated) {
+  // If not authenticated or not a regular user, redirect to appropriate place
+  if (!isAuthenticated || !isUser) {
+    // If authenticated but not a user, redirect to appropriate dashboard
+    if (isAuthenticated) {
+      // Redirect to appropriate dashboard based on role would go here
+    }
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 

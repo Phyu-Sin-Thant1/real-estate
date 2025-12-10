@@ -1,9 +1,9 @@
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated } = useUnifiedAuth()
   const location = useLocation()
 
   if (!isAuthenticated) {

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useUnifiedAuth } from '../../context/UnifiedAuthContext';
 
 const RequireBusinessAuth = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isBusinessRealEstate, isBusinessDelivery, isAdmin } = useUnifiedAuth();
   const location = useLocation();
 
   // If not authenticated, redirect to login
@@ -12,8 +12,7 @@ const RequireBusinessAuth = () => {
   }
 
   // Check if user has valid business role
-  const validRoles = ['BUSINESS_REAL_ESTATE', 'BUSINESS_DELIVERY', 'ADMIN'];
-  if (!user || !validRoles.includes(user.role)) {
+  if (!(isBusinessRealEstate || isBusinessDelivery || isAdmin)) {
     return <Navigate to="/" replace />;
   }
 

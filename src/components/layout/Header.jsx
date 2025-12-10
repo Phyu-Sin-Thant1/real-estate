@@ -1,13 +1,16 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useUserAuth } from '../../context/UserAuthContext'
+import { useUnifiedAuth } from '../../context/UnifiedAuthContext'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../i18n'
 
 const Header = () => {
   const navigate = useNavigate()
   const { t, i18n: translationInstance } = useTranslation('common')
-  const { user, isAuthenticated, logout } = useUserAuth()
+  const { user, isAuthenticated, isUser, isBusinessRealEstate, isBusinessDelivery, isAdmin, logout } = useUnifiedAuth()
+
+  // Show dashboard button only for partners and admins
+  const isPartnerOrAdmin = isBusinessRealEstate || isBusinessDelivery || isAdmin;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
 
@@ -22,6 +25,10 @@ const Header = () => {
     setIsUserDropdownOpen(false)
   }
 
+  const handleGoToDashboard = () => {
+    navigate('/business')
+  }
+
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng)
   }
@@ -33,6 +40,9 @@ const Header = () => {
     { name: '빌라', path: '/category/villa' },
     { name: '분양/신축', path: '/category/presale' }
   ]
+
+  // Show agent signup button only for regular users or when not logged in
+  const showAgentSignup = isUser || !isAuthenticated;
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
@@ -121,12 +131,24 @@ const Header = () => {
             </button>
           </div>
           
-          <Link 
-            to="/agent-signup" 
-            className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-dabang-primary bg-dabang-secondary hover:bg-dabang-secondary/90"
-          >
-            중개사 가입
-          </Link>
+          {showAgentSignup && (
+            <Link 
+              to="/agent-signup" 
+              className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-dabang-primary bg-dabang-secondary hover:bg-dabang-secondary/90"
+            >
+              중개사 가입
+            </Link>
+          )}
+          
+          {/* Go to Dashboard Button - shown only for partners and admins */}
+          {isPartnerOrAdmin && (
+            <button
+              onClick={handleGoToDashboard}
+              className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+            >
+              대시보드로 이동
+            </button>
+          )}
           
           {!isAuthenticated ? (
             <div className="flex space-x-3">
@@ -221,6 +243,23 @@ const Header = () => {
           <Link to="/community" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
             {t('nav.community')}
           </Link>
+          {/* Go to Dashboard Button - shown only for partners and admins */}
+          {isPartnerOrAdmin && (
+            <button
+              onClick={handleGoToDashboard}
+              className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap"
+            >
+              대시보드로 이동
+            </button>
+          )}
+          {showAgentSignup && (
+            <Link 
+              to="/agent-signup" 
+              className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap"
+            >
+              중개사 가입
+            </Link>
+          )}
         </div>
       </div>
     </header>

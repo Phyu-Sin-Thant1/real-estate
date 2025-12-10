@@ -1,38 +1,32 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Header from '../components/layout/Header'
-import { useAuth } from '../context/AuthContext'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 
 const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login: adminLogin, isAuthenticated: isAdminAuthenticated } = useAuth()
-  const { login: userLogin, isAuthenticated: isUserAuthenticated } = useUserAuth()
+  const { login, isAuthenticated, isUser, isBusinessRealEstate, isBusinessDelivery, isAdmin } = useUnifiedAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [userType, setUserType] = useState('user') // 'user' or 'admin'
+
 
   // Only redirect if the user just logged in (not on page load)
   const [justLoggedIn, setJustLoggedIn] = useState(false)
 
   useEffect(() => {
     // Redirect logic only when user just logged in
-    if (justLoggedIn) {
-      if (userType === 'user' && isUserAuthenticated) {
-        const redirectTarget = location.state?.from || '/'
-        navigate(redirectTarget, { replace: true })
-      } else if (userType === 'admin' && isAdminAuthenticated) {
-        const redirectTarget = location.state?.from || '/admin'
-        navigate(redirectTarget, { replace: true })
-      }
+    if (justLoggedIn && isAuthenticated) {
+      // Everyone goes to home page after login, including partners and admins
+      const redirectTarget = location.state?.from || '/'
+      navigate(redirectTarget, { replace: true })
       setJustLoggedIn(false)
     }
-  }, [justLoggedIn, isUserAuthenticated, isAdminAuthenticated, location.state, navigate, userType])
+  }, [justLoggedIn, isAuthenticated, isUser, isBusinessRealEstate, isBusinessDelivery, isAdmin, location.state, navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -68,29 +62,16 @@ const LoginPage = () => {
     setError(null)
     setLoading(true)
 
-    if (userType === 'admin') {
-      // Admin login
-      const result = await adminLogin(formData)
-      setLoading(false)
+    // Login with unified auth context
+    const result = await login(formData)
+    setLoading(false)
 
-      if (!result.success) {
-        setError(result.error || '로그인에 실패했습니다.')
-        return
-      }
-
-      setJustLoggedIn(true)
-    } else {
-      // User login
-      const result = await userLogin(formData)
-      setLoading(false)
-
-      if (!result.success) {
-        setError(result.error || '로그인에 실패했습니다.')
-        return
-      }
-
-      setJustLoggedIn(true)
+    if (!result.success) {
+      setError(result.error || '로그인에 실패했습니다.')
+      return
     }
+
+    setJustLoggedIn(true)
   }
 
   const goToSignUp = () => {
@@ -113,29 +94,7 @@ const LoginPage = () => {
               <p className="text-gray-600 font-body">두부에 오신 것을 환영합니다</p>
             </div>
 
-            {/* User Type Toggle */}
-            <div className="flex mb-6 bg-white rounded-lg p-1">
-              <button
-                onClick={() => setUserType('user')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  userType === 'user'
-                    ? 'bg-white text-dabang-primary shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                일반 사용자
-              </button>
-              <button
-                onClick={() => setUserType('admin')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  userType === 'admin'
-                    ? 'bg-white text-dabang-primary shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                관리자
-              </button>
-            </div>
+
 
             <div className="mb-8">
               <p className="text-sm text-gray-600 text-center mb-4 font-body">간편 로그인</p>

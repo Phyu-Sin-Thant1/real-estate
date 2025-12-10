@@ -1,53 +1,30 @@
 import React from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-
-const BASE_MENU = [
-  { key: 'overview', label: '대시보드', path: '/business/dashboard' },
-  { key: 'calendar', label: '일정', path: '/business/calendar' },
-  { key: 'customers', label: '고객 관리', path: '/business/customers' },
-];
-
-const REAL_ESTATE_MENU = [
-  { key: 'listings', label: '매물 관리', path: '/business/listings' },
-  { key: 'inquiries', label: '문의/리드', path: '/business/inquiries' },
-  { key: 'viewings', label: '방문 일정', path: '/business/viewings' },
-  { key: 'deals', label: '계약 내역', path: '/business/deals' },
-];
-
-const DELIVERY_MENU = [
-  { key: 'requests', label: '견적/신청 관리', path: '/business/requests' },
-  { key: 'jobs', label: '작업/배차 관리', path: '/business/jobs' },
-  { key: 'pricing', label: '요금 설정', path: '/business/pricing' },
-];
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useUnifiedAuth } from '../context/UnifiedAuthContext';
+import { realEstateMenu, deliveryMenu, adminMenu } from '../config/businessMenu';
 
 const getMenuForUser = (user) => {
-  if (!user) return BASE_MENU;
+  if (!user) return realEstateMenu;
 
   if (user.role === 'BUSINESS_REAL_ESTATE') {
-    return [...BASE_MENU, ...REAL_ESTATE_MENU];
+    return realEstateMenu;
   }
 
   if (user.role === 'BUSINESS_DELIVERY') {
-    return [...BASE_MENU, ...DELIVERY_MENU];
+    return deliveryMenu;
   }
 
   if (user.role === 'ADMIN') {
-    return [
-      ...BASE_MENU,
-      { type: 'section', label: '부동산 파트너' },
-      ...REAL_ESTATE_MENU,
-      { type: 'section', label: '딜리버리 파트너' },
-      ...DELIVERY_MENU,
-    ];
+    return adminMenu;
   }
 
-  return BASE_MENU;
+  return realEstateMenu;
 };
 
 const BusinessDashboardLayout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useUnifiedAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const menuItems = getMenuForUser(user);
 
   const getPageTitle = () => {
@@ -137,6 +114,13 @@ const BusinessDashboardLayout = () => {
           <div className="h-full flex items-center justify-between px-6">
             <h2 className="text-xl font-semibold text-gray-900">비즈니스 대시보드</h2>
             <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                웹사이트로 이동
+              </button>
               {/* Notifications placeholder */}
               <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

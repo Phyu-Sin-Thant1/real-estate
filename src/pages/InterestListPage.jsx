@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import { useNavigate } from 'react-router-dom'
-import { useUserAuth } from '../context/UserAuthContext'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext'
 import { useFavorites } from '../hooks/useFavorites'
 
 const InterestListPage = () => {

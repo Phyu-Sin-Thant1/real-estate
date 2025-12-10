@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext.jsx'
+import { useUnifiedAuth } from '../context/UnifiedAuthContext.jsx'
 
 const NAV_ITEMS = [
   { label: 'Dashboard Overview', icon: '🏠', badge: null },
@@ -837,7 +837,7 @@ const RichTextEditor = ({ value, onChange }) => (
 
 const AdminDashboardPage = () => {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout } = useUnifiedAuth()
 
   const [collapsed, setCollapsed] = useState(false)
   const [activeNav, setActiveNav] = useState('Dashboard Overview')
@@ -1508,6 +1508,49 @@ const searchPlaceholder = isDashboardView
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Partner Dashboard Access Buttons */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 transition hover:shadow-xl hover:shadow-slate-900/10">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">부동산 파트너 대시보드</h3>
+                    <p className="text-sm text-slate-500">부동산 파트너를 위한 전용 대시보드에 접근하세요</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/business')}
+                  className="mt-4 w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  부동산 파트너 대시보드 열기
+                </button>
+              </div>
+              
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 transition hover:shadow-xl hover:shadow-slate-900/10">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-600">
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">이사 / 배달 파트너 대시보드</h3>
+                    <p className="text-sm text-slate-500">이사 및 배달 파트너를 위한 전용 대시보드에 접근하세요</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/business')}
+                  className="mt-4 w-full rounded-xl bg-green-600 py-3 text-sm font-semibold text-white transition hover:bg-green-700"
+                >
+                  이사 / 배달 파트너 대시보드 열기
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
