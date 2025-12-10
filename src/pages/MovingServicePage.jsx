@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 
 const MovingServicePage = () => {
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     region: '',
     housingType: '',
@@ -335,9 +338,9 @@ const MovingServicePage = () => {
 
         {/* Quick Estimate Calculator Section */}
         <section className="py-16 bg-dabang-background">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">빠른 견적 계산기</h2>
+          <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">빠른 견적 계산기</h2>
               
               <div className="space-y-8">
                 <div>
@@ -402,8 +405,12 @@ const MovingServicePage = () => {
                   <p className="text-3xl font-bold">
                     {min}만 ~ {max}만 원
                   </p>
-                  <button className="mt-4 bg-white text-dabang-primary hover:bg-gray-100 font-medium py-2 px-6 rounded-lg transition-colors">
-                    정확한 견적 받기
+                  <button
+                    type="button"
+                    onClick={() => navigate('/moving/register')}
+                    className="mt-4 inline-flex items-center justify-center rounded-xl bg-white px-5 py-2 text-sm font-semibold text-indigo-700 shadow-sm hover:bg-indigo-50 transition-colors"
+                  >
+                    정확한 견적 신청하기
                   </button>
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { useUserAuth } from '../context/UserAuthContext'
 const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login: adminLogin, isAuthenticated: isAdminAuthenticated } = useAuth()
+  const { login: adminLogin, isAuthenticated: isAdminOrBusinessAuthenticated, user: authUser } = useAuth()
   const { login: userLogin, isAuthenticated: isUserAuthenticated } = useUserAuth()
   const [formData, setFormData] = useState({
     email: '',
@@ -15,24 +15,28 @@ const LoginPage = () => {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [userType, setUserType] = useState('user') // 'user' or 'admin'
+  const [loginMode, setLoginMode] = useState('user') // 'user' | 'admin'
 
   // Only redirect if the user just logged in (not on page load)
   const [justLoggedIn, setJustLoggedIn] = useState(false)
 
   useEffect(() => {
     // Redirect logic only when user just logged in
-    if (justLoggedIn) {
-      if (userType === 'user' && isUserAuthenticated) {
-        const redirectTarget = location.state?.from || '/'
-        navigate(redirectTarget, { replace: true })
-      } else if (userType === 'admin' && isAdminAuthenticated) {
-        const redirectTarget = location.state?.from || '/admin'
-        navigate(redirectTarget, { replace: true })
-      }
-      setJustLoggedIn(false)
+    if (!justLoggedIn) return
+
+    if (authUser?.role === 'ADMIN') {
+      const redirectTarget = location.state?.from || '/admin'
+      navigate(redirectTarget, { replace: true })
+    } else if (authUser?.role === 'BUSINESS_REAL_ESTATE' || authUser?.role === 'BUSINESS_DELIVERY') {
+      const redirectTarget = location.state?.from || '/business/dashboard'
+      navigate(redirectTarget, { replace: true })
+    } else if (isUserAuthenticated) {
+      const redirectTarget = location.state?.from || '/'
+      navigate(redirectTarget, { replace: true })
     }
-  }, [justLoggedIn, isUserAuthenticated, isAdminAuthenticated, location.state, navigate, userType])
+
+    setJustLoggedIn(false)
+  }, [justLoggedIn, authUser, isUserAuthenticated, location.state, navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -68,9 +72,16 @@ const LoginPage = () => {
     setError(null)
     setLoading(true)
 
-    if (userType === 'admin') {
-      // Admin login
-      const result = await adminLogin(formData)
+    try {
+      let result
+
+      if (loginMode === 'admin') {
+        result = await adminLogin({ ...formData, loginMode: 'admin' })
+      } else {
+        // user mode
+        result = await userLogin(formData)
+      }
+
       setLoading(false)
 
       if (!result.success) {
@@ -79,17 +90,10 @@ const LoginPage = () => {
       }
 
       setJustLoggedIn(true)
-    } else {
-      // User login
-      const result = await userLogin(formData)
+    } catch (err) {
+      console.error(err)
       setLoading(false)
-
-      if (!result.success) {
-        setError(result.error || '로그인에 실패했습니다.')
-        return
-      }
-
-      setJustLoggedIn(true)
+      setError('로그인 중 오류가 발생했습니다.')
     }
   }
 
@@ -113,12 +117,60 @@ const LoginPage = () => {
               <p className="text-gray-600 font-body">두부에 오신 것을 환영합니다</p>
             </div>
 
+            {/* Dashboard Navigation for Already Logged In Users */}
+            {isAdminOrBusinessAuthenticated && authUser && (
+              <div className="mb-6 space-y-2">
+                {authUser.role === 'BUSINESS_REAL_ESTATE' && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/business/dashboard')}
+                    className="w-full py-3 px-4 rounded-lg bg-dabang-primary hover:bg-dabang-primary/90 text-white text-sm font-medium transition-colors"
+                  >
+                    부동산 파트너 대시보드로 이동
+                  </button>
+                )}
+
+                {authUser.role === 'BUSINESS_DELIVERY' && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/business/dashboard')}
+                    className="w-full py-3 px-4 rounded-lg bg-dabang-primary hover:bg-dabang-primary/90 text-white text-sm font-medium transition-colors"
+                  >
+                    배송 파트너 대시보드로 이동
+                  </button>
+                )}
+
+                {authUser.role === 'ADMIN' && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin')}
+                    className="w-full py-3 px-4 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium transition-colors"
+                  >
+                    관리자 대시보드로 이동
+                  </button>
+                )}
+              </div>
+            )}
+
+            {(!isAdminOrBusinessAuthenticated && isUserAuthenticated) && (
+              <div className="mb-6">
+                <button
+                  type="button"
+                  onClick={() => navigate('/')}
+                  className="w-full py-3 px-4 rounded-lg bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium transition-colors"
+                >
+                  홈으로 이동
+                </button>
+              </div>
+            )}
+
             {/* User Type Toggle */}
-            <div className="flex mb-6 bg-white rounded-lg p-1">
+            <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
               <button
-                onClick={() => setUserType('user')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  userType === 'user'
+                type="button"
+                onClick={() => setLoginMode('user')}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  loginMode === 'user'
                     ? 'bg-white text-dabang-primary shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
@@ -126,9 +178,10 @@ const LoginPage = () => {
                 일반 사용자
               </button>
               <button
-                onClick={() => setUserType('admin')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  userType === 'admin'
+                type="button"
+                onClick={() => setLoginMode('admin')}
+                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${
+                  loginMode === 'admin'
                     ? 'bg-white text-dabang-primary shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
@@ -141,6 +194,7 @@ const LoginPage = () => {
               <p className="text-sm text-gray-600 text-center mb-4 font-body">간편 로그인</p>
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
+                  type="button"
                   onClick={() => handleSocialLogin('kakao')}
                   className="flex items-center justify-center px-4 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-lg font-medium transition-all duration-200 font-body transform hover:scale-105 active:scale-95"
                 >
@@ -150,6 +204,7 @@ const LoginPage = () => {
                   카카오
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleSocialLogin('naver')}
                   className="flex items-center justify-center px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all duration-200 font-body transform hover:scale-105 active:scale-95"
                 >
@@ -159,6 +214,7 @@ const LoginPage = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={() => handleSocialLogin('google')}
                   className="flex items-center justify-center px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg font-medium transition-all duration-200 font-body transform hover:scale-105 active:scale-95"
                 >
@@ -171,6 +227,7 @@ const LoginPage = () => {
                   구글
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleSocialLogin('apple')}
                   className="flex items-center justify-center px-4 py-3 bg-black hover:bg-gray-800 text-white rounded-lg font-medium transition-all duration-200 font-body transform hover:scale-105 active:scale-95"
                 >
@@ -247,7 +304,7 @@ const LoginPage = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600 font-body">
                 계정이 없으신가요?{' '}
-                <button onClick={goToSignUp} className="text-dabang-primary hover:text-dabang-primary/80 font-medium transition-colors">
+                <button type="button" onClick={goToSignUp} className="text-dabang-primary hover:text-dabang-primary/80 font-medium transition-colors">
                   회원가입
                 </button>
               </p>
@@ -255,6 +312,7 @@ const LoginPage = () => {
 
             <div className="text-center mt-6 pt-6 border-t border-gray-200">
               <button
+                type="button"
                 onClick={goHome}
                 className="text-sm text-gray-500 hover:text-gray-700 transition-colors font-body flex items-center justify-center mx-auto"
               >

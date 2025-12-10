@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { useUserAuth } from '../../context/UserAuthContext'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../i18n'
@@ -7,12 +8,22 @@ import i18n from '../../i18n'
 const Header = () => {
   const navigate = useNavigate()
   const { t, i18n: translationInstance } = useTranslation('common')
-  const { user, isAuthenticated, logout } = useUserAuth()
+  const { user: authUser, isAuthenticated: isAdminOrBusinessAuthenticated, logout: adminLogout } = useAuth()
+  const { user, isAuthenticated, logout: userLogout } = useUserAuth()
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
 
+  // Debug logging
+  console.log('HEADER authUser = ', authUser)
+  console.log('HEADER isAdminOrBusinessAuthenticated = ', isAdminOrBusinessAuthenticated)
+  console.log('HEADER isAuthenticated (user) = ', isAuthenticated)
+
   const handleLogout = () => {
-    logout()
+    if (isAdminOrBusinessAuthenticated) {
+      adminLogout()
+    } else {
+      userLogout()
+    }
     setIsUserDropdownOpen(false)
     navigate('/')
   }
@@ -128,7 +139,7 @@ const Header = () => {
             중개사 가입
           </Link>
           
-          {!isAuthenticated ? (
+          {!isAuthenticated && !isAdminOrBusinessAuthenticated ? (
             <div className="flex space-x-3">
               <Link
                 to="/login"
@@ -150,9 +161,9 @@ const Header = () => {
                 className="flex items-center text-sm rounded-full focus:outline-none"
               >
                 <div className="w-8 h-8 rounded-full bg-dabang-primary flex items-center justify-center text-white font-medium">
-                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  {(authUser?.name || user?.name)?.charAt(0)?.toUpperCase() || 'U'}
                 </div>
-                <span className="ml-2 text-gray-700 hidden sm:block">{user?.name || '사용자'}</span>
+                <span className="ml-2 text-gray-700 hidden sm:block">{authUser?.name || user?.name || '사용자'}</span>
                 <svg className="ml-1 w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -160,7 +171,47 @@ const Header = () => {
               
               {isUserDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                  {/* Dashboard buttons for Business Partners and Admin */}
+                  {isAdminOrBusinessAuthenticated && authUser && (
+                    <>
+                      {(authUser.role === 'BUSINESS_REAL_ESTATE' ||
+                        authUser.role === 'BUSINESS_DELIVERY') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigate('/business/dashboard')
+                            setIsUserDropdownOpen(false)
+                          }}
+                          className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          대시보드 가기
+                        </button>
+                      )}
+
+                      {authUser.role === 'ADMIN' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigate('/admin')
+                            setIsUserDropdownOpen(false)
+                          }}
+                          className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          대시보드 가기
+                        </button>
+                      )}
+
+                      {/* Divider if dashboard button exists */}
+                      {(authUser.role === 'BUSINESS_REAL_ESTATE' ||
+                        authUser.role === 'BUSINESS_DELIVERY' ||
+                        authUser.role === 'ADMIN') && (
+                        <div className="border-t border-gray-100"></div>
+                      )}
+                    </>
+                  )}
+
                   <button
+                    type="button"
                     onClick={handleProfileClick}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
@@ -168,6 +219,7 @@ const Header = () => {
                   </button>
                   <div className="border-t border-gray-100"></div>
                   <button
+                    type="button"
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >

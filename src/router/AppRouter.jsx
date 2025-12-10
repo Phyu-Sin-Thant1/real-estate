@@ -25,10 +25,24 @@ import TermsPage from '../pages/TermsPage'
 import PrivacyPage from '../pages/PrivacyPage'
 import MyPage from '../pages/MyPage'
 import MovingServicePage from '../pages/MovingServicePage'
+import MovingRegistrationPage from '../pages/MovingRegistrationPage'
 import NewsListPage from '../pages/NewsListPage'
 import NewsDetailPage from '../pages/NewsDetailPage'
 import CommunityLandingPage from '../pages/CommunityLandingPage'
 import PriceTrendsPage from '../pages/PriceTrendsPage'
+import RequireBusinessAuth from '../components/layout/RequireBusinessAuth'
+import BusinessDashboardLayout from '../layouts/BusinessDashboardLayout'
+import OverviewPage from '../pages/business/OverviewPage'
+import CalendarPage from '../pages/business/CalendarPage'
+import CustomersPage from '../pages/business/CustomersPage'
+import SettlementsPage from '../pages/business/SettlementsPage'
+import ListingsPage from '../pages/business/realEstate/ListingsPage'
+import InquiriesPage from '../pages/business/realEstate/InquiriesPage'
+import ViewingsPage from '../pages/business/realEstate/ViewingsPage'
+import DealsPage from '../pages/business/realEstate/DealsPage'
+import RequestsPage from '../pages/business/delivery/RequestsPage'
+import JobsPage from '../pages/business/delivery/JobsPage'
+import PricingPage from '../pages/business/delivery/PricingPage'
 
 const AppRouter = () => {
   return (
@@ -43,7 +57,9 @@ const AppRouter = () => {
         <Route path="/list-property" element={<ListPropertyPage />} />
         <Route path="/category/:categoryName" element={<CategoryPage />} />
         <Route path="/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/moving" element={<MovingServicePage />} />
         <Route path="/moving-service" element={<MovingServicePage />} />
+        <Route path="/moving/register" element={<MovingRegistrationPage />} />
         <Route path="/community" element={<CommunityLandingPage />} />
         <Route path="/price-trends" element={<PriceTrendsPage />} />
         
@@ -83,6 +99,26 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Business Dashboard Routes */}
+        <Route element={<RequireBusinessAuth />}>
+          <Route path="/business" element={<BusinessDashboardLayout />}>
+            <Route path="dashboard" element={<OverviewPage />} />
+            <Route path="calendar" element={<CalendarPage />} />
+            <Route path="customers" element={<CustomersPage />} />
+            {/* Real Estate Routes */}
+            <Route path="listings" element={<ListingsPage />} />
+            <Route path="inquiries" element={<InquiriesPage />} />
+            <Route path="viewings" element={<ViewingsPage />} />
+            <Route path="deals" element={<DealsPage />} />
+            {/* Delivery Routes */}
+            <Route path="requests" element={<RequestsPage />} />
+            <Route path="jobs" element={<JobsPage />} />
+            <Route path="pricing" element={<PricingPage />} />
+            {/* Sprint 2 - Settlements */}
+            {/* <Route path="settlements" element={<SettlementsPage />} /> */}
+          </Route>
+        </Route>
       </Routes>
     </Router>
   )

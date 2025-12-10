@@ -8,6 +8,20 @@ const defaultAdmin = {
   name: import.meta.env.VITE_ADMIN_NAME || 'TOFU Admin',
 }
 
+// Business Partner Test Accounts
+const businessAccounts = {
+  'realestate@tofu.com': {
+    password: 'RealEstate123!',
+    name: '부동산 파트너',
+    role: 'BUSINESS_REAL_ESTATE',
+  },
+  'delivery@tofu.com': {
+    password: 'Delivery123!',
+    name: '배송 파트너',
+    role: 'BUSINESS_DELIVERY',
+  },
+}
+
 const AuthContext = createContext(null)
 
 const readStoredSession = () => {
@@ -34,27 +48,46 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user])
 
-  const login = useCallback(async ({ email, password }) => {
+  const login = useCallback(async ({ email, password, loginMode = 'admin' }) => {
     await new Promise((resolve) => setTimeout(resolve, 300))
 
     const normalizedEmail = email.trim().toLowerCase()
-    const expectedEmail = defaultAdmin.email.trim().toLowerCase()
-    const expectedPassword = defaultAdmin.password
 
-    if (normalizedEmail !== expectedEmail || password !== expectedPassword) {
+    // Business partner login
+    if (loginMode === 'business') {
+      const businessAccount = businessAccounts[normalizedEmail]
+      if (businessAccount && password === businessAccount.password) {
+        const session = {
+          email: normalizedEmail,
+          name: businessAccount.name,
+          role: businessAccount.role,
+          loginAt: new Date().toISOString(),
+        }
+        setUser(session)
+        return { success: true, user: session }
+      }
+      return { success: false, error: '잘못된 비즈니스 파트너 계정 정보입니다.' }
+    }
+
+    // Admin login
+    if (loginMode === 'admin') {
+      const expectedEmail = defaultAdmin.email.trim().toLowerCase()
+      const expectedPassword = defaultAdmin.password
+
+      if (normalizedEmail === expectedEmail && password === expectedPassword) {
+        const session = {
+          email: expectedEmail,
+          name: defaultAdmin.name,
+          role: 'ADMIN',
+          loginAt: new Date().toISOString(),
+        }
+        setUser(session)
+        return { success: true, user: session }
+      }
       return { success: false, error: '잘못된 관리자 계정 정보입니다.' }
     }
 
-    const session = {
-      email: expectedEmail,
-      name: defaultAdmin.name,
-      role: 'admin',
-      loginAt: new Date().toISOString(),
-    }
-
-    setUser(session)
-
-    return { success: true, user: session }
+    return { success: false, error: '잘못된 로그인 모드입니다.' }
   }, [])
 
   const logout = useCallback(() => {
