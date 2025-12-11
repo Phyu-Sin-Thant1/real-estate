@@ -326,8 +326,6 @@ export const leads = [
     inquiryType: '일반문의',
     status: '새 문의',
     memo: '가격 협의 가능 여부 문의',
-    email: 'kim@example.com',
-    message: '안녕하세요, 강남 아파트 A동 101호에 대해 문의드립니다. 가격 협의가 가능한가요?'
   },
   {
     id: 2,
@@ -338,8 +336,6 @@ export const leads = [
     inquiryType: '방문예약',
     status: '연락 완료',
     memo: '주말 방문 희망',
-    email: 'lee@example.com',
-    message: '송파 오피스텔 B동 502호에 관심이 있습니다. 주말에 방문하고 싶은데 가능할까요?'
   },
   {
     id: 3,
@@ -350,8 +346,6 @@ export const leads = [
     inquiryType: '상담요청',
     status: '예약 완료',
     memo: '계약 관련 상담 요청',
-    email: 'park@example.com',
-    message: '용산 원룸 301호 계약에 대해 상담을 받고 싶습니다. 조만간 연락 부탁드립니다.'
   },
   {
     id: 4,
@@ -362,8 +356,6 @@ export const leads = [
     inquiryType: '일반문의',
     status: '보류',
     memo: '다른 지역 관심 있음',
-    email: 'choi@example.com',
-    message: '마포 아파트 C동 801호에 대해 문의드립니다. 다른 지역도 있는지 알고 싶습니다.'
   },
   {
     id: 5,
@@ -374,51 +366,8 @@ export const leads = [
     inquiryType: '방문예약',
     status: '새 문의',
     memo: '가까운 시간 방문 가능',
-    email: 'jung@example.com',
-    message: '서초 빌라 2층에 관심이 있습니다. 가능한 빠른 시간에 방문하고 싶습니다.'
   },
 ];
-
-// Function to add a new lead
-export const addLead = (leadData) => {
-  // In a real app, this would be an API call
-  console.log('Adding new lead with data:', leadData);
-  
-  // Simulate API delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newLead = {
-        id: leads.length + 1,
-        createdAt: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-        customerName: leadData.name,
-        phone: leadData.phone,
-        propertyName: leadData.propertyName || 'Unknown Property',
-        inquiryType: leadData.inquiryType,
-        status: '새 문의',
-        memo: leadData.message || '',
-        email: leadData.email || '',
-        message: leadData.message || '',
-        ...leadData
-      };
-      
-      // In a real app, you would update the leads array or make an API call
-      // For now, we'll just return the new lead
-      resolve(newLead);
-    }, 500);
-  });
-};
-
-// Function to get a lead by ID
-export const getLeadById = (id) => {
-  return leads.find(lead => lead.id === parseInt(id));
-};
-
-// Function to update a lead (prototype only)
-export const updateLead = (id, updatedData) => {
-  console.log(`Updating lead ${id} with data:`, updatedData);
-  // In a real app, this would make an API call to update the lead
-  // For prototype, we just log the update
-};
 
 // Analytics Data
 export const monthlyRevenue = [
@@ -496,32 +445,6 @@ export const customers = [
     memo: '상담 진행 중',
   },
 ];
-
-// Function to add a new customer
-export const addCustomer = (customerData) => {
-  // In a real app, this would be an API call
-  console.log('Adding new customer with data:', customerData);
-  
-  // Simulate API delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const newCustomer = {
-        id: customers.length + 1,
-        name: customerData.name,
-        phone: customerData.phone,
-        email: customerData.email || '',
-        lastActivity: new Date().toISOString().split('T')[0], // Today's date
-        totalContracts: 0,
-        memo: customerData.memo || '',
-        propertyName: customerData.propertyName || ''
-      };
-      
-      // In a real app, you would update the customers array or make an API call
-      // For now, we'll just return the new customer
-      resolve(newCustomer);
-    }, 500);
-  });
-};
 
 // Settings Data
 export const officeInfo = {

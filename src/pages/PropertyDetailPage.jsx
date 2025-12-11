@@ -8,7 +8,6 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useFavorites } from '../hooks/useFavorites'
-import InquiryModal from '../features/inquiry/InquiryModal'
 
 // Fix for default marker icons in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -27,7 +26,18 @@ const PropertyDetailPage = () => {
   const [similarProperties, setSimilarProperties] = useState([])
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [mapLoaded, setMapLoaded] = useState(false)
-  const [isInquiryOpen, setInquiryOpen] = useState(false)
+  
+  // 방문 예약 modal state
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
+  const [reservationForm, setReservationForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    visitDate: '',
+    timeSlot: '',
+    visitors: '',
+    memo: ''
+  })
 
   useEffect(() => {
     // Get property by ID
@@ -59,8 +69,8 @@ const PropertyDetailPage = () => {
       navigate('/login')
       return
     }
-    // Open inquiry modal instead of showing alert
-    setInquiryOpen(true)
+    // In a real app, this would open a contact form or chat
+    alert(`문의가 접수되었습니다. ${property.agent.name}님께서 곧 연락드리겠습니다.`)
   }
 
   const handleToggleFavorite = () => {
@@ -80,6 +90,63 @@ const PropertyDetailPage = () => {
 
   const handleImageClick = (index) => {
     setActiveImageIndex(index)
+  }
+
+  // 방문 예약 handlers
+  const handleOpenReservationModal = () => {
+    setIsReservationModalOpen(true)
+  }
+
+  const handleCloseReservationModal = () => {
+    setIsReservationModalOpen(false)
+    // Reset form
+    setReservationForm({
+      name: '',
+      phone: '',
+      email: '',
+      visitDate: '',
+      timeSlot: '',
+      visitors: '',
+      memo: ''
+    })
+  }
+
+  const handleReservationFormChange = (e) => {
+    const { name, value } = e.target
+    setReservationForm(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleReservationSubmit = (e) => {
+    e.preventDefault()
+    
+    // Validate required fields
+    if (!reservationForm.name || !reservationForm.phone || !reservationForm.visitDate || !reservationForm.timeSlot || !reservationForm.visitors) {
+      alert('필수 항목을 모두 입력해주세요.')
+      return
+    }
+    
+    // In a real app, this would send data to backend
+    // For now, we'll just create a local object and show success message
+    const reservationData = {
+      type: '방문예약',
+      status: '새 문의',
+      propertyId: property.id,
+      propertyName: property.title,
+      ...reservationForm,
+      createdAt: new Date().toISOString()
+    }
+    
+    // Add to temp list (in a real app, this would be stored in context or state management)
+    console.log('New reservation:', reservationData)
+    
+    // Show success message
+    alert('방문 예약이 완료되었습니다.')
+    
+    // Close modal
+    handleCloseReservationModal()
   }
 
   if (!property) {
@@ -373,7 +440,10 @@ const PropertyDetailPage = () => {
                   <button className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium transition-colors hover:bg-gray-50">
                     카톡 상담
                   </button>
-                  <button className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium transition-colors hover:bg-gray-50">
+                  <button 
+                    onClick={handleOpenReservationModal}
+                    className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium transition-colors hover:bg-gray-50"
+                  >
                     방문 예약
                   </button>
                 </div>
@@ -415,16 +485,151 @@ const PropertyDetailPage = () => {
         </div>
       </main>
       
-      {/* Inquiry Modal */}
-      <InquiryModal 
-        isOpen={isInquiryOpen}
-        onClose={() => setInquiryOpen(false)}
-        listing={property ? {
-          id: property.id,
-          title: property.title,
-          address: property.address
-        } : null}
-      />
+      {/* 방문 예약 Modal */}
+      {isReservationModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">방문 예약</h3>
+                <button 
+                  onClick={handleCloseReservationModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <form onSubmit={handleReservationSubmit}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      이름 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={reservationForm.name}
+                      onChange={handleReservationFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                      placeholder="이름을 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      연락처 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="phone"
+                      value={reservationForm.phone}
+                      onChange={handleReservationFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                      placeholder="연락처를 입력하세요"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      이메일
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={reservationForm.email}
+                      onChange={handleReservationFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                      placeholder="이메일을 입력하세요 (선택)"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      희망 방문일 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="visitDate"
+                      value={reservationForm.visitDate}
+                      onChange={handleReservationFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      희망 시간대 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="timeSlot"
+                      value={reservationForm.timeSlot}
+                      onChange={handleReservationFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                    >
+                      <option value="">시간대를 선택하세요</option>
+                      <option value="오전">오전</option>
+                      <option value="오후">오후</option>
+                      <option value="저녁">저녁</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      방문 인원 <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="visitors"
+                      value={reservationForm.visitors}
+                      onChange={handleReservationFormChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                    >
+                      <option value="">인원을 선택하세요</option>
+                      <option value="1">1명</option>
+                      <option value="2">2명</option>
+                      <option value="3">3명</option>
+                      <option value="4">4명</option>
+                      <option value="5">5명 이상</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      메모
+                    </label>
+                    <textarea
+                      name="memo"
+                      value={reservationForm.memo}
+                      onChange={handleReservationFormChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                      placeholder="요청사항이나 추가 메모를 입력하세요"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={handleCloseReservationModal}
+                    className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+                  >
+                    예약하기
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
       
       <Footer />
     </div>

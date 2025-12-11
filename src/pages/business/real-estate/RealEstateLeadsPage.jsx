@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { leads, leadStatuses } from '../../../mock/realEstateData';
 
 const RealEstateLeadsPage = () => {
-  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState('전체');
   const [propertyFilter, setPropertyFilter] = useState('전체');
 
@@ -38,11 +36,6 @@ const RealEstateLeadsPage = () => {
   const handleMemoEdit = (id) => {
     console.log(`Edit memo for lead ${id}`);
     // In a real app, this would open a modal to edit the memo
-  };
-
-  // Handle row click to navigate to detail page
-  const handleRowClick = (id) => {
-    navigate(`/business/real-estate/leads/${id}`);
   };
 
   return (
@@ -125,11 +118,7 @@ const RealEstateLeadsPage = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredLeads.map((lead) => (
-                <tr 
-                  key={lead.id} 
-                  onClick={() => handleRowClick(lead.id)}
-                  className="cursor-pointer hover:bg-gray-50"
-                >
+                <tr key={lead.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {lead.createdAt}
                   </td>
@@ -156,10 +145,7 @@ const RealEstateLeadsPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMemoEdit(lead.id);
-                      }}
+                      onClick={() => handleMemoEdit(lead.id)}
                       className="text-dabang-primary hover:text-dabang-primary/80"
                     >
                       {lead.memo}

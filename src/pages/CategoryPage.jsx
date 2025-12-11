@@ -11,7 +11,7 @@ const CategoryPage = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   
-  const { isAuthenticated } = useUnifiedAuth()
+  const { isAuthenticated } = useUserAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
   
   // Category tabs configuration

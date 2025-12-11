@@ -38,7 +38,8 @@ import RealEstateSettingsPage from '../pages/business/real-estate/RealEstateSett
 import RealEstateContractCreatePage from '../pages/business/real-estate/RealEstateContractCreatePage';
 import RealEstateContractDetailPage from '../pages/business/real-estate/RealEstateContractDetailPage';
 import RealEstateNewListingPage from '../pages/business/real-estate/RealEstateNewListingPage';
-import { InquiryDetailPage } from '../features/inquiry';// Auth pages
+
+// Auth pages
 import LoginPage from '../pages/LoginPage'
 import SignUpPage from '../pages/SignUpPage'
 import AgentSignUpPage from '../pages/AgentSignUpPage'
@@ -155,7 +156,6 @@ const AppRouter = () => {
           <Route path="listings/new" element={<RealEstateNewListingPage />} />
           <Route path="listings/:id/edit" element={<RealEstateNewListingPage />} />
           <Route path="leads" element={<RealEstateLeadsPage />} />
-          <Route path="leads/:id" element={<InquiryDetailPage />} />
           <Route path="analytics" element={<RealEstateAnalyticsPage />} />
           <Route path="customers" element={<RealEstateCustomersPage />} />
           <Route path="settings" element={<RealEstateSettingsPage />} />

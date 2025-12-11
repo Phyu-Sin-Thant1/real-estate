@@ -13,7 +13,6 @@ const Header = () => {
   const isPartnerOrAdmin = isBusinessRealEstate || isBusinessDelivery || isAdmin;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
-  const [showAgentSignup, setShowAgentSignup] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -42,14 +41,6 @@ const Header = () => {
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng)
-  }
-
-  const handleOpenAgentSignup = () => {
-    setShowAgentSignup(true)
-  }
-
-  const handleCloseAgentSignup = () => {
-    setShowAgentSignup(false)
   }
 
   const categories = [
@@ -146,15 +137,6 @@ const Header = () => {
               EN
             </button>
           </div>
-          
-          {showAgentSignup && (
-            <Link 
-              to="/agent-signup" 
-              className="hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-dabang-primary bg-dabang-secondary hover:bg-dabang-secondary/90"
-            >
-              중개사 가입
-            </Link>
-          )}
           
           {/* Go to Dashboard Button - shown only for partners and admins */}
           {isPartnerOrAdmin && (
@@ -267,14 +249,6 @@ const Header = () => {
             >
               대시보드로 이동
             </button>
-          )}
-          {showAgentSignup && (
-            <Link 
-              to="/agent-signup" 
-              className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap"
-            >
-              중개사 가입
-            </Link>
           )}
         </div>
       </div>

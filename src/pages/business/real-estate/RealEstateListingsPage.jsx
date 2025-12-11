@@ -11,8 +11,6 @@ const RealEstateListingsPage = () => {
   const [regionFilter, setRegionFilter] = useState('서울 전체');
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [listingToComplete, setListingToComplete] = useState(null);
-  const [hideModalOpen, setHideModalOpen] = useState(false);
-  const [selectedListingId, setSelectedListingId] = useState(null);
 
   // Combine mock listings with context listings
   // In a real app, you would use only one source of truth
@@ -60,19 +58,6 @@ const RealEstateListingsPage = () => {
   const openCompleteModal = (id) => {
     setListingToComplete(id);
     setShowCompleteModal(true);
-  };
-
-  // Open confirmation modal for hiding a listing
-  const openHideModal = (id) => {
-    setSelectedListingId(id);
-    setHideModalOpen(true);
-  };
-
-  // Hide listing (set status to 비노출)
-  const hideListing = () => {
-    updateListing(selectedListingId, { status: '비노출' });
-    setHideModalOpen(false);
-    setSelectedListingId(null);
   };
 
   return (
@@ -218,15 +203,7 @@ const RealEstateListingsPage = () => {
                             수정
                           </button>
                           <button 
-                            onClick={() => {
-                              if (listing.status === '노출중') {
-                                // If currently 노출중, show confirmation modal before hiding
-                                openHideModal(listing.id);
-                              } else {
-                                // If currently 비노출, just toggle back to 노출중
-                                toggleListingStatus(listing.id, listing.status);
-                              }
-                            }}
+                            onClick={() => toggleListingStatus(listing.id, listing.status)}
                             className="text-dabang-primary hover:text-dabang-primary/80"
                           >
                             {listing.status === '노출중' ? '비노출' : '노출'}
@@ -269,35 +246,6 @@ const RealEstateListingsPage = () => {
                 className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
               >
                 확인
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Confirmation Modal for Hiding Listing */}
-      {hideModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-[360px] shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">매물 노출</h2>
-            <p className="text-sm text-gray-600 mb-6">
-              이 매물을 노출 처리하시겠습니까?<br />
-              비노출로 변경되면 웹사이트에서 보이지 않습니다.
-            </p>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 border rounded"
-                onClick={() => setHideModalOpen(false)}
-              >
-                취소
-              </button>
-
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded"
-                onClick={hideListing}
-              >
-                노출 처리
               </button>
             </div>
           </div>

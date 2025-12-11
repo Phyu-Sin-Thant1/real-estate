@@ -69,20 +69,12 @@ const RealEstateBusinessLayout = () => {
                 <p className="text-xs text-gray-500">부동산 파트너</p>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => navigate("/")}
-                className="flex-1 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                웹사이트로 이동
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex-1 px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                로그아웃
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              로그아웃
+            </button>
           </div>
         </div>
       </aside>

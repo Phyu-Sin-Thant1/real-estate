@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCustomers } from '../../../context/CustomerContext';
-import { listings, createContract } from '../../../mock/realEstateData';
+import { customers, listings, createContract } from '../../../mock/realEstateData';
 
 const RealEstateContractCreatePage = () => {
   const navigate = useNavigate();
-  const { customers } = useCustomers();
   
   const [formData, setFormData] = useState({
     // Customer Information
