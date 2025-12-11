@@ -35,7 +35,8 @@ export const mockProperties = [
     image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 강남구 역삼동',
     size: '84㎡',
-    type: '아파트'
+    type: '아파트',
+    status: '노출중' // Add status for filtering in public pages
   },
   {
     id: 2,
@@ -71,7 +72,8 @@ export const mockProperties = [
     image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 마포구 홍익로',
     size: '25㎡',
-    type: '원룸'
+    type: '원룸',
+    status: '노출중' // Add status for filtering in public pages
   },
   {
     id: 3,
@@ -107,7 +109,8 @@ export const mockProperties = [
     image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 송파구 잠실동',
     size: '120㎡',
-    type: '빌라'
+    type: '빌라',
+    status: '노출중' // Add status for filtering in public pages
   },
   {
     id: 4,
@@ -141,7 +144,8 @@ export const mockProperties = [
     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 용산구 이태원로',
     size: '45㎡',
-    type: '오피스텔'
+    type: '오피스텔',
+    status: '노출중' // Add status for filtering in public pages
   },
   {
     id: 5,
@@ -175,7 +179,8 @@ export const mockProperties = [
     image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 영등포구 여의도동',
     size: '35㎡',
-    type: '오피스텔'
+    type: '오피스텔',
+    status: '노출중' // Add status for filtering in public pages
   }
 ];
 

@@ -13,6 +13,7 @@ const Header = () => {
   const isPartnerOrAdmin = isBusinessRealEstate || isBusinessDelivery || isAdmin;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const [showAgentSignup, setShowAgentSignup] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -26,11 +27,29 @@ const Header = () => {
   }
 
   const handleGoToDashboard = () => {
-    navigate('/business')
+    // Updated logic to route users based on their role
+    if (isBusinessRealEstate) {
+      navigate('/business/real-estate')
+    } else if (isBusinessDelivery) {
+      // TODO: Implement delivery dashboard route
+      navigate('/business')
+    } else if (isAdmin) {
+      navigate('/business/real-estate')
+    } else {
+      navigate('/login')
+    }
   }
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng)
+  }
+
+  const handleOpenAgentSignup = () => {
+    setShowAgentSignup(true)
+  }
+
+  const handleCloseAgentSignup = () => {
+    setShowAgentSignup(false)
   }
 
   const categories = [
@@ -40,9 +59,6 @@ const Header = () => {
     { name: '빌라', path: '/category/villa' },
     { name: '분양/신축', path: '/category/presale' }
   ]
-
-  // Show agent signup button only for regular users or when not logged in
-  const showAgentSignup = isUser || !isAuthenticated;
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">

@@ -26,6 +26,9 @@ export const usePropertySearch = (params = {}) => {
     // Start with all properties
     let results = [...mockProperties]
     
+    // Filter out hidden or completed listings (only show 노출중 listings in public pages)
+    results = results.filter(property => property.status === '노출중')
+    
     // Apply text search filter
     if (params.q) {
       const query = params.q.toLowerCase().trim()

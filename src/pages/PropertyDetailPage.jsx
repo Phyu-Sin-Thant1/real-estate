@@ -8,6 +8,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import { useFavorites } from '../hooks/useFavorites'
+import InquiryModal from '../features/inquiry/InquiryModal'
 
 // Fix for default marker icons in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -26,10 +27,19 @@ const PropertyDetailPage = () => {
   const [similarProperties, setSimilarProperties] = useState([])
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [mapLoaded, setMapLoaded] = useState(false)
+  const [isInquiryOpen, setInquiryOpen] = useState(false)
 
   useEffect(() => {
     // Get property by ID
     const propertyData = getPropertyById(id)
+    
+    // Check if property is available (노출중)
+    if (propertyData && propertyData.status !== '노출중') {
+      // Redirect to home page if property is not available
+      navigate('/')
+      return
+    }
+    
     setProperty(propertyData)
     
     // Get similar properties
@@ -41,7 +51,7 @@ const PropertyDetailPage = () => {
     
     // Set map loaded state
     setMapLoaded(true)
-  }, [id])
+  }, [id, navigate])
 
   const handleContactAgent = () => {
     if (!isAuthenticated) {
@@ -49,8 +59,8 @@ const PropertyDetailPage = () => {
       navigate('/login')
       return
     }
-    // In a real app, this would open a contact form or chat
-    alert(`문의가 접수되었습니다. ${property.agent.name}님께서 곧 연락드리겠습니다.`)
+    // Open inquiry modal instead of showing alert
+    setInquiryOpen(true)
   }
 
   const handleToggleFavorite = () => {
@@ -375,24 +385,27 @@ const PropertyDetailPage = () => {
                   <h2 className="text-lg font-medium text-gray-900 mb-4">비슷한 매물</h2>
                   <div className="space-y-4">
                     {similarProperties.slice(0, 3).map((similarProperty) => (
-                      <div 
-                        key={similarProperty.id}
-                        onClick={() => navigate(`/property/${similarProperty.id}`)}
-                        className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-dabang-primary cursor-pointer transition-colors"
-                      >
-                        <div className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden">
-                          <img 
-                            src={similarProperty.images[0]} 
-                            alt={similarProperty.title}
-                            className="w-full h-full object-cover"
-                          />
+                      // Only show similar properties that are 노출중
+                      similarProperty.status === '노출중' && (
+                        <div 
+                          key={similarProperty.id}
+                          onClick={() => navigate(`/property/${similarProperty.id}`)}
+                          className="flex items-center p-3 border border-gray-200 rounded-lg hover:border-dabang-primary cursor-pointer transition-colors"
+                        >
+                          <div className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden">
+                            <img 
+                              src={similarProperty.images[0]} 
+                              alt={similarProperty.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="ml-4 flex-1">
+                            <h3 className="font-medium text-gray-900 text-sm line-clamp-1">{similarProperty.title}</h3>
+                            <p className="text-dabang-primary font-medium text-sm mt-1">{similarProperty.price}</p>
+                            <p className="text-gray-500 text-xs mt-1">{similarProperty.area} · {similarProperty.dealType}</p>
+                          </div>
                         </div>
-                        <div className="ml-4 flex-1">
-                          <h3 className="font-medium text-gray-900 text-sm line-clamp-1">{similarProperty.title}</h3>
-                          <p className="text-dabang-primary font-medium text-sm mt-1">{similarProperty.price}</p>
-                          <p className="text-gray-500 text-xs mt-1">{similarProperty.area} · {similarProperty.dealType}</p>
-                        </div>
-                      </div>
+                      )
                     ))}
                   </div>
                 </div>
@@ -401,6 +414,17 @@ const PropertyDetailPage = () => {
           </div>
         </div>
       </main>
+      
+      {/* Inquiry Modal */}
+      <InquiryModal 
+        isOpen={isInquiryOpen}
+        onClose={() => setInquiryOpen(false)}
+        listing={property ? {
+          id: property.id,
+          title: property.title,
+          address: property.address
+        } : null}
+      />
       
       <Footer />
     </div>
