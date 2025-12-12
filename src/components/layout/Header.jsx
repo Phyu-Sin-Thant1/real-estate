@@ -30,7 +30,6 @@ const Header = () => {
     if (isBusinessRealEstate) {
       navigate('/business/real-estate')
     } else if (isBusinessDelivery) {
-      // TODO: Implement delivery dashboard route
       navigate('/business')
     } else if (isAdmin) {
       navigate('/business/real-estate')
