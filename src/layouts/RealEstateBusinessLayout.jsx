@@ -6,6 +6,7 @@ const realEstateMenu = [
   { key: 'dashboard', label: '대시보드', path: '/business/real-estate/dashboard' },
   { key: 'contracts', label: '계약 내역', path: '/business/real-estate/contracts' },
   { key: 'listings', label: '매물 관리', path: '/business/real-estate/listings' },
+  { key: 'reservations', label: '예약 관리', path: '/business/real-estate/reservations' }, // Added reservation menu
   { key: 'leads', label: '문의 / 리드 관리', path: '/business/real-estate/leads' },
   { key: 'analytics', label: '정산 / 통계', path: '/business/real-estate/analytics' },
   { key: 'customers', label: '고객 관리', path: '/business/real-estate/customers' },

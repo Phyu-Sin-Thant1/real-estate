@@ -1,43 +1,77 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import Header from '../components/layout/Header'
-import Footer from '../components/layout/Footer'
-import { useUnifiedAuth } from '../context/UnifiedAuthContext'
-import { getPropertyById, getSimilarProperties } from '../mock/properties'
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
-import { useFavorites } from '../hooks/useFavorites'
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getPropertyById, getSimilarProperties } from '../mock/properties';
+import { useUnifiedAuth } from '../context/UnifiedAuthContext';
+import { useReservations } from '../context/ReservationsContext';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
+import { useFavorites } from '../hooks/useFavorites';
+import L from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import Modal from '../components/common/Modal';
 
 // Fix for default marker icons in react-leaflet
-delete L.Icon.Default.prototype._getIconUrl
+delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-})
+});
+
+// Helper function to load inquiries from localStorage
+const loadInquiriesFromStorage = () => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const stored = localStorage.getItem('tofu_inquiries_v1');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.warn('Failed to parse inquiries from localStorage', error);
+    return [];
+  }
+};
+
+// Helper function to save inquiries to localStorage
+const saveInquiriesToStorage = (inquiries) => {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('tofu_inquiries_v1', JSON.stringify(inquiries));
+  } catch (error) {
+    console.warn('Failed to save inquiries to localStorage', error);
+  }
+};
 
 const PropertyDetailPage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { isAuthenticated } = useUnifiedAuth()
-  const { isFavorite, toggleFavorite } = useFavorites()
-  const [property, setProperty] = useState(null)
-  const [similarProperties, setSimilarProperties] = useState([])
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const [mapLoaded, setMapLoaded] = useState(false)
-  
-  // 방문 예약 modal state
-  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useUnifiedAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { addReservation } = useReservations();
+  const [property, setProperty] = useState(null);
+  const [similarProperties, setSimilarProperties] = useState([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [mapLoaded, setMapLoaded] = useState(false);  
+  // Reservation form state
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [reservationForm, setReservationForm] = useState({
-    name: '',
+    name: user?.name || '',
     phone: '',
-    email: '',
+    email: user?.email || '',
     visitDate: '',
     timeSlot: '',
     visitors: '',
     memo: ''
-  })
+  });
+  
+  // Inquiry form state
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [inquiryForm, setInquiryForm] = useState({
+    name: user?.name || '',
+    phone: '',
+    email: user?.email || '',
+    message: ''
+  });
 
   useEffect(() => {
     // Get property by ID
@@ -50,18 +84,33 @@ const PropertyDetailPage = () => {
       return
     }
     
-    setProperty(propertyData)
+    // Handle case where property is not found
+    if (!propertyData) {
+      setProperty(null);
+      setSimilarProperties([]);
+      return;
+    }
+    
+    // Set property with safe defaults for missing fields
+    const propertyWithDefaults = {
+      ...propertyData,
+      images: Array.isArray(propertyData.images) ? propertyData.images : [],
+      amenities: Array.isArray(propertyData.amenities) ? propertyData.amenities : [],
+      agent: propertyData.agent || { name: '', phone: '', email: '' }
+    };
+    
+    setProperty(propertyWithDefaults);
     
     // Get similar properties
-    const similar = getSimilarProperties(propertyData.id, 4)
-    setSimilarProperties(similar)
+    const similar = getSimilarProperties(propertyData.id, 4);
+    setSimilarProperties(Array.isArray(similar) ? similar : []);
     
-    // Set first image as active
-    setActiveImageIndex(0)
+    // Set first image as active if images exist
+    setActiveImageIndex(0);
     
     // Set map loaded state
-    setMapLoaded(true)
-  }, [id, navigate])
+    setMapLoaded(true);
+  }, [id, navigate]);
 
   const handleContactAgent = () => {
     if (!isAuthenticated) {
@@ -69,8 +118,8 @@ const PropertyDetailPage = () => {
       navigate('/login')
       return
     }
-    // In a real app, this would open a contact form or chat
-    alert(`문의가 접수되었습니다. ${property.agent.name}님께서 곧 연락드리겠습니다.`)
+    // Open inquiry modal instead of showing alert
+    setIsInquiryModalOpen(true);
   }
 
   const handleToggleFavorite = () => {
@@ -94,60 +143,116 @@ const PropertyDetailPage = () => {
 
   // 방문 예약 handlers
   const handleOpenReservationModal = () => {
-    setIsReservationModalOpen(true)
-  }
+    setIsReservationModalOpen(true);
+  };
 
   const handleCloseReservationModal = () => {
-    setIsReservationModalOpen(false)
+    setIsReservationModalOpen(false);
     // Reset form
     setReservationForm({
-      name: '',
+      name: user?.name || '',
       phone: '',
-      email: '',
+      email: user?.email || '',
       visitDate: '',
       timeSlot: '',
       visitors: '',
       memo: ''
-    })
-  }
+    });
+  };
 
   const handleReservationFormChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setReservationForm(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
+    }));
+  };
 
   const handleReservationSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     
     // Validate required fields
-    if (!reservationForm.name || !reservationForm.phone || !reservationForm.visitDate || !reservationForm.timeSlot || !reservationForm.visitors) {
-      alert('필수 항목을 모두 입력해주세요.')
-      return
+    if (!reservationForm.name || !reservationForm.phone || !reservationForm.visitDate || 
+        !reservationForm.timeSlot || !reservationForm.visitors) {
+      alert('필수 항목을 모두 입력해주세요.');
+      return;
     }
     
-    // In a real app, this would send data to backend
-    // For now, we'll just create a local object and show success message
+    // Create reservation using the context
     const reservationData = {
-      type: '방문예약',
-      status: '새 문의',
-      propertyId: property.id,
-      propertyName: property.title,
-      ...reservationForm,
-      createdAt: new Date().toISOString()
-    }
+      appointmentDate: reservationForm.visitDate,
+      appointmentTime: reservationForm.timeSlot,
+      customerName: reservationForm.name,
+      customerPhone: reservationForm.phone,
+      customerEmail: reservationForm.email,
+      listingId: property.id,
+      listingTitle: property.title,
+      listingAddress: `${property.region1} ${property.region2} ${property.region3}`,
+      requestMessage: reservationForm.memo,
+    };
     
-    // Add to temp list (in a real app, this would be stored in context or state management)
-    console.log('New reservation:', reservationData)
+    addReservation(reservationData);
     
     // Show success message
-    alert('방문 예약이 완료되었습니다.')
+    alert('방문 예약 요청이 접수되었습니다.');
     
     // Close modal
-    handleCloseReservationModal()
-  }
+    handleCloseReservationModal();
+  };
+  
+  // Inquiry form handlers
+  const handleCloseInquiryModal = () => {
+    setIsInquiryModalOpen(false);
+    // Reset form
+    setInquiryForm({
+      name: user?.name || '',
+      phone: '',
+      email: user?.email || '',
+      message: ''
+    });
+  };
+  
+  const handleInquiryFormChange = (e) => {
+    const { name, value } = e.target;
+    setInquiryForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleInquirySubmit = (e) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!inquiryForm.name || !inquiryForm.phone || !inquiryForm.message) {
+      alert('필수 항목을 모두 입력해주세요.');
+      return;
+    }
+    
+    // Create inquiry object
+    const inquiryData = {
+      id: `inq-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      name: inquiryForm.name,
+      phone: inquiryForm.phone,
+      email: inquiryForm.email,
+      message: inquiryForm.message,
+      propertyId: property.id,
+      propertyTitle: property.title
+    };
+    
+    // Save to localStorage
+    const currentInquiries = loadInquiriesFromStorage();
+    saveInquiriesToStorage([...currentInquiries, inquiryData]);
+    
+    // Close inquiry modal and show success modal
+    handleCloseInquiryModal();
+    setIsSuccessModalOpen(true);
+  };
+  
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+  };
 
   if (!property) {
     return (
@@ -156,14 +261,20 @@ const PropertyDetailPage = () => {
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dabang-primary mx-auto"></div>
-              <p className="mt-4 text-gray-600">매물 정보를 불러오는 중...</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Property not found</h2>
+              <p className="text-gray-600 mb-6">죄송합니다. 해당 매물을 찾을 수 없습니다.</p>
+              <button
+                onClick={() => navigate('/')}
+                className="px-6 py-3 bg-dabang-primary text-white rounded-lg hover:bg-dabang-primary/90 font-medium transition-colors"
+              >
+                Back to list
+              </button>
             </div>
           </div>
         </main>
         <Footer />
       </div>
-    )
+    );
   }
 
   return (
@@ -243,7 +354,7 @@ const PropertyDetailPage = () => {
                 
                 {/* Thumbnail Images */}
                 <div className="flex p-4 space-x-4 overflow-x-auto">
-                  {property.images.map((image, index) => (
+                  {(Array.isArray(property.images) ? property.images : []).map((image, index) => (
                     <button
                       key={index}
                       onClick={() => handleImageClick(index)}
@@ -258,160 +369,99 @@ const PropertyDetailPage = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Property Details */}
+              
+              {/* Property Info */}
               <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">{property.title}</h1>
                     <p className="text-gray-600 flex items-center">
-                      <svg className="w-5 h-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      {property.address}
+                      {property.region1} {property.region2} {property.region3}
                     </p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {property.tags.map((tag, index) => (
-                        <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
                   </div>
-                  <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                    {property.dealType}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-dabang-primary">{property.price}</div>
+                    <div className="text-sm text-gray-500">{property.dealType}</div>
+                  </div>
                 </div>
-
-                <div className="mb-6">
-                  <div className="flex items-end mb-2">
-                    <span className="text-3xl font-bold text-dabang-primary">{property.price}</span>
-                    {property.originalPrice && (
-                      <span className="ml-3 text-lg text-gray-500 line-through">{property.originalPrice}</span>
-                    )}
-                    {property.discount && (
-                      <span className="ml-3 px-2 py-1 bg-red-100 text-red-600 rounded text-sm font-medium">
-                        {property.discount}
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-t border-b border-gray-200 my-4">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500">면적</div>
+                    <div className="font-medium">{property.area}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500">층수</div>
+                    <div className="font-medium">{property.floor}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500">방/욕실</div>
+                    <div className="font-medium">{property.rooms}방 {property.bathrooms}욕</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-500">관리비</div>
+                    <div className="font-medium">{property.maintenance}</div>
+                  </div>
+                </div>
+                
+                <div className="py-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">상세 설명</h3>
+                  <p className="text-gray-700">{property.description}</p>
+                </div>
+                
+                <div className="py-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">편의시설</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {(Array.isArray(property.amenities) ? property.amenities : []).map((amenity, index) => (
+                      <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                        {amenity}
                       </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Key Info Grid */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">기본 정보</h2>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">면적</p>
-                      <p className="font-medium">{property.area}</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">방/욕실</p>
-                      <p className="font-medium">{property.rooms}개/{property.bathrooms}개</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">층수</p>
-                      <p className="font-medium">{property.floor}층</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">방향</p>
-                      <p className="font-medium">{property.direction}</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">준공년도</p>
-                      <p className="font-medium">{property.builtYear}</p>
-                    </div>
-                    <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <p className="text-sm text-gray-500 mb-1">거래유형</p>
-                      <p className="font-medium">{property.dealType}</p>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
-
-              {/* Property Description */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">상세 설명</h2>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                  {property.description}
-                </p>
-              </div>
-
-              {/* Options & Facilities */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">옵션 & 시설</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-3">옵션</h3>
-                    <ul className="space-y-2">
-                      {property.options.map((option, index) => (
-                        <li key={index} className="flex items-center">
-                          <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="text-gray-700">{option}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-gray-900 mb-3">주변 편의시설</h3>
-                    <ul className="space-y-2">
-                      {property.facilities.map((facility, index) => (
-                        <li key={index} className="flex items-center">
-                          <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="text-gray-700">{facility}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Map Section */}
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">위치</h2>
-                <div className="h-80 rounded-lg overflow-hidden">
-                  {mapLoaded && (
+              
+              {/* Map */}
+              {mapLoaded && property.latitude && property.longitude && (
+                <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                  <h2 className="text-lg font-medium text-gray-900 mb-4">위치</h2>
+                  <div className="h-80 rounded-lg overflow-hidden">
                     <MapContainer 
-                      center={property.coordinates} 
+                      center={[property.latitude, property.longitude]} 
                       zoom={15} 
                       style={{ height: '100%', width: '100%' }}
-                      className="rounded-lg"
+                      zoomControl={false}
                     >
                       <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                       />
-                      <Marker position={property.coordinates}>
+                      <Marker position={[property.latitude, property.longitude]}>
                         <Popup>
                           {property.title}
                         </Popup>
                       </Marker>
                     </MapContainer>
-                  )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-
+            
             {/* Agent Info - Right Column */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">담당 공인중개사</h2>
-                
-                <div className="flex items-center mb-6">
-                  <div className="w-16 h-16 rounded-full bg-dabang-primary/10 flex items-center justify-center mr-4">
+              <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 rounded-full bg-dabang-primary/10 flex items-center justify-center mx-auto mb-3">
                     <span className="text-xl text-dabang-primary font-bold">
-                      {property.agent.name?.[0]?.toUpperCase() || 'A'}
+                      {(property.agent && property.agent.name) ? property.agent.name.charAt(0) : '?'}
                     </span>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">{property.agent.name}</h3>
-                    <p className="text-gray-600 text-sm">{property.agent.company}</p>
-                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">{(property.agent && property.agent.name) || 'Unknown Agent'}</h3>
+                  <p className="text-gray-600 text-sm">전문 중개사</p>
                 </div>
                 
                 <div className="space-y-3 mb-6">
@@ -419,13 +469,13 @@ const PropertyDetailPage = () => {
                     <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                     </svg>
-                    <span>{property.agent.phone}</span>
+                    <span>{(property.agent && property.agent.phone) || 'N/A'}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
-                    <span>{property.agent.email}</span>
+                    <span>{(property.agent && property.agent.email) || 'N/A'}</span>
                   </div>
                 </div>
                 
@@ -464,7 +514,7 @@ const PropertyDetailPage = () => {
                         >
                           <div className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden">
                             <img 
-                              src={similarProperty.images[0]} 
+                              src={(Array.isArray(similarProperty.images) && similarProperty.images[0]) || 'https://via.placeholder.com/150'} 
                               alt={similarProperty.title}
                               className="w-full h-full object-cover"
                             />
@@ -630,6 +680,113 @@ const PropertyDetailPage = () => {
           </div>
         </div>
       )}
+      
+      {/* Inquiry Modal */}
+      <Modal 
+        isOpen={isInquiryModalOpen} 
+        onClose={handleCloseInquiryModal}
+        title="문의하기"
+      >
+        <form onSubmit={handleInquirySubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                이름 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={inquiryForm.name}
+                onChange={handleInquiryFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="이름을 입력하세요"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                연락처 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="phone"
+                value={inquiryForm.phone}
+                onChange={handleInquiryFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="연락처를 입력하세요"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                이메일
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={inquiryForm.email}
+                onChange={handleInquiryFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="이메일을 입력하세요 (선택)"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                문의 내용 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="message"
+                value={inquiryForm.message}
+                onChange={handleInquiryFormChange}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="문의 내용을 입력하세요"
+              />
+            </div>
+            
+            {/* Hidden fields for property info */}
+            <input type="hidden" name="propertyId" value={property.id} />
+            <input type="hidden" name="propertyTitle" value={property.title} />
+          </div>
+          
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={handleCloseInquiryModal}
+              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+            >
+              제출
+            </button>
+          </div>
+        </form>
+      </Modal>
+      
+      {/* Success Modal */}
+      <Modal 
+        isOpen={isSuccessModalOpen} 
+        onClose={handleCloseSuccessModal}
+        title="문의 완료"
+      >
+        <div className="text-center py-4">
+          <div className="text-5xl mb-4">✅</div>
+          <p className="text-gray-700 mb-6">
+            문의가 접수되었습니다. 담당자가 곧 연락드리겠습니다.
+          </p>
+          <button
+            onClick={handleCloseSuccessModal}
+            className="px-6 py-2 bg-dabang-primary text-white rounded-lg hover:bg-dabang-primary/90 font-medium"
+          >
+            확인
+          </button>
+        </div>
+      </Modal>
       
       <Footer />
     </div>

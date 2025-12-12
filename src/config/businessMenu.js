@@ -8,17 +8,19 @@ export const BUSINESS_MENU_KEYS = {
   DELIVERY_ORDERS: 'deliveryOrders',
   SCHEDULE: 'schedule',
   CUSTOMERS: 'customers',
-  SETTINGS: 'settings'
+  SETTINGS: 'settings',
+  RESERVATIONS: 'reservations' // Added reservation menu key
 };
 
 export const realEstateMenu = [
-  { key: BUSINESS_MENU_KEYS.DASHBOARD, label: '대시보드', path: '/business/dashboard' },
-  { key: BUSINESS_MENU_KEYS.CONTRACTS, label: '계약 내역', path: '/business/contracts' },
-  { key: BUSINESS_MENU_KEYS.PROPERTIES, label: '매물 관리', path: '/business/properties' },
-  { key: BUSINESS_MENU_KEYS.ADS, label: '광고 / 프로모션', path: '/business/ads' },
-  { key: BUSINESS_MENU_KEYS.STATS, label: '정산 / 통계', path: '/business/stats' },
-  { key: BUSINESS_MENU_KEYS.CUSTOMERS, label: '고객 관리', path: '/business/customers' },
-  { key: BUSINESS_MENU_KEYS.SETTINGS, label: '설정', path: '/business/settings' }
+  { key: BUSINESS_MENU_KEYS.DASHBOARD, label: '대시보드', path: '/business/real-estate/dashboard' },
+  { key: BUSINESS_MENU_KEYS.CONTRACTS, label: '계약 내역', path: '/business/real-estate/contracts' },
+  { key: BUSINESS_MENU_KEYS.PROPERTIES, label: '매물 관리', path: '/business/real-estate/listings' },
+  { key: BUSINESS_MENU_KEYS.RESERVATIONS, label: '예약 관리', path: '/business/real-estate/reservations' }, // Added reservation menu
+  { key: BUSINESS_MENU_KEYS.ADS, label: '광고 / 프로모션', path: '/business/real-estate/ads' },
+  { key: BUSINESS_MENU_KEYS.STATS, label: '정산 / 통계', path: '/business/real-estate/stats' },
+  { key: BUSINESS_MENU_KEYS.CUSTOMERS, label: '고객 관리', path: '/business/real-estate/customers' },
+  { key: BUSINESS_MENU_KEYS.SETTINGS, label: '설정', path: '/business/real-estate/settings' }
 ];
 
 export const deliveryMenu = [
@@ -37,6 +39,7 @@ export const adminMenu = [
   { key: BUSINESS_MENU_KEYS.DASHBOARD, label: '대시보드', path: '/business/dashboard' },
   { key: BUSINESS_MENU_KEYS.CONTRACTS, label: '계약 내역', path: '/business/contracts' },
   { key: BUSINESS_MENU_KEYS.PROPERTIES, label: '매물 관리', path: '/business/properties' },
+  { key: BUSINESS_MENU_KEYS.RESERVATIONS, label: '예약 관리', path: '/business/real-estate/reservations' }, // Added reservation menu for admin
   { key: BUSINESS_MENU_KEYS.ADS, label: '광고 / 프로모션', path: '/business/ads' },
   // Delivery items
   { key: BUSINESS_MENU_KEYS.MOVING_REQUESTS, label: '이사 / 견적 요청', path: '/business/moving-requests' },

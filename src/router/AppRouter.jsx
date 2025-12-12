@@ -39,6 +39,10 @@ import RealEstateContractCreatePage from '../pages/business/real-estate/RealEsta
 import RealEstateContractDetailPage from '../pages/business/real-estate/RealEstateContractDetailPage';
 import RealEstateNewListingPage from '../pages/business/real-estate/RealEstateNewListingPage';
 
+// Reservation pages
+import ReservationsListPage from '../pages/business/real-estate/ReservationsListPage';
+import ReservationDetailPage from '../pages/business/real-estate/ReservationDetailPage';
+
 // Auth pages
 import LoginPage from '../pages/LoginPage'
 import SignUpPage from '../pages/SignUpPage'
@@ -159,6 +163,9 @@ const AppRouter = () => {
           <Route path="analytics" element={<RealEstateAnalyticsPage />} />
           <Route path="customers" element={<RealEstateCustomersPage />} />
           <Route path="settings" element={<RealEstateSettingsPage />} />
+          {/* Reservation routes */}
+          <Route path="reservations" element={<ReservationsListPage />} />
+          <Route path="reservations/:reservationId" element={<ReservationDetailPage />} />
         </Route>
         
         {/* Redirects for old dashboard URLs */}
