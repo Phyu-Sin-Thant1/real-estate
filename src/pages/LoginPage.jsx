@@ -21,9 +21,20 @@ const LoginPage = () => {
   useEffect(() => {
     // Redirect logic only when user just logged in
     if (justLoggedIn && isAuthenticated) {
-      // Everyone goes to home page after login, including partners and admins
-      const redirectTarget = location.state?.from || '/'
-      navigate(redirectTarget, { replace: true })
+      // Check if we should go to admin dashboard
+      if (isAdmin) {
+        // If coming from admin route or no specific redirect, go to admin dashboard
+        const fromPath = location.state?.from || '';
+        if (fromPath.startsWith('/admin') || !fromPath) {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate(fromPath, { replace: true });
+        }
+      } else {
+        // Everyone else goes to home page after login
+        const redirectTarget = location.state?.from || '/'
+        navigate(redirectTarget, { replace: true })
+      }
       setJustLoggedIn(false)
     }
   }, [justLoggedIn, isAuthenticated, isUser, isBusinessRealEstate, isBusinessDelivery, isAdmin, location.state, navigate])
@@ -93,7 +104,6 @@ const LoginPage = () => {
               <h1 className="text-3xl font-bold text-gray-900 mb-2 font-display">로그인</h1>
               <p className="text-gray-600 font-body">두부에 오신 것을 환영합니다</p>
             </div>
-
 
 
             <div className="mb-8">

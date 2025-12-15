@@ -63,6 +63,25 @@ import MapPage from '../pages/MapPage'
 import NewsManagementPage from '../pages/NewsManagementPage'
 import AdminDashboardPage from '../pages/AdminDashboardPage'
 
+// Admin dashboard pages
+import AdminDashboardLayout from '../layouts/AdminDashboardLayout'
+import AdminDashboardHomePage from '../pages/admin/AdminDashboardHomePage'
+import AdminPartnersPage from '../pages/admin/AdminPartnersPage'
+import AdminUsersPage from '../pages/admin/AdminUsersPage'
+import AdminDeliveryOversightPage from '../pages/admin/AdminDeliveryOversightPage'
+import AdminRealEstateOversightPage from '../pages/admin/AdminRealEstateOversightPage'
+import AdminSettingsPage from '../pages/admin/AdminSettingsPage'
+// New admin pages
+import AdminApprovalsPage from '../pages/admin/AdminApprovalsPage'
+import AdminSettlementsPage from '../pages/admin/AdminSettlementsPage'
+import AdminFinanceRulesPage from '../pages/admin/AdminFinanceRulesPage'
+import AdminSupportTicketsPage from '../pages/admin/AdminSupportTicketsPage'
+import AdminReportsPage from '../pages/admin/AdminReportsPage'
+import AdminNotificationsPage from '../pages/admin/AdminNotificationsPage'
+import AdminRolesPermissionsPage from '../pages/admin/AdminRolesPermissionsPage'
+import AdminAuditLogsPage from '../pages/admin/AdminAuditLogsPage'
+import AdminSystemStatusPage from '../pages/admin/AdminSystemStatusPage'
+
 // User protected pages
 import UserProtectedRoute from './UserProtectedRoute'
 import RoleProtectedRoute from '../components/layout/RoleProtectedRoute'
@@ -104,6 +123,35 @@ const AppRouter = () => {
           }
         />
         
+        {/* Admin Dashboard Route */}
+        <Route
+          path="/admin/*"
+          element={
+            <RoleProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminDashboardLayout />
+            </RoleProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardHomePage />} />
+          <Route path="partners" element={<AdminPartnersPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="real-estate" element={<AdminRealEstateOversightPage />} />
+          <Route path="delivery" element={<AdminDeliveryOversightPage />} />
+          <Route path="approvals" element={<AdminApprovalsPage />} />
+          <Route path="finance/settlements" element={<AdminSettlementsPage />} />
+          <Route path="finance/rules" element={<AdminFinanceRulesPage />} />
+          <Route path="support/tickets" element={<AdminSupportTicketsPage />} />
+          <Route path="reports" element={<AdminReportsPage />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
+          <Route path="security/roles" element={<AdminRolesPermissionsPage />} />
+          <Route path="security/audit-logs" element={<AdminAuditLogsPage />} />
+          <Route path="system/status" element={<AdminSystemStatusPage />} />
+          <Route path="content/news" element={<NewsManagementPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+        
+        {/* Keep existing admin route for backward compatibility */}
         <Route
           path="/admin"
           element={
