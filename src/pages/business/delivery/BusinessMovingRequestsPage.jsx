@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StatusBadge from '../../../components/delivery/StatusBadge';
 import FilterChips from '../../../components/delivery/FilterChips';
 import Table from '../../../components/delivery/Table';
 import Modal from '../../../components/delivery/Modal';
 import { movingRequests } from '../../../mock/deliveryData';
+import { useDeliveryQuotes } from '../../../context/DeliveryQuotesContext';
 
 const BusinessMovingRequestsPage = () => {
-  const [requests, setRequests] = useState(movingRequests);
+  const { quotes } = useDeliveryQuotes();
+  const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('전체');
   const [notes, setNotes] = useState('');
+
+  // Combine quotes from context with mock data
+  useEffect(() => {
+    setRequests([...quotes, ...movingRequests]);
+  }, [quotes]);
 
   const filters = [
     { key: '전체', label: '전체' },

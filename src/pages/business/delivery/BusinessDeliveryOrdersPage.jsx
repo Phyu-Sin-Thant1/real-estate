@@ -8,7 +8,6 @@ const BusinessDeliveryOrdersPage = () => {
   const [orders, setOrders] = useState(deliveryOrders);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false); // New state for add order modal
   const [activeTab, setActiveTab] = useState('전체');
   const [internalMemo, setInternalMemo] = useState('');
   const [assignedDriver, setAssignedDriver] = useState('');
@@ -91,16 +90,6 @@ const BusinessDeliveryOrdersPage = () => {
     }
   };
 
-  // New function to handle adding a new order
-  const handleAddOrder = (newOrder) => {
-    const order = {
-      ...newOrder,
-      id: `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(orders.length + 1).padStart(3, '0')}`
-    };
-    setOrders(prevOrders => [order, ...prevOrders]);
-    setIsAddOrderModalOpen(false);
-  };
-
   const handleAssignDriver = () => {
     if (selectedOrder && assignedDriver) {
       const updatedOrders = orders.map(order => 
@@ -160,255 +149,11 @@ const BusinessDeliveryOrdersPage = () => {
     return statusSteps.findIndex(step => step.key === selectedOrder.orderStatus);
   };
 
-  // Add Order Modal Component
-  const AddOrderModal = ({ isOpen, onClose, onAdd }) => {
-    const [formData, setFormData] = useState({
-      createdAt: new Date().toLocaleString('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }).replace(/\./g, '-').replace(/ /, ' '),
-      pickupAddress: '',
-      deliveryAddress: '',
-      customer: {
-        name: '',
-        phone: ''
-      },
-      product: '',
-      paymentStatus: '결제완료',
-      orderStatus: '신규'
-    });
-
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-      
-      if (name.startsWith('customer.')) {
-        const customerField = name.split('.')[1];
-        setFormData(prev => ({
-          ...prev,
-          customer: {
-            ...prev.customer,
-            [customerField]: value
-          }
-        }));
-      } else {
-        setFormData(prev => ({
-          ...prev,
-          [name]: value
-        }));
-      }
-    };
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      
-      // Validate required fields
-      if (!formData.pickupAddress.trim()) {
-        alert('픽업주소를 입력해주세요.');
-        return;
-      }
-      if (!formData.deliveryAddress.trim()) {
-        alert('배송주소를 입력해주세요.');
-        return;
-      }
-      if (!formData.customer.name.trim()) {
-        alert('고객명을 입력해주세요.');
-        return;
-      }
-      if (!formData.customer.phone.trim() || !/^[\d-]+$/.test(formData.customer.phone)) {
-        alert('연락처를 올바르게 입력해주세요 (숫자와 하이픈만 허용).');
-        return;
-      }
-      if (!formData.product.trim()) {
-        alert('상품을 입력해주세요.');
-        return;
-      }
-
-      onAdd(formData);
-      
-      // Reset form
-      setFormData({
-        createdAt: new Date().toLocaleString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).replace(/\./g, '-').replace(/ /, ' '),
-        pickupAddress: '',
-        deliveryAddress: '',
-        customer: {
-          name: '',
-          phone: ''
-        },
-        product: '',
-        paymentStatus: '결제완료',
-        orderStatus: '신규'
-      });
-    };
-
-    return (
-      <Modal isOpen={isOpen} onClose={onClose} title="새 배달 주문 등록" size="md">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              접수일시
-            </label>
-            <input
-              type="text"
-              name="createdAt"
-              value={formData.createdAt}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              픽업주소 *
-            </label>
-            <input
-              type="text"
-              name="pickupAddress"
-              value={formData.pickupAddress}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="픽업 주소를 입력하세요"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              배송주소 *
-            </label>
-            <input
-              type="text"
-              name="deliveryAddress"
-              value={formData.deliveryAddress}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="배송 주소를 입력하세요"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              고객명 *
-            </label>
-            <input
-              type="text"
-              name="customer.name"
-              value={formData.customer.name}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="고객명을 입력하세요"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              연락처 *
-            </label>
-            <input
-              type="text"
-              name="customer.phone"
-              value={formData.customer.phone}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="010-1234-5678"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              상품 *
-            </label>
-            <input
-              type="text"
-              name="product"
-              value={formData.product}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="상품명을 입력하세요"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              결제상태
-            </label>
-            <select
-              name="paymentStatus"
-              value={formData.paymentStatus}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-            >
-              <option value="결제완료">결제완료</option>
-              <option value="미결제">미결제</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              주문상태
-            </label>
-            <select
-              name="orderStatus"
-              value={formData.orderStatus}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-            >
-              <option value="신규">신규</option>
-              <option value="배차 대기">배차 대기</option>
-              <option value="배차 완료">배차 완료</option>
-              <option value="배송 중">배송 중</option>
-              <option value="배송 완료">배송 완료</option>
-              <option value="취소">취소</option>
-            </select>
-          </div>
-          
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
-            >
-              등록
-            </button>
-          </div>
-        </form>
-      </Modal>
-    );
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">배달 주문 관리</h1>
-          <p className="text-gray-600 mt-1">배달 주문의 전체 lifecycle을 관리합니다.</p>
-        </div>
-        <button
-          onClick={() => setIsAddOrderModalOpen(true)}
-          className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium self-start"
-        >
-          새 배달 주문
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">배달 주문 관리</h1>
+        <p className="text-gray-600 mt-1">배달 주문의 전체 lifecycle을 관리합니다.</p>
       </div>
 
       {/* Tabs */}
@@ -658,13 +403,6 @@ const BusinessDeliveryOrdersPage = () => {
           </div>
         )}
       </Modal>
-
-      {/* Add Order Modal */}
-      <AddOrderModal 
-        isOpen={isAddOrderModalOpen} 
-        onClose={() => setIsAddOrderModalOpen(false)}
-        onAdd={handleAddOrder}
-      />
     </div>
   );
 };

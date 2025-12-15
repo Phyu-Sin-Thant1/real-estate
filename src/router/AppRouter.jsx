@@ -21,11 +21,12 @@ import BusinessContractsPage from '../pages/business/contracts/BusinessContracts
 import BusinessPropertiesPage from '../pages/business/properties/BusinessPropertiesPage'
 import BusinessAdsPage from '../pages/business/ads/BusinessAdsPage'
 import BusinessStatsPage from '../pages/business/stats/BusinessStatsPage'
-import BusinessMovingRequestsPage from '../pages/business/moving/BusinessMovingRequestsPage'
+import BusinessMovingRequestsPage from '../pages/business/delivery/BusinessMovingRequestsPage'
 import BusinessDeliveryOrdersPage from '../pages/business/delivery/BusinessDeliveryOrdersPage'
 import BusinessSchedulePage from '../pages/business/schedule/BusinessSchedulePage'
-import BusinessCustomersPage from '../pages/business/customers/BusinessCustomersPage'
-import BusinessSettingsPage from '../pages/business/settings/BusinessSettingsPage'
+import BusinessCustomersPage from '../pages/business/delivery/BusinessDeliveryCustomersPage'
+import BusinessSettingsPage from '../pages/business/delivery/DeliverySettingsPage'
+import BusinessSettlementStatsPage from '../pages/business/delivery/BusinessSettlementStatsPage'
 
 // Real estate specific pages
 import RealEstateDashboardOverview from '../pages/business/real-estate/RealEstateDashboardOverview'
@@ -134,7 +135,7 @@ const AppRouter = () => {
           <Route path="contracts" element={<BusinessContractsPage />} />
           <Route path="properties" element={<BusinessPropertiesPage />} />
           <Route path="ads" element={<BusinessAdsPage />} />
-          <Route path="stats" element={<BusinessStatsPage />} />
+          <Route path="stats" element={<BusinessSettlementStatsPage />} />
           <Route path="moving-requests" element={<BusinessMovingRequestsPage />} />
           <Route path="delivery-orders" element={<BusinessDeliveryOrdersPage />} />
           <Route path="schedule" element={<BusinessSchedulePage />} />

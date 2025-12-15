@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import StatusBadge from '../../../components/delivery/StatusBadge';
 import Modal from '../../../components/delivery/Modal';
 import { scheduleItems, vehicles } from '../../../mock/deliveryData';
-import { drivers } from '../../../mock/driverData';
+import { drivers } from '../../../mock/deliveryDriversData';
 
 // Generate more mock schedule data
 const generateMockScheduleData = () => {
@@ -40,14 +40,10 @@ const BusinessSchedulePage = () => {
   const [statusFilter, setStatusFilter] = useState('전체');
   const [searchTerm, setSearchTerm] = useState('');
   const [vehicleList, setVehicleList] = useState(vehicles);
-  // Driver management state
   const [driverList, setDriverList] = useState(drivers);
   const [isAddDriverModalOpen, setIsAddDriverModalOpen] = useState(false);
   const [isEditDriverModalOpen, setIsEditDriverModalOpen] = useState(false);
   const [currentDriver, setCurrentDriver] = useState(null);
-  const [driverStatusFilter, setDriverStatusFilter] = useState('전체');
-  const [driverSearchTerm, setDriverSearchTerm] = useState('');
-  const [showAssignedOnly, setShowAssignedOnly] = useState(false);
 
   const tabs = [
     { key: 'schedule', label: '스케줄' },
@@ -67,19 +63,6 @@ const BusinessSchedulePage = () => {
     { title: '진행 중', value: ongoingSchedules.length, color: 'bg-yellow-500' },
     { title: '완료', value: completedSchedules.length, color: 'bg-green-500' },
     { title: '지연', value: delayedSchedules.length, color: 'bg-red-500' }
-  ];
-
-  // Driver summary cards data
-  const totalDrivers = driverList.length;
-  const activeDrivers = driverList.filter(driver => driver.status === '활성').length;
-  const inactiveDrivers = driverList.filter(driver => driver.status === '휴무').length;
-  const retiredDrivers = driverList.filter(driver => driver.status === '퇴사').length;
-
-  const driverSummaryCards = [
-    { title: '전체 기사 수', value: totalDrivers, color: 'bg-blue-500' },
-    { title: '활성', value: activeDrivers, color: 'bg-green-500' },
-    { title: '휴무', value: inactiveDrivers, color: 'bg-yellow-500' },
-    { title: '퇴사', value: retiredDrivers, color: 'bg-gray-500' }
   ];
 
   // Filter schedule data
@@ -116,26 +99,6 @@ const BusinessSchedulePage = () => {
     return true;
   });
 
-  // Filter driver data
-  const filteredDriverData = driverList.filter(driver => {
-    // Status filter
-    if (driverStatusFilter !== '전체' && driver.status !== driverStatusFilter) return false;
-
-    // Search term filter
-    if (driverSearchTerm) {
-      const lowerSearch = driverSearchTerm.toLowerCase();
-      if (!(
-        driver.name.toLowerCase().includes(lowerSearch) ||
-        driver.phone.toLowerCase().includes(lowerSearch)
-      )) return false;
-    }
-
-    // Assigned only filter
-    if (showAssignedOnly && !driver.assignedVehicleId) return false;
-
-    return true;
-  });
-
   // Schedule columns
   const scheduleColumns = [
     { key: 'id', label: '요청번호' },
@@ -163,12 +126,9 @@ const BusinessSchedulePage = () => {
     { key: 'name', label: '기사명' },
     { key: 'phone', label: '연락처' },
     { key: 'status', label: '상태' },
-    { key: 'assignedVehicle', label: '배정 차량' },
-    { key: 'note', label: '메모' },
+    { key: 'assignedVehicle', label: '담당차량' },
     { key: 'actions', label: '작업' }
   ];
-  
-
 
   const formatDateTime = (date, time) => {
     return `${date} ${time}`;
@@ -237,78 +197,17 @@ const BusinessSchedulePage = () => {
     setCurrentVehicle(null);
   };
 
-  // Driver management functions
-  const handleAddDriver = (newDriver) => {
-    const driver = {
-      id: driverList.length + 1,
-      ...newDriver,
-      assignedVehicleName: newDriver.assignedVehicleId 
-        ? vehicleList.find(v => v.id === newDriver.assignedVehicleId)?.name || ''
-        : ''
-    };
-    setDriverList(prev => [...prev, driver]);
-    setIsAddDriverModalOpen(false);
-  };
-
-  const handleUpdateDriver = (updatedDriver) => {
-    const driver = {
-      ...updatedDriver,
-      assignedVehicleName: updatedDriver.assignedVehicleId 
-        ? vehicleList.find(v => v.id === updatedDriver.assignedVehicleId)?.name || ''
-        : ''
-    };
-    setDriverList(prev => 
-      prev.map(d => 
-        d.id === driver.id ? driver : d
-      )
-    );
-    setIsEditDriverModalOpen(false);
-    setCurrentDriver(null);
-  };
-
-  const handleToggleDriverStatus = (driverId) => {
-    setDriverList(prev => 
-      prev.map(driver => {
-        if (driver.id === driverId) {
-          // Toggle between 활성 and 휴무
-          const newStatus = driver.status === '활성' ? '휴무' : '활성';
-          return { ...driver, status: newStatus };
-        }
-        return driver;
-      })
-    );
-  };
-
-  const handleRetireDriver = (driverId) => {
-    setDriverList(prev => 
-      prev.map(driver => {
-        if (driver.id === driverId) {
-          return { 
-            ...driver, 
-            status: '퇴사',
-            assignedVehicleId: null,
-            assignedVehicleName: ''
-          };
-        }
-        return driver;
-      })
-    );
-  };
-
   const renderVehicleCell = (row, columnKey) => {
-    // Test to see if we're getting to the driver column
-    if (columnKey === 'driver') {
-      return (
-        <div>
-          <div className="font-medium">{row.driverName || '미지정'}</div>
-          {row.driverPhone && (
-            <div className="text-xs text-gray-500">{row.driverPhone}</div>
-          )}
-        </div>
-      );
-    }
-    
     switch (columnKey) {
+      case 'driver':
+        return (
+          <div>
+            <div className="font-medium">{row.driverName}</div>
+            {row.driverPhone && (
+              <div className="text-xs text-gray-500">{row.driverPhone}</div>
+            )}
+          </div>
+        );
       case 'status':
         return <StatusBadge status={row.status} type="vehicle" />;
       case 'actions':
@@ -329,45 +228,42 @@ const BusinessSchedulePage = () => {
     switch (columnKey) {
       case 'status':
         return <StatusBadge status={row.status} type="driver" />;
-      case 'assignedVehicle':
-        return row.assignedVehicleName || '미배정';
       case 'actions':
         return (
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => {
-                setCurrentDriver(row);
-                setIsEditDriverModalOpen(true);
-              }}
-              className="text-dabang-primary hover:text-dabang-primary/80 text-sm font-medium"
-            >
-              수정
-            </button>
-            {row.status !== '퇴사' && (
-              <button 
-                onClick={() => handleToggleDriverStatus(row.id)}
-                className="text-dabang-primary hover:text-dabang-primary/80 text-sm font-medium"
-              >
-                {row.status === '활성' ? '휴무' : '활성'}
-              </button>
-            )}
-            {row.status !== '퇴사' && (
-              <button 
-                onClick={() => {
-                  if (window.confirm('정말 이 기사를 퇴사 처리하시겠습니까?')) {
-                    handleRetireDriver(row.id);
-                  }
-                }}
-                className="text-red-600 hover:text-red-800 text-sm font-medium"
-              >
-                퇴사
-              </button>
-            )}
-          </div>
+          <button 
+            onClick={() => handleEditDriver(row)}
+            className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
+          >
+            수정
+          </button>
         );
       default:
         return row[columnKey] || '-';
     }
+  };
+
+  const handleEditDriver = (driver) => {
+    setCurrentDriver(driver);
+    setIsEditDriverModalOpen(true);
+  };
+
+  const handleAddDriver = (newDriver) => {
+    const driver = {
+      id: driverList.length + 1,
+      ...newDriver
+    };
+    setDriverList(prev => [...prev, driver]);
+    setIsAddDriverModalOpen(false);
+  };
+
+  const handleUpdateDriver = (updatedDriver) => {
+    setDriverList(prev => 
+      prev.map(driver => 
+        driver.id === updatedDriver.id ? updatedDriver : driver
+      )
+    );
+    setIsEditDriverModalOpen(false);
+    setCurrentDriver(null);
   };
 
   // Vehicle Modal Components
@@ -658,9 +554,9 @@ const BusinessSchedulePage = () => {
     const [formData, setFormData] = useState({
       name: '',
       phone: '',
-      status: '활성',
-      assignedVehicleId: '',
-      note: ''
+      status: '근무',
+      assignedVehicle: '',
+      licenseNumber: ''
     });
 
     const handleChange = (e) => {
@@ -677,20 +573,13 @@ const BusinessSchedulePage = () => {
         alert('기사명을 입력해주세요.');
         return;
       }
-      if (!formData.phone.trim()) {
-        alert('연락처를 입력해주세요.');
-        return;
-      }
-      onAdd({
-        ...formData,
-        assignedVehicleId: formData.assignedVehicleId ? parseInt(formData.assignedVehicleId) : null
-      });
+      onAdd(formData);
       setFormData({
         name: '',
         phone: '',
-        status: '활성',
-        assignedVehicleId: '',
-        note: ''
+        status: '근무',
+        assignedVehicle: '',
+        licenseNumber: ''
       });
     };
 
@@ -699,7 +588,7 @@ const BusinessSchedulePage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              기사명 *
+              기사명 * <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -707,14 +596,14 @@ const BusinessSchedulePage = () => {
               value={formData.name}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="예: 김민수"
+              placeholder="예: 김철수"
               required
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              연락처 *
+              연락처
             </label>
             <input
               type="text"
@@ -723,7 +612,6 @@ const BusinessSchedulePage = () => {
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
               placeholder="예: 010-1234-5678"
-              required
             />
           </div>
           
@@ -737,42 +625,36 @@ const BusinessSchedulePage = () => {
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
             >
-              <option value="활성">활성</option>
+              <option value="근무">근무</option>
               <option value="휴무">휴무</option>
-              <option value="퇴사">퇴사</option>
             </select>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              배정 차량
+              담당 차량
             </label>
-            <select 
-              name="assignedVehicleId"
-              value={formData.assignedVehicleId}
+            <input
+              type="text"
+              name="assignedVehicle"
+              value={formData.assignedVehicle}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-            >
-              <option value="">미배정</option>
-              {vehicleList.map(vehicle => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name}
-                </option>
-              ))}
-            </select>
+              placeholder="예: 트럭 1호"
+            />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              메모
+              면허번호
             </label>
-            <textarea
-              name="note"
-              value={formData.note}
+            <input
+              type="text"
+              name="licenseNumber"
+              value={formData.licenseNumber}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="기사 관련 메모"
-              rows="3"
+              placeholder="예: 12-345678-90"
             />
           </div>
           
@@ -800,9 +682,9 @@ const BusinessSchedulePage = () => {
     const [formData, setFormData] = useState({
       name: driver?.name || '',
       phone: driver?.phone || '',
-      status: driver?.status || '활성',
-      assignedVehicleId: driver?.assignedVehicleId || '',
-      note: driver?.note || ''
+      status: driver?.status || '근무',
+      assignedVehicle: driver?.assignedVehicle || '',
+      licenseNumber: driver?.licenseNumber || ''
     });
 
     const handleChange = (e) => {
@@ -819,15 +701,7 @@ const BusinessSchedulePage = () => {
         alert('기사명을 입력해주세요.');
         return;
       }
-      if (!formData.phone.trim()) {
-        alert('연락처를 입력해주세요.');
-        return;
-      }
-      onUpdate({
-        ...formData,
-        id: driver.id,
-        assignedVehicleId: formData.assignedVehicleId ? parseInt(formData.assignedVehicleId) : null
-      });
+      onUpdate({ ...formData, id: driver.id });
     };
 
     return (
@@ -835,7 +709,7 @@ const BusinessSchedulePage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              기사명 *
+              기사명 * <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -843,14 +717,14 @@ const BusinessSchedulePage = () => {
               value={formData.name}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="예: 김민수"
+              placeholder="예: 김철수"
               required
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              연락처 *
+              연락처
             </label>
             <input
               type="text"
@@ -859,7 +733,6 @@ const BusinessSchedulePage = () => {
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
               placeholder="예: 010-1234-5678"
-              required
             />
           </div>
           
@@ -873,42 +746,36 @@ const BusinessSchedulePage = () => {
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
             >
-              <option value="활성">활성</option>
+              <option value="근무">근무</option>
               <option value="휴무">휴무</option>
-              <option value="퇴사">퇴사</option>
             </select>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              배정 차량
+              담당 차량
             </label>
-            <select 
-              name="assignedVehicleId"
-              value={formData.assignedVehicleId}
+            <input
+              type="text"
+              name="assignedVehicle"
+              value={formData.assignedVehicle}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-            >
-              <option value="">미배정</option>
-              {vehicleList.map(vehicle => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.name}
-                </option>
-              ))}
-            </select>
+              placeholder="예: 트럭 1호"
+            />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              메모
+              면허번호
             </label>
-            <textarea
-              name="note"
-              value={formData.note}
+            <input
+              type="text"
+              name="licenseNumber"
+              value={formData.licenseNumber}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              placeholder="기사 관련 메모"
-              rows="3"
+              placeholder="예: 12-345678-90"
             />
           </div>
           
@@ -1108,20 +975,18 @@ const BusinessSchedulePage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {vehicleList.map((vehicle) => {
-                      return (
-                        <tr key={vehicle.id}>
-                          {vehicleColumns.map((column) => (
-                            <td
-                              key={`${vehicle.id}-${column.key}`}
-                              className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                            >
-                              {renderVehicleCell(vehicle, column.key)}
-                            </td>
-                          ))}
-                        </tr>
-                      );
-                    })}
+                    {vehicleList.map((vehicle) => (
+                      <tr key={vehicle.id}>
+                        {vehicleColumns.map((column) => (
+                          <td
+                            key={`${vehicle.id}-${column.key}`}
+                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                          >
+                            {renderVehicleCell(vehicle, column.key)}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -1132,77 +997,14 @@ const BusinessSchedulePage = () => {
         {/* Driver Tab */}
         {activeTab === 'driver' && (
           <div className="mt-6 space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {driverSummaryCards.map((card, index) => (
-                <div key={index} className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="px-4 py-5 sm:p-6">
-                    <div className="flex items-center">
-                      <div className={`flex-shrink-0 rounded-md p-3 ${card.color}`}>
-                        <div className="h-6 w-6 text-white"></div>
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">{card.title}</dt>
-                          <dd className="flex items-baseline">
-                            <div className="text-2xl font-semibold text-gray-900">{card.value}</div>
-                          </dd>
-                        </dl>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Filters */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <div>
-                  <select
-                    value={driverStatusFilter}
-                    onChange={(e) => setDriverStatusFilter(e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-dabang-primary focus:border-dabang-primary sm:text-sm rounded-md"
-                  >
-                    <option value="전체">전체 상태</option>
-                    <option value="활성">활성</option>
-                    <option value="휴무">휴무</option>
-                    <option value="퇴사">퇴사</option>
-                  </select>
-                </div>
-                
-                <div className="flex-1 min-w-[200px]">
-                  <input
-                    type="text"
-                    placeholder="이름, 연락처 검색..."
-                    value={driverSearchTerm}
-                    onChange={(e) => setDriverSearchTerm(e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-dabang-primary focus:border-dabang-primary sm:text-sm rounded-md"
-                  />
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    id="assigned-only"
-                    type="checkbox"
-                    checked={showAssignedOnly}
-                    onChange={(e) => setShowAssignedOnly(e.target.checked)}
-                    className="h-4 w-4 text-dabang-primary focus:ring-dabang-primary border-gray-300 rounded"
-                  />
-                  <label htmlFor="assigned-only" className="ml-2 block text-sm text-gray-700">
-                    배정됨만 보기
-                  </label>
-                </div>
-                
-                <div className="ml-auto">
-                  <button
-                    onClick={() => setIsAddDriverModalOpen(true)}
-                    className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
-                  >
-                    새 기사 등록
-                  </button>
-                </div>
-              </div>
+            {/* Add Driver Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsAddDriverModalOpen(true)}
+                className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
+              >
+                새 기사 등록
+              </button>
             </div>
 
             {/* Drivers Table */}
@@ -1226,7 +1028,7 @@ const BusinessSchedulePage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredDriverData.map((driver) => (
+                    {driverList.map((driver) => (
                       <tr key={driver.id}>
                         {driverColumns.map((column) => (
                           <td

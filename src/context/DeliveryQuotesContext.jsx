@@ -107,4 +107,5 @@ export const DeliveryQuotesProvider = ({ children }) => {
   );
 };
 
-export default DeliveryQuotesContext;
+// Export the context for direct access if needed
+export { DeliveryQuotesContext };
