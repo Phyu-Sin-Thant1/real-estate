@@ -7,12 +7,22 @@ import { movingRequests } from '../../../mock/deliveryData';
 import { useDeliveryQuotes } from '../../../context/DeliveryQuotesContext';
 
 const BusinessMovingRequestsPage = () => {
-  const { quotes } = useDeliveryQuotes();
+  const { quotes, addQuote } = useDeliveryQuotes();
   const [requests, setRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('전체');
   const [notes, setNotes] = useState('');
+  const [newRequest, setNewRequest] = useState({
+    customerName: '',
+    phone: '',
+    pickupAddress: '',
+    deliveryAddress: '',
+    moveType: '',
+    desiredDate: '',
+    customerMemo: ''
+  });
 
   // Combine quotes from context with mock data
   useEffect(() => {
@@ -73,6 +83,36 @@ const BusinessMovingRequestsPage = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewRequest(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAddRequest = () => {
+    const requestToAdd = {
+      ...newRequest,
+      id: Date.now(), // Simple ID generation
+      status: '신규',
+      createdAt: new Date().toISOString().split('T')[0],
+      notes: ''
+    };
+    
+    addQuote(requestToAdd);
+    setIsAddModalOpen(false);
+    setNewRequest({
+      customerName: '',
+      phone: '',
+      pickupAddress: '',
+      deliveryAddress: '',
+      moveType: '',
+      desiredDate: '',
+      customerMemo: ''
+    });
+  };
+
   const renderCell = (row, columnKey) => {
     switch (columnKey) {
       case 'status':
@@ -103,8 +143,18 @@ const BusinessMovingRequestsPage = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">이사 / 견적 요청</h1>
-        <p className="text-gray-600 mt-1">고객의 이사 및 견적 요청을 관리합니다.</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">이사 / 견적 요청</h1>
+            <p className="text-gray-600 mt-1">고객의 이사 및 견적 요청을 관리합니다.</p>
+          </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dabang-primary"
+          >
+            새 이사/견적 요청
+          </button>
+        </div>
       </div>
 
       {/* Filter Chips */}
@@ -123,6 +173,134 @@ const BusinessMovingRequestsPage = () => {
           renderCell={renderCell}
         />
       </div>
+
+      {/* Add Request Modal */}
+      <Modal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)}
+        title="새 이사/견적 요청"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              고객명 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="customerName"
+              value={newRequest.customerName}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="고객명을 입력하세요"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              연락처 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={newRequest.phone}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="'-' 없이 숫자만 입력"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              출발지 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="pickupAddress"
+              value={newRequest.pickupAddress}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="출발지 주소를 입력하세요"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              도착지 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="deliveryAddress"
+              value={newRequest.deliveryAddress}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="도착지 주소를 입력하세요"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              이사 유형 <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="moveType"
+              value={newRequest.moveType}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+            >
+              <option value="">선택해주세요</option>
+              <option value="원룸">원룸</option>
+              <option value="가정이사">가정이사</option>
+              <option value="사무실이사">사무실이사</option>
+              <option value="특수이사">특수이사</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              희망일 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              name="desiredDate"
+              value={newRequest.desiredDate}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              요청사항
+            </label>
+            <textarea
+              name="customerMemo"
+              value={newRequest.customerMemo}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="고객의 요청사항을 입력하세요"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleAddRequest}
+              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+            >
+              추가하기
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Detail Modal */}
       <Modal 
