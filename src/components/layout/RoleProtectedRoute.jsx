@@ -15,16 +15,9 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
   // Check if user has one of the allowed roles
   const userRole = user?.role;
   if (!allowedRoles.includes(userRole)) {
-    // Redirect to appropriate dashboard based on role
-    if (isUser) {
-      return <Navigate to="/" replace />;
-    } else if (isBusinessRealEstate || isBusinessDelivery || isAdmin) {
-      return <Navigate to="/business" replace />;
-    } else if (isAdmin) {
-      return <Navigate to="/admin" replace />;
-    }
-    
-    // Fallback redirect
+    // Route users back to their own area; admins never enter business ops
+    if (isAdmin) return <Navigate to="/admin" replace />;
+    if (isBusinessRealEstate || isBusinessDelivery) return <Navigate to="/business" replace />;
     return <Navigate to="/" replace />;
   }
 

@@ -8,6 +8,26 @@ export const dashboardStats = [
   { label: '완료율', value: '94%', change: '+2%' },
 ];
 
+// Minimal listings for support ticket linking
+export const supportListings = [
+  {
+    id: 'LIST-301',
+    title: '강남역 초역세권 오피스텔',
+    location: '서울 강남구',
+    price: '보증금 1억 / 월 90만',
+    partnerId: 'partner-re-1',
+    partnerName: '두부부동산'
+  },
+  {
+    id: 'LIST-302',
+    title: '판교 테크노밸리 인근 오피스',
+    location: '경기 성남시',
+    price: '매매 12억',
+    partnerId: 'partner-re-2',
+    partnerName: '스마트에셋'
+  }
+];
+
 export const recentActivities = [
   { id: 1, text: '새로운 요청이 접수되었습니다.', time: '2시간 전' },
   { id: 2, text: '계약이 체결되었습니다.', time: '5시간 전' },

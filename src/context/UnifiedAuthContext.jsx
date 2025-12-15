@@ -1,3 +1,4 @@
+import { loadBusinessAccounts } from '../lib/helpers/realEstateStorage';
 import React, { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'tofu-auth-session'
@@ -31,6 +32,14 @@ const ADMIN_ACCOUNT = {
   name: 'TOFU Admin',
   role: ROLES.ADMIN
 }
+
+// Demo user
+const DEMO_USER = {
+  email: 'user@tofu.com',
+  password: 'User123!',
+  role: ROLES.USER,
+  name: 'Demo User'
+};
 
 const UnifiedAuthContext = createContext(null)
 
@@ -95,6 +104,38 @@ export const UnifiedAuthProvider = ({ children }) => {
 
       setUser(session)
       return { success: true, user: session }
+    }
+
+    // Demo user
+    if (normalizedEmail === DEMO_USER.email && password === DEMO_USER.password) {
+      const session = {
+        email: DEMO_USER.email,
+        name: DEMO_USER.name,
+        role: DEMO_USER.role,
+        loginAt: new Date().toISOString(),
+      };
+      setUser(session);
+      return { success: true, user: session };
+    }
+
+    // Check stored business accounts
+    const storedAccounts = loadBusinessAccounts();
+    const matchedAccount = storedAccounts.find(
+      (acct) => acct.email.trim().toLowerCase() === normalizedEmail
+    );
+    if (matchedAccount) {
+      const expectedPwd = matchedAccount.tempPassword || matchedAccount.password;
+      if (password === expectedPwd) {
+        const session = {
+          email: matchedAccount.email,
+          name: matchedAccount.companyName || matchedAccount.email.split('@')[0],
+          role: matchedAccount.role,
+          loginAt: new Date().toISOString(),
+        };
+        setUser(session);
+        return { success: true, user: session };
+      }
+      return { success: false, error: '잘못된 계정 정보입니다.' };
     }
 
     // Regular user login (for now, accept any non-empty credentials)

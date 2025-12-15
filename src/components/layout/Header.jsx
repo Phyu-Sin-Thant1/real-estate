@@ -1,15 +1,13 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUnifiedAuth } from '../../context/UnifiedAuthContext'
-import { useTranslation } from 'react-i18next'
-import i18n from '../../i18n'
+import { useI18n } from '../../context/I18nContext'
 
 const Header = () => {
   const navigate = useNavigate()
-  const { t, i18n: translationInstance } = useTranslation('common')
+  const { t, lang, setLang } = useI18n()
   const { user, isAuthenticated, isUser, isBusinessRealEstate, isBusinessDelivery, isAdmin, logout } = useUnifiedAuth()
 
-  // Show dashboard button only for partners and admins
   const isPartnerOrAdmin = isBusinessRealEstate || isBusinessDelivery || isAdmin;
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
@@ -36,10 +34,6 @@ const Header = () => {
     } else {
       navigate('/login')
     }
-  }
-
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng)
   }
 
   const categories = [
@@ -108,6 +102,9 @@ const Header = () => {
             <Link to="/community" className="text-gray-700 hover:text-dabang-primary">
               {t('nav.community')}
             </Link>
+          <Link to="/partner/apply" className="text-gray-700 hover:text-dabang-primary">
+            파트너 신청
+          </Link>
           </nav>
         </div>
 
@@ -116,9 +113,9 @@ const Header = () => {
           {/* Language Switcher */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => changeLanguage('ko')}
+              onClick={() => setLang('ko')}
               className={`px-3 py-1 text-sm rounded-md ${
-                translationInstance.language === 'ko' 
+                lang === 'ko' 
                   ? 'bg-dabang-primary text-white' 
                   : 'text-gray-600 hover:text-dabang-primary'
               }`}
@@ -126,9 +123,9 @@ const Header = () => {
               KO
             </button>
             <button
-              onClick={() => changeLanguage('en')}
+              onClick={() => setLang('en')}
               className={`px-3 py-1 text-sm rounded-md ${
-                translationInstance.language === 'en' 
+                lang === 'en' 
                   ? 'bg-dabang-primary text-white' 
                   : 'text-gray-600 hover:text-dabang-primary'
               }`}
@@ -185,6 +182,14 @@ const Header = () => {
                   >
                     내 프로필
                   </button>
+                  {isUser && (
+                    <button
+                      onClick={() => { navigate('/support'); setIsUserDropdownOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      지원 / 문의
+                    </button>
+                  )}
                   <div className="border-t border-gray-100"></div>
                   <button
                     onClick={handleLogout}
@@ -239,6 +244,9 @@ const Header = () => {
           </Link>
           <Link to="/community" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
             {t('nav.community')}
+          </Link>
+          <Link to="/partner/apply" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
+            파트너 신청
           </Link>
           {/* Go to Dashboard Button - shown only for partners and admins */}
           {isPartnerOrAdmin && (

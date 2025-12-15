@@ -1,20 +1,26 @@
-import React, { useState } from 'react';
-import { supportTickets } from '../../mock/adminData';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getAllTickets, updateTicket } from '../../store/supportTicketsStore';
 
 const AdminSupportTicketsPage = () => {
-  const [tickets, setTickets] = useState(supportTickets);
+  const [tickets, setTickets] = useState([]);
   const [selectedTickets, setSelectedTickets] = useState([]);
-  const [priorityFilter, setPriorityFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [issueFilter, setIssueFilter] = useState('ALL');
+  const [noteInput, setNoteInput] = useState({});
 
-  const priorities = ['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
   const statuses = ['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 
-  const filteredTickets = tickets.filter(ticket => {
-    const priorityMatch = priorityFilter === 'ALL' || ticket.priority === priorityFilter;
-    const statusMatch = statusFilter === 'ALL' || ticket.status === statusFilter;
-    return priorityMatch && statusMatch;
-  });
+  useEffect(() => {
+    setTickets(getAllTickets());
+  }, []);
+
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(ticket => {
+      const statusMatch = statusFilter === 'ALL' || ticket.status === statusFilter;
+      const issueMatch = issueFilter === 'ALL' || (ticket.issueType || 'OTHER') === issueFilter;
+      return statusMatch && issueMatch;
+    });
+  }, [tickets, statusFilter, issueFilter]);
 
   const handleSelectTicket = (ticketId) => {
     setSelectedTickets(prev => 
@@ -32,27 +38,37 @@ const AdminSupportTicketsPage = () => {
     }
   };
 
+  const persistTickets = (next) => {
+    setTickets(next);
+  };
+
   const handleAssignTicket = (ticketId, agent) => {
-    setTickets(prev => 
-      prev.map(ticket => 
-        ticket.id === ticketId 
-          ? { ...ticket, assignedTo: agent, status: 'IN_PROGRESS' } 
-          : ticket
-      )
-    );
+    const next = updateTicket(ticketId, { assignedTo: agent, status: 'IN_PROGRESS' });
+    persistTickets(next);
   };
 
   const handleResolveTicket = (ticketId) => {
-    setTickets(prev => 
-      prev.map(ticket => 
-        ticket.id === ticketId 
-          ? { ...ticket, status: 'RESOLVED' } 
-          : ticket
-      )
-    );
-    
-    // If this was selected, remove it from selection
+    const next = updateTicket(ticketId, { status: 'RESOLVED' });
+    persistTickets(next);
     setSelectedTickets(prev => prev.filter(id => id !== ticketId));
+  };
+
+  const handleStatusChange = (ticketId, status) => {
+    const next = updateTicket(ticketId, { status });
+    persistTickets(next);
+  };
+
+  const handleAddNote = (ticketId) => {
+    const note = noteInput[ticketId];
+    if (!note || !note.trim()) return;
+    const next = updateTicket(ticketId, {
+      internalNotes: [
+        ...(tickets.find((t) => t.id === ticketId)?.internalNotes || []),
+        { at: new Date().toISOString(), note }
+      ]
+    });
+    persistTickets(next);
+    setNoteInput((prev) => ({ ...prev, [ticketId]: '' }));
   };
 
   const getPriorityClass = (priority) => {
@@ -86,20 +102,6 @@ const AdminSupportTicketsPage = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              {priorities.map(priority => (
-                <option key={priority} value={priority}>
-                  {priority === 'ALL' ? 'All Priorities' : priority}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               value={statusFilter}
@@ -113,11 +115,25 @@ const AdminSupportTicketsPage = () => {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Issue Type</label>
+            <select
+              value={issueFilter}
+              onChange={(e) => setIssueFilter(e.target.value)}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
+            >
+              {['ALL', 'DELIVERY', 'REAL_ESTATE', 'ACCOUNT', 'OTHER'].map((iss) => (
+                <option key={iss} value={iss}>
+                  {iss === 'ALL' ? 'All Issue Types' : iss.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-end">
             <button
               onClick={() => {
-                setPriorityFilter('ALL');
                 setStatusFilter('ALL');
+                setIssueFilter('ALL');
               }}
               className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
@@ -209,19 +225,22 @@ const AdminSupportTicketsPage = () => {
                   />
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Subject
+                  Ticket ID
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Issue Type
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Related
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Partner
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Requester
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assigned To
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Created At
@@ -242,16 +261,26 @@ const AdminSupportTicketsPage = () => {
                       className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{ticket.subject}</div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ticket.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ticket.issueType || 'OTHER'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {ticket.relatedEntityType === 'DELIVERY_ORDER' && (
+                      <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
+                        배송: {ticket.relatedEntityId || '-'}
+                      </span>
+                    )}
+                    {ticket.relatedEntityType === 'REAL_ESTATE_LISTING' && (
+                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                        매물: {ticket.relatedEntityId || '-'}
+                      </span>
+                    )}
+                    {!ticket.relatedEntityType || ticket.relatedEntityType === 'NONE' ? (
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">없음</span>
+                    ) : null}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{ticket.partnerName || '-'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ticket.requester}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityClass(ticket.priority)}`}>
-                      {ticket.priority}
-                    </span>
+                    {ticket.createdBy}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(ticket.status)}`}>
@@ -259,32 +288,48 @@ const AdminSupportTicketsPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ticket.assignedTo || '-'}
+                    {new Date(ticket.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {ticket.createdAt}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {ticket.status === 'OPEN' && (
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-y-2">
+                    <div className="flex items-center space-x-2 justify-end">
                       <select
-                        onChange={(e) => handleAssignTicket(ticket.id, e.target.value)}
+                        onChange={(e) => handleStatusChange(ticket.id, e.target.value)}
                         className="text-sm rounded border-gray-300 focus:border-dabang-primary focus:ring-dabang-primary"
-                        value={ticket.assignedTo || ''}
+                        value={ticket.status}
                       >
-                        <option value="">Assign To...</option>
-                        <option value="김지원">김지원</option>
-                        <option value="이지원">이지원</option>
-                        <option value="최지원">최지원</option>
+                        <option value="OPEN">OPEN</option>
+                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option value="RESOLVED">RESOLVED</option>
+                        <option value="CLOSED">CLOSED</option>
                       </select>
-                    )}
-                    {ticket.status === 'IN_PROGRESS' && (
+                      {ticket.status === 'OPEN' && (
+                        <select
+                          onChange={(e) => handleAssignTicket(ticket.id, e.target.value)}
+                          className="text-sm rounded border-gray-300 focus:border-dabang-primary focus:ring-dabang-primary"
+                          value={ticket.assignedTo || ''}
+                        >
+                          <option value="">Assign...</option>
+                          <option value="김지원">김지원</option>
+                          <option value="이지원">이지원</option>
+                          <option value="최지원">최지원</option>
+                        </select>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={noteInput[ticket.id] || ''}
+                        onChange={(e) => setNoteInput((prev) => ({ ...prev, [ticket.id]: e.target.value }))}
+                        placeholder="내부 메모"
+                        className="w-full text-sm border-gray-300 rounded focus:border-dabang-primary focus:ring-dabang-primary"
+                      />
                       <button
-                        onClick={() => handleResolveTicket(ticket.id)}
-                        className="text-green-600 hover:text-green-900"
+                        onClick={() => handleAddNote(ticket.id)}
+                        className="px-2 py-1 text-xs text-white bg-dabang-primary rounded"
                       >
-                        Resolve
+                        Add
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}

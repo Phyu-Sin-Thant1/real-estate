@@ -39,6 +39,10 @@ import RealEstateSettingsPage from '../pages/business/real-estate/RealEstateSett
 import RealEstateContractCreatePage from '../pages/business/real-estate/RealEstateContractCreatePage';
 import RealEstateContractDetailPage from '../pages/business/real-estate/RealEstateContractDetailPage';
 import RealEstateNewListingPage from '../pages/business/real-estate/RealEstateNewListingPage';
+import RealEstateListingCreatePage from '../pages/business/real-estate/RealEstateListingCreatePage';
+import PartnerApplyPage from '../pages/PartnerApplyPage';
+import UserSupportPage from '../pages/UserSupportPage';
+import MySupportTicketsPage from '../pages/MySupportTicketsPage';
 
 // Reservation pages
 import ReservationsListPage from '../pages/business/real-estate/ReservationsListPage';
@@ -97,6 +101,7 @@ const AppRouter = () => {
         <Route path="/faq" element={<FAQPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/partner/apply" element={<PartnerApplyPage />} />
         <Route path="/moving-service" element={<MovingServicePage />} />
         <Route path="/moving-registration" element={<MovingRegistrationPage />} />
         <Route path="/community" element={<CommunityLandingPage />} />
@@ -107,6 +112,14 @@ const AppRouter = () => {
         <Route path="/map" element={<MapPage />} />
         <Route path="/news" element={<NewsListPage />} />
         <Route path="/news/:id" element={<NewsDetailPage />} />
+        <Route
+          path="/support"
+          element={
+            <UserProtectedRoute allowedRoles={["USER"]}>
+              <UserSupportPage />
+            </UserProtectedRoute>
+          }
+        />
         
         {/* Auth routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -119,6 +132,14 @@ const AppRouter = () => {
           element={
             <UserProtectedRoute allowedRoles={["USER", "BUSINESS_REAL_ESTATE", "BUSINESS_DELIVERY", "ADMIN"]}>
               <MyPage />
+            </UserProtectedRoute>
+          }
+        />
+        <Route
+          path="/mypage/support"
+          element={
+            <UserProtectedRoute allowedRoles={["USER"]}>
+              <MySupportTicketsPage />
             </UserProtectedRoute>
           }
         />
@@ -173,7 +194,7 @@ const AppRouter = () => {
         <Route
           path="/business"
           element={
-            <UserProtectedRoute allowedRoles={["BUSINESS_REAL_ESTATE", "BUSINESS_DELIVERY", "ADMIN"]}>
+            <UserProtectedRoute allowedRoles={["BUSINESS_REAL_ESTATE", "BUSINESS_DELIVERY"]}>
               <BusinessDashboardLayout />
             </UserProtectedRoute>
           }
@@ -195,7 +216,7 @@ const AppRouter = () => {
         <Route
           path="/business/real-estate"
           element={
-            <UserProtectedRoute allowedRoles={["BUSINESS_REAL_ESTATE", "ADMIN"]}>
+            <UserProtectedRoute allowedRoles={["BUSINESS_REAL_ESTATE"]}>
               <RealEstateBusinessLayout />
             </UserProtectedRoute>
           }
@@ -206,7 +227,7 @@ const AppRouter = () => {
           <Route path="contracts/new" element={<RealEstateContractCreatePage />} />
           <Route path="contracts/:id" element={<RealEstateContractDetailPage />} />
           <Route path="listings" element={<RealEstateListingsPage />} />
-          <Route path="listings/new" element={<RealEstateNewListingPage />} />
+          <Route path="listings/new" element={<RealEstateListingCreatePage />} />
           <Route path="listings/:id/edit" element={<RealEstateNewListingPage />} />
           <Route path="leads" element={<RealEstateLeadsPage />} />
           <Route path="analytics" element={<RealEstateAnalyticsPage />} />

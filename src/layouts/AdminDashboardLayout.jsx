@@ -113,7 +113,7 @@ const AdminDashboardLayout = () => {
                 
                 {/* View Website Button */}
                 <button
-                  onClick={() => window.open('/', '_blank')}
+                  onClick={() => navigate('/')}
                   className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                 >
                   View Website

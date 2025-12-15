@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
-import { realEstateMenu, deliveryMenu, adminMenu } from '../config/businessMenu';
+import { realEstateMenu, deliveryMenu } from '../config/businessMenu';
 
 const getMenuForUser = (user) => {
   if (!user) return realEstateMenu;
@@ -12,10 +12,6 @@ const getMenuForUser = (user) => {
 
   if (user.role === 'BUSINESS_DELIVERY') {
     return deliveryMenu;
-  }
-
-  if (user.role === 'ADMIN') {
-    return adminMenu;
   }
 
   return realEstateMenu;

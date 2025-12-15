@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useListings } from '../../../context/ListingsContext';
 import { listings as mockListings, listingTypes, transactionTypes, listingStatuses, listingRegions } from '../../../mock/realEstateData';
+import { loadListings } from '../../../lib/helpers/realEstateStorage';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateListingsPage = () => {
   const navigate = useNavigate();
   const { listings: contextListings, updateListing } = useListings();
+  const { user } = useUnifiedAuth();
+  const [storedListings, setStoredListings] = useState([]);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState('전체');
   const [statusFilter, setStatusFilter] = useState('전체');
   const [regionFilter, setRegionFilter] = useState('서울 전체');
@@ -14,12 +18,28 @@ const RealEstateListingsPage = () => {
 
   // Combine mock listings with context listings
   // In a real app, you would use only one source of truth
-  const allListings = [...contextListings, ...mockListings];
+  useEffect(() => {
+    setStoredListings(loadListings());
+  }, []);
+
+  const allListings = useMemo(() => {
+    const partnerEmail = user?.email;
+    const partnerListings = storedListings.filter((listing) => listing.partnerEmail === partnerEmail);
+    return [...partnerListings, ...contextListings, ...mockListings];
+  }, [contextListings, mockListings, storedListings, user?.email]);
+
+  const statusFilterOptions = useMemo(
+    () => [...listingStatuses, '심사중', '반려'],
+    []
+  );
 
   // Filter listings based on filters
   const filteredListings = allListings.filter(listing => {
     const transactionMatch = transactionTypeFilter === '전체' || listing.transactionType === transactionTypeFilter;
-    const statusMatch = statusFilter === '전체' || listing.status === statusFilter;
+    const statusMatch =
+      statusFilter === '전체' ||
+      listing.status === statusFilter ||
+      statusLabel(listing.status) === statusFilter;
     const regionMatch = regionFilter === '서울 전체' || listing.region.includes(regionFilter);
     return transactionMatch && statusMatch && regionMatch;
   });
@@ -28,13 +48,29 @@ const RealEstateListingsPage = () => {
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case '노출중':
+      case 'LIVE':
         return 'bg-green-100 text-green-800';
       case '비노출':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
       case '거래완료':
-        return 'bg-gray-100 text-gray-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const statusLabel = (status) => {
+    switch (status) {
+      case 'LIVE':
+        return '노출중';
+      case 'PENDING':
+        return '심사중';
+      case 'REJECTED':
+        return '반려';
+      default:
+        return status;
     }
   };
 
@@ -65,12 +101,13 @@ const RealEstateListingsPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">매물 관리</h1>
+          <p className="text-gray-600 mt-1">승인 완료된 매물만 노출됩니다.</p>
         </div>
         <button 
           onClick={() => navigate('/business/real-estate/listings/new')}
           className="px-4 py-2 bg-dabang-primary text-white rounded-lg hover:bg-dabang-primary/90 transition-colors"
         >
-          새 매물 등록
+          매물 등록
         </button>
       </div>
 
@@ -99,7 +136,7 @@ const RealEstateListingsPage = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
             >
-              {listingStatuses.map((status) => (
+              {statusFilterOptions.map((status) => (
                 <option key={status} value={status}>{status}</option>
               ))}
             </select>
@@ -179,7 +216,7 @@ const RealEstateListingsPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(listing.status)}`}>
-                      {listing.status}
+                    {statusLabel(listing.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -187,14 +224,10 @@ const RealEstateListingsPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex space-x-2">
-                      {listing.status === '거래완료' ? (
-                        <button 
-                          onClick={() => navigate(`/business/real-estate/listings/${listing.id}`)}
-                          className="text-dabang-primary hover:text-dabang-primary/80"
-                        >
-                          상세보기
-                        </button>
-                      ) : (
+                      {['PENDING', 'REJECTED'].includes(listing.status) && (
+                        <span className="text-gray-500 text-xs">승인 대기/반려</span>
+                      )}
+                      {['노출중', 'LIVE'].includes(listing.status) && (
                         <>
                           <button 
                             onClick={() => navigate(`/business/real-estate/listings/${listing.id}/edit`)}
@@ -215,6 +248,14 @@ const RealEstateListingsPage = () => {
                             거래완료
                           </button>
                         </>
+                      )}
+                      {listing.status === '거래완료' && (
+                        <button 
+                          onClick={() => navigate(`/business/real-estate/listings/${listing.id}`)}
+                          className="text-dabang-primary hover:text-dabang-primary/80"
+                        >
+                          상세보기
+                        </button>
                       )}
                     </div>
                   </td>
