@@ -108,13 +108,6 @@ const Header = () => {
             <Link to="/community" className="text-gray-700 hover:text-dabang-primary">
               {t('nav.community')}
             </Link>
-            
-            {/* Admin Dashboard Link - shown only for admins */}
-            {isAdmin && (
-              <Link to="/admin" className="text-dabang-primary hover:text-dabang-primary/80 font-medium">
-                Admin Dashboard
-              </Link>
-            )}
           </nav>
         </div>
 
@@ -255,12 +248,6 @@ const Header = () => {
             >
               대시보드로 이동
             </button>
-          )}
-          {/* Admin Dashboard Link - shown only for admins */}
-          {isAdmin && (
-            <Link to="/admin" className="text-dabang-primary hover:text-dabang-primary/80 font-medium whitespace-nowrap">
-              Admin
-            </Link>
           )}
         </div>
       </div>
