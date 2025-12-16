@@ -1,28 +1,31 @@
 import React from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
+import { useI18n } from '../context/I18nContext';
+import DashboardTopBar from '../components/layout/DashboardTopBar';
 
 const realEstateMenu = [
-  { key: 'dashboard', label: '대시보드', path: '/business/real-estate/dashboard' },
-  { key: 'contracts', label: '계약 내역', path: '/business/real-estate/contracts' },
-  { key: 'listings', label: '매물 관리', path: '/business/real-estate/listings' },
-  { key: 'reservations', label: '예약 관리', path: '/business/real-estate/reservations' }, // Added reservation menu
-  { key: 'leads', label: '문의 / 리드 관리', path: '/business/real-estate/leads' },
-  { key: 'analytics', label: '정산 / 통계', path: '/business/real-estate/analytics' },
-  { key: 'customers', label: '고객 관리', path: '/business/real-estate/customers' },
-  { key: 'settings', label: '설정', path: '/business/real-estate/settings' }
+  { key: 'dashboard', translationKey: 'nav.dashboard', path: '/business/real-estate/dashboard' },
+  { key: 'contracts', translationKey: 'nav.contracts', path: '/business/real-estate/contracts' },
+  { key: 'listings', translationKey: 'nav.properties', path: '/business/real-estate/listings' },
+  { key: 'reservations', translationKey: 'nav.reservations', path: '/business/real-estate/reservations' },
+  { key: 'leads', translationKey: 'nav.leads', path: '/business/real-estate/leads' },
+  { key: 'analytics', translationKey: 'nav.analytics', path: '/business/real-estate/analytics' },
+  { key: 'customers', translationKey: 'nav.customers', path: '/business/real-estate/customers' },
+  { key: 'settings', translationKey: 'nav.settings', path: '/business/real-estate/settings' }
 ];
 
 const RealEstateBusinessLayout = () => {
   const { user, logout } = useUnifiedAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const getPageTitle = () => {
     const currentItem = realEstateMenu.find(
       (item) => item.path === location.pathname
     );
-    return currentItem ? currentItem.label : '비즈니스 대시보드';
+    return currentItem ? t(currentItem.translationKey) : t('nav.businessDashboard');
   };
 
   const handleLogout = () => {
@@ -55,7 +58,7 @@ const RealEstateBusinessLayout = () => {
                       }`
                     }
                   >
-                    {item.label}
+                    {t(item.translationKey)}
                   </NavLink>
                 </li>
               ))}
@@ -67,14 +70,14 @@ const RealEstateBusinessLayout = () => {
             <div className="flex items-center justify-between mb-2">
               <div>
                 <p className="text-sm font-medium text-gray-900">{user?.name || 'Business User'}</p>
-                <p className="text-xs text-gray-500">부동산 파트너</p>
+                <p className="text-xs text-gray-500">{t('nav.realEstatePartner')}</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
               className="w-full px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              로그아웃
+              {t('common.logout')}
             </button>
           </div>
         </div>
@@ -83,27 +86,19 @@ const RealEstateBusinessLayout = () => {
       {/* Main Content */}
       <div className="flex-1 ml-64">
         {/* Header */}
-        <header className="fixed top-0 right-0 left-64 h-16 bg-white border-b border-gray-200 z-10">
-          <div className="h-full flex items-center justify-between px-6">
-            <h2 className="text-xl font-semibold text-gray-900">{getPageTitle()}</h2>
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                웹사이트로 이동
-              </button>
-              {/* User Avatar */}
-              <div className="w-8 h-8 rounded-full bg-dabang-primary flex items-center justify-center text-white text-sm font-medium">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-            </div>
-          </div>
-        </header>
+        <div className="fixed top-0 right-0 left-64 z-10">
+          <DashboardTopBar 
+            title={getPageTitle()}
+            showSearch={false}
+            showViewWebsite={true}
+            showNotifications={false}
+            user={user}
+            onLogout={handleLogout}
+          />
+        </div>
 
         {/* Content Area */}
-        <main className="pt-16 p-6">
+        <main className="pt-20 p-6">
           <Outlet />
         </main>
       </div>

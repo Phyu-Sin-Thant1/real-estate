@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useListings } from '../../../context/ListingsContext';
 import { listings as mockListings, listingTypes, transactionTypes, listingStatuses, listingRegions } from '../../../mock/realEstateData';
-import { loadListings } from '../../../lib/helpers/realEstateStorage';
+import { getListingsByPartner, updateListing } from '../../../store/realEstateListingsStore';
+import { getApprovalById } from '../../../store/approvalsStore';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateListingsPage = () => {
@@ -16,17 +17,19 @@ const RealEstateListingsPage = () => {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [listingToComplete, setListingToComplete] = useState(null);
 
-  // Combine mock listings with context listings
-  // In a real app, you would use only one source of truth
+  // Load partner's listings from store
   useEffect(() => {
-    setStoredListings(loadListings());
-  }, []);
+    if (user?.email) {
+      const partnerListings = getListingsByPartner(user.email);
+      setStoredListings(partnerListings);
+    }
+  }, [user?.email]);
 
   const allListings = useMemo(() => {
-    const partnerEmail = user?.email;
-    const partnerListings = storedListings.filter((listing) => listing.partnerEmail === partnerEmail);
-    return [...partnerListings, ...contextListings, ...mockListings];
-  }, [contextListings, mockListings, storedListings, user?.email]);
+    // Use stored listings from the new store (these are the real ones)
+    // Keep mock listings for demo purposes
+    return [...storedListings, ...mockListings];
+  }, [storedListings, mockListings]);
 
   const statusFilterOptions = useMemo(
     () => [...listingStatuses, '심사중', '반려'],
@@ -76,11 +79,17 @@ const RealEstateListingsPage = () => {
 
   // Toggle listing status between 노출중 and 비노출
   const toggleListingStatus = (id, currentStatus) => {
-    // Prevent toggling if listing is already completed
+    // Only allow toggle for LIVE listings
+    if (currentStatus !== 'LIVE' && currentStatus !== '노출중') return;
     if (currentStatus === '거래완료') return;
     
-    const newStatus = currentStatus === '노출중' ? '비노출' : '노출중';
+    const newStatus = currentStatus === '노출중' || currentStatus === 'LIVE' ? 'HIDDEN' : 'LIVE';
     updateListing(id, { status: newStatus });
+    // Refresh listings
+    if (user?.email) {
+      const partnerListings = getListingsByPartner(user.email);
+      setStoredListings(partnerListings);
+    }
   };
 
   // Mark listing as completed
@@ -88,6 +97,17 @@ const RealEstateListingsPage = () => {
     updateListing(id, { status: '거래완료' });
     setShowCompleteModal(false);
     setListingToComplete(null);
+    // Refresh listings
+    if (user?.email) {
+      const partnerListings = getListingsByPartner(user.email);
+      setStoredListings(partnerListings);
+    }
+  };
+
+  // Get rejection reason from approval if listing is rejected
+  const getRejectionReason = (listingId) => {
+    const approval = getApprovalById(`approval-${listingId}`);
+    return approval?.rejectReason || null;
   };
 
   // Open confirmation modal for completing a listing
@@ -215,19 +235,39 @@ const RealEstateListingsPage = () => {
                     {listing.price}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(listing.status)}`}>
-                    {statusLabel(listing.status)}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(listing.status)}`}>
+                        {statusLabel(listing.status)}
+                      </span>
+                      {listing.status === 'REJECTED' && getRejectionReason(listing.id) && (
+                        <span className="text-xs text-red-600 mt-1" title={getRejectionReason(listing.id)}>
+                          반려 사유 있음
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {listing.createdAt}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex space-x-2">
-                      {['PENDING', 'REJECTED'].includes(listing.status) && (
-                        <span className="text-gray-500 text-xs">승인 대기/반려</span>
+                      {listing.status === 'PENDING' && (
+                        <span className="text-gray-500 text-xs">승인 대기 중</span>
                       )}
-                      {['노출중', 'LIVE'].includes(listing.status) && (
+                      {listing.status === 'REJECTED' && (
+                        <div className="flex flex-col">
+                          <span className="text-gray-500 text-xs">반려됨</span>
+                          {getRejectionReason(listing.id) && (
+                            <button
+                              onClick={() => alert(`반려 사유: ${getRejectionReason(listing.id)}`)}
+                              className="text-red-600 text-xs hover:underline mt-1"
+                            >
+                              사유 보기
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {(listing.status === 'LIVE' || listing.status === '노출중') && (
                         <>
                           <button 
                             onClick={() => navigate(`/business/real-estate/listings/${listing.id}/edit`)}
@@ -239,7 +279,7 @@ const RealEstateListingsPage = () => {
                             onClick={() => toggleListingStatus(listing.id, listing.status)}
                             className="text-dabang-primary hover:text-dabang-primary/80"
                           >
-                            {listing.status === '노출중' ? '비노출' : '노출'}
+                            {listing.status === '노출중' || listing.status === 'LIVE' ? '비노출' : '노출'}
                           </button>
                           <button 
                             onClick={() => openCompleteModal(listing.id)}

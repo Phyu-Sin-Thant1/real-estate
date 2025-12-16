@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { moderationListings } from '../../mock/adminData';
+import React, { useState, useEffect } from 'react';
+import { getListings, updateListing } from '../../store/realEstateListingsStore';
+import { getBusinessAccounts } from '../../store/businessAccountsStore';
 
 const AdminRealEstateOversightPage = () => {
+  const [listings, setListings] = useState([]);
+  const [partners, setPartners] = useState([]);
   const [selectedListings, setSelectedListings] = useState([]);
   const [dateRange, setDateRange] = useState('ALL');
   const [partnerFilter, setPartnerFilter] = useState('ALL');
@@ -9,12 +12,18 @@ const AdminRealEstateOversightPage = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState(null);
 
-  const statuses = ['ALL', 'LIVE', 'HIDDEN', 'PENDING_REVIEW'];
+  useEffect(() => {
+    setListings(getListings());
+    setPartners(getBusinessAccounts().filter(p => p.role === 'BUSINESS_REAL_ESTATE'));
+  }, []);
+
+  const statuses = ['ALL', 'LIVE', 'HIDDEN', 'PENDING', 'REJECTED'];
 
   // Filter listings based on filters
-  const filteredListings = moderationListings.filter(listing => {
+  const filteredListings = listings.filter(listing => {
     const statusMatch = statusFilter === 'ALL' || listing.status === statusFilter;
-    return statusMatch;
+    const partnerMatch = partnerFilter === 'ALL' || listing.partnerEmail === partnerFilter || listing.partnerId === partnerFilter;
+    return statusMatch && partnerMatch;
   });
 
   const handleSelectListing = (listingId) => {
@@ -39,9 +48,15 @@ const AdminRealEstateOversightPage = () => {
   };
 
   const handleToggleVisibility = (listingId) => {
-    // In a real implementation, this would update the listing status
-    // For now, we'll just show an alert since this is UI-only
-    alert('In a real implementation, this would toggle the listing visibility status');
+    const listing = listings.find(l => l.id === listingId || String(l.id) === String(listingId));
+    if (!listing) return;
+
+    const newStatus = listing.status === 'HIDDEN' ? 'LIVE' : 'HIDDEN';
+    updateListing(listingId, { status: newStatus });
+    setListings(getListings());
+    if (selectedListing && (selectedListing.id === listingId || String(selectedListing.id) === String(listingId))) {
+      setSelectedListing({ ...selectedListing, status: newStatus });
+    }
   };
 
   const getStatusClass = (status) => {
@@ -63,9 +78,9 @@ const AdminRealEstateOversightPage = () => {
   };
 
   // Calculate summary stats
-  const totalListings = moderationListings.length;
-  const reportedListings = moderationListings.filter(l => l.reportedCount > 0).length;
-  const hiddenListings = moderationListings.filter(l => l.status === 'HIDDEN').length;
+  const totalListings = listings.length;
+  const pendingListings = listings.filter(l => l.status === 'PENDING').length;
+  const hiddenListings = listings.filter(l => l.status === 'HIDDEN').length;
 
   return (
     <div className="space-y-6">
@@ -99,8 +114,8 @@ const AdminRealEstateOversightPage = () => {
               </svg>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Reported Listings</h3>
-              <p className="text-2xl font-semibold text-gray-900">{reportedListings}</p>
+              <h3 className="text-sm font-medium text-gray-500">Pending Review</h3>
+              <p className="text-2xl font-semibold text-gray-900">{pendingListings}</p>
             </div>
           </div>
         </div>
@@ -144,8 +159,11 @@ const AdminRealEstateOversightPage = () => {
               className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
             >
               <option value="ALL">All Partners</option>
-              <option value="PARTNER_A">Partner A</option>
-              <option value="PARTNER_B">Partner B</option>
+              {partners.map(partner => (
+                <option key={partner.email} value={partner.email}>
+                  {partner.companyName || partner.email}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -204,7 +222,7 @@ const AdminRealEstateOversightPage = () => {
                   Status
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Reports
+                  Partner
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -212,24 +230,32 @@ const AdminRealEstateOversightPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredListings.map((listing) => (
-                <tr key={listing.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedListings.includes(listing.id)}
-                      onChange={() => handleSelectListing(listing.id)}
-                      className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
-                    />
+              {filteredListings.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    No listings found
                   </td>
+                </tr>
+              ) : (
+                filteredListings.map((listing) => (
+                  <tr key={listing.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleViewDetails(listing)}>
+                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedListings.includes(listing.id)}
+                        onChange={() => handleSelectListing(listing.id)}
+                        className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
+                      />
+                    </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{listing.title}</div>
+                    <div className="text-sm font-medium text-gray-900">{listing.title || 'N/A'}</div>
+                    <div className="text-xs text-gray-500">{listing.partnerName || listing.partnerEmail || 'Unknown Partner'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {listing.location}
+                    {listing.address || listing.city || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {listing.price}
+                    {listing.price ? `${listing.price}원` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(listing.status)}`}>
@@ -237,7 +263,7 @@ const AdminRealEstateOversightPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {listing.reportedCount}
+                    {listing.partnerName || listing.partnerEmail || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
@@ -256,13 +282,7 @@ const AdminRealEstateOversightPage = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
-              {filteredListings.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No listings found matching the current filters
-                  </td>
-                </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -298,15 +318,15 @@ const AdminRealEstateOversightPage = () => {
                       <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
                         <div className="sm:col-span-2">
                           <dt className="text-sm font-medium text-gray-500">Title</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.title}</dd>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.title || 'N/A'}</dd>
                         </div>
                         <div className="sm:col-span-1">
                           <dt className="text-sm font-medium text-gray-500">Location</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.location}</dd>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.address || selectedListing.city || 'N/A'}</dd>
                         </div>
                         <div className="sm:col-span-1">
                           <dt className="text-sm font-medium text-gray-500">Price</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.price}</dd>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.price ? `${selectedListing.price}원` : 'N/A'}</dd>
                         </div>
                         <div className="sm:col-span-1">
                           <dt className="text-sm font-medium text-gray-500">Status</dt>
@@ -317,8 +337,12 @@ const AdminRealEstateOversightPage = () => {
                           </dd>
                         </div>
                         <div className="sm:col-span-1">
-                          <dt className="text-sm font-medium text-gray-500">Report Count</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.reportedCount}</dd>
+                          <dt className="text-sm font-medium text-gray-500">Partner</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.partnerName || selectedListing.partnerEmail || 'N/A'}</dd>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <dt className="text-sm font-medium text-gray-500">Description</dt>
+                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.description || 'N/A'}</dd>
                         </div>
                       </dl>
                     </div>
@@ -331,16 +355,18 @@ const AdminRealEstateOversightPage = () => {
                     >
                       Close
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleToggleVisibility(selectedListing.id);
-                        setIsDrawerOpen(false);
-                      }}
-                      className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700"
-                    >
-                      {selectedListing.status === 'HIDDEN' ? 'Unhide Listing' : 'Hide Listing'}
-                    </button>
+                    {(selectedListing.status === 'LIVE' || selectedListing.status === 'HIDDEN') && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleVisibility(selectedListing.id);
+                        }}
+                        className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700"
+                      >
+                        {selectedListing.status === 'HIDDEN' ? 'Unhide Listing' : 'Hide Listing'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

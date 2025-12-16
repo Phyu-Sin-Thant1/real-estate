@@ -52,6 +52,7 @@ import ReservationDetailPage from '../pages/business/real-estate/ReservationDeta
 import LoginPage from '../pages/LoginPage'
 import SignUpPage from '../pages/SignUpPage'
 import AgentSignUpPage from '../pages/AgentSignUpPage'
+import ChangePasswordPage from '../pages/auth/ChangePasswordPage'
 
 // Property pages
 import PropertyDetailPage from '../pages/PropertyDetailPage'
@@ -125,6 +126,14 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/agent-signup" element={<AgentSignUpPage />} />
+        <Route
+          path="/auth/change-password"
+          element={
+            <UserProtectedRoute allowedRoles={["BUSINESS_REAL_ESTATE", "BUSINESS_DELIVERY"]}>
+              <ChangePasswordPage />
+            </UserProtectedRoute>
+          }
+        />
         
         {/* User protected routes */}
         <Route

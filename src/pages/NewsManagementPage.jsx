@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import { getDraft, saveDraft, clearDraft, addArticle, getArticles } from '../store/newsArticlesStore'
 
 const STATUS_VARIANTS = {
   Draft: 'bg-slate-100 text-slate-600',
@@ -170,20 +171,24 @@ const Modal = ({ open, onClose, children }) => {
 
 const Tabs = ({ tabs, active, onChange }) => (
   <div className="flex items-center gap-2 rounded-full bg-admin-accent/60 p-1 text-sm">
-    {tabs.map((tab) => (
-      <button
-        key={tab}
-        onClick={() => onChange(tab)}
-        className={classNames(
-          'rounded-full px-4 py-1.5 font-semibold transition',
-          active === tab
-            ? 'bg-white text-admin-primary shadow'
-            : 'text-admin-muted hover:bg-white/60'
-        )}
-      >
-        {tab}
-      </button>
-    ))}
+    {tabs.map((tab) => {
+      const cleanTab = tab.replace(' ✓', '')
+      const isActive = active === cleanTab || active === tab
+      return (
+        <button
+          key={tab}
+          onClick={() => onChange(tab)}
+          className={classNames(
+            'rounded-full px-4 py-1.5 font-semibold transition',
+            isActive
+              ? 'bg-white text-admin-primary shadow'
+              : 'text-admin-muted hover:bg-white/60'
+          )}
+        >
+          {tab}
+        </button>
+      )
+    })}
   </div>
 )
 
@@ -198,8 +203,80 @@ const CreateArticleModal = ({
   activeTab,
   error,
 }) => {
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  const [previewMode, setPreviewMode] = useState(false)
+  const debounceTimerRef = useRef(null)
+
+  // Load draft on mount
+  useEffect(() => {
+    if (open) {
+      const savedDraft = getDraft()
+      if (savedDraft) {
+        setFormData(savedDraft)
+      }
+    }
+  }, [open, setFormData])
+
+  // Debounced draft save
+  const handleChange = useCallback((field, value) => {
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value }
+      
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      
+      // Save draft after 400ms delay
+      debounceTimerRef.current = setTimeout(() => {
+        saveDraft(updated)
+      }, 400)
+      
+      return updated
+    })
+  }, [setFormData])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Word count helper
+  const getWordCount = (text) => {
+    if (!text) return 0
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length
+  }
+
+  // Simple markdown preview (basic rendering)
+  const renderPreview = (content) => {
+    if (!content) return <p className="text-gray-400 italic">No content yet...</p>
+    
+    // Basic markdown-like rendering
+    return (
+      <div className="prose prose-sm max-w-none">
+        {content.split('\n').map((line, idx) => {
+          if (line.trim().startsWith('# ')) {
+            return <h1 key={idx} className="text-2xl font-bold mt-4 mb-2">{line.replace('# ', '')}</h1>
+          }
+          if (line.trim().startsWith('## ')) {
+            return <h2 key={idx} className="text-xl font-bold mt-3 mb-2">{line.replace('## ', '')}</h2>
+          }
+          if (line.trim().startsWith('### ')) {
+            return <h3 key={idx} className="text-lg font-bold mt-2 mb-1">{line.replace('### ', '')}</h3>
+          }
+          if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+            return <li key={idx} className="ml-4">{line.replace(/^[-*] /, '')}</li>
+          }
+          if (line.trim() === '') {
+            return <br key={idx} />
+          }
+          return <p key={idx} className="mb-2">{line}</p>
+        })}
+      </div>
+    )
   }
 
   return (
@@ -217,9 +294,18 @@ const CreateArticleModal = ({
               </p>
             </div>
             <Tabs
-              tabs={['Info', 'Content', 'SEO', 'Publish']}
+              tabs={[
+                formData.title && formData.category ? 'Info ✓' : 'Info',
+                formData.content?.trim() ? 'Content ✓' : 'Content',
+                'SEO',
+                'Publish'
+              ]}
               active={activeTab}
-              onChange={setActiveTab}
+              onChange={(tab) => {
+                // Remove checkmark for tab switching
+                const cleanTab = tab.replace(' ✓', '')
+                setActiveTab(cleanTab)
+              }}
             />
           </div>
         </header>
@@ -334,17 +420,83 @@ const CreateArticleModal = ({
 
           <section className={classNames(activeTab !== 'Content' && 'hidden')}>
             <div className="space-y-5">
+              {/* Short Summary */}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-admin-muted">
-                  Body content
+                  Short Summary
+                  <span className="ml-2 text-xs font-normal normal-case text-admin-muted">
+                    (200-300 chars recommended)
+                  </span>
                 </label>
                 <textarea
-                  className="mt-2 h-56 w-full rounded-xl border border-admin-border bg-white px-4 py-3 text-base leading-relaxed focus:border-admin-primary focus:outline-none focus:ring-4 focus:ring-admin-primary/10"
-                  placeholder="Write the article..."
-                  value={formData.content}
-                  onChange={(event) => handleChange('content', event.target.value)}
+                  className="mt-2 h-24 w-full rounded-xl border border-admin-border bg-white px-4 py-3 text-base leading-relaxed focus:border-admin-primary focus:outline-none focus:ring-4 focus:ring-admin-primary/10"
+                  placeholder="Brief summary of the article..."
+                  value={formData.summary || ''}
+                  onChange={(event) => handleChange('summary', event.target.value)}
+                  maxLength={500}
                 />
+                <p className="mt-1 text-xs text-admin-muted">
+                  {formData.summary?.length || 0} / 500 characters
+                </p>
               </div>
+
+              {/* Body Content Editor */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold uppercase tracking-wide text-admin-muted">
+                    Body Content
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-admin-muted">
+                      {getWordCount(formData.content || '')} words
+                    </span>
+                    <div className="flex items-center gap-2 rounded-lg border border-admin-border bg-white p-1">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode(false)}
+                        className={classNames(
+                          'rounded-md px-3 py-1 text-xs font-semibold transition',
+                          !previewMode
+                            ? 'bg-admin-primary text-white'
+                            : 'text-admin-muted hover:bg-admin-accent'
+                        )}
+                      >
+                        Write
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode(true)}
+                        className={classNames(
+                          'rounded-md px-3 py-1 text-xs font-semibold transition',
+                          previewMode
+                            ? 'bg-admin-primary text-white'
+                            : 'text-admin-muted hover:bg-admin-accent'
+                        )}
+                      >
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                {previewMode ? (
+                  <div className="mt-2 min-h-[400px] w-full rounded-xl border border-admin-border bg-white px-4 py-3 text-base leading-relaxed">
+                    {renderPreview(formData.content || '')}
+                  </div>
+                ) : (
+                  <textarea
+                    className="mt-2 min-h-[400px] w-full rounded-xl border border-admin-border bg-white px-4 py-3 text-base leading-relaxed focus:border-admin-primary focus:outline-none focus:ring-4 focus:ring-admin-primary/10 font-mono"
+                    placeholder="Write the article... Supports Markdown"
+                    value={formData.content || ''}
+                    onChange={(event) => handleChange('content', event.target.value)}
+                  />
+                )}
+                <p className="mt-2 text-xs text-admin-muted">
+                  Supports Markdown formatting (headers, lists, etc.)
+                </p>
+              </div>
+
+              {/* Tags */}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-admin-muted">
                   Tags
@@ -352,7 +504,7 @@ const CreateArticleModal = ({
                 <input
                   className="mt-2 w-full rounded-xl border border-admin-border bg-white px-4 py-3 text-base focus:border-admin-primary focus:outline-none focus:ring-4 focus:ring-admin-primary/10"
                   placeholder="market, trends, real estate"
-                  value={formData.tags}
+                  value={formData.tags || ''}
                   onChange={(event) => handleChange('tags', event.target.value)}
                 />
                 <p className="mt-2 text-xs text-admin-muted">
@@ -467,8 +619,14 @@ const CreateArticleModal = ({
               Save Draft
             </button>
             <button
-              className="rounded-full bg-admin-primary px-5 py-2 text-sm font-semibold text-white hover:bg-admin-primary-hover"
+              className={classNames(
+                'rounded-full px-5 py-2 text-sm font-semibold text-white transition',
+                formData.title && formData.category && formData.author && formData.content?.trim()
+                  ? 'bg-admin-primary hover:bg-admin-primary-hover'
+                  : 'bg-gray-400 cursor-not-allowed'
+              )}
               onClick={onPublish}
+              disabled={!formData.title || !formData.category || !formData.author || !formData.content?.trim()}
             >
               Publish
             </button>
@@ -509,7 +667,11 @@ const ConfirmDeleteModal = ({ open, onClose, onConfirm, title }) => (
 )
 
 const NewsManagementPage = () => {
-  const [newsItems, setNewsItems] = useState(INITIAL_NEWS)
+  // Load articles from localStorage on mount
+  const [newsItems, setNewsItems] = useState(() => {
+    const storedArticles = getArticles()
+    return storedArticles.length > 0 ? storedArticles : INITIAL_NEWS
+  })
   const [selected, setSelected] = useState([])
   const [categoryFilter, setCategoryFilter] = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
@@ -522,6 +684,7 @@ const NewsManagementPage = () => {
     author: 'Yavan Kim',
     thumbnail: '',
     featured: false,
+    summary: '',
     content: '',
     tags: '',
     metaTitle: '',
@@ -555,6 +718,7 @@ const NewsManagementPage = () => {
       author: 'Yavan Kim',
       thumbnail: '',
       featured: false,
+      summary: '',
       content: '',
       tags: '',
       metaTitle: '',
@@ -565,6 +729,7 @@ const NewsManagementPage = () => {
     })
     setActiveTab('Info')
     setError('')
+    clearDraft()
   }
 
   const handleOpenCreate = () => {
@@ -587,12 +752,37 @@ const NewsManagementPage = () => {
       setActiveTab('Info')
       return false
     }
+    if (!formData.author.trim()) {
+      setError('Author is required to create a news article.')
+      setActiveTab('Info')
+      return false
+    }
+    if (!formData.content || !formData.content.trim()) {
+      setError('Content is required to publish an article.')
+      setActiveTab('Content')
+      return false
+    }
     setError('')
     return true
   }
 
   const upsertArticle = (statusOverride) => {
-    if (!validateForm()) return
+    // For drafts, skip content validation
+    if (statusOverride !== 'Draft' && !validateForm()) return
+    // For drafts, still validate title and category
+    if (statusOverride === 'Draft') {
+      if (!formData.title.trim()) {
+        setError('Title is required to save a draft.')
+        setActiveTab('Info')
+        return
+      }
+      if (!formData.category) {
+        setError('Please choose a category before saving.')
+        setActiveTab('Info')
+        return
+      }
+      setError('')
+    }
 
     const status = statusOverride || formData.status || 'Draft'
     const now = new Date()
@@ -608,16 +798,33 @@ const NewsManagementPage = () => {
       title: formData.title,
       category: formData.category,
       author: formData.author || 'TOFU Admin',
+      summary: formData.summary || '',
+      content: formData.content || '',
+      tags: formData.tags || '',
       date: formData.scheduleAt || now.toISOString(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
       status,
       featured: formData.featured,
       thumbnail:
         formData.thumbnail ||
         'https://images.unsplash.com/photo-1529429617124-aee0a9d2a0aa?auto=format&fit=crop&w=320&q=80',
       slug,
+      seoTitle: formData.metaTitle || '',
+      seoDescription: formData.metaDescription || '',
     }
 
+    // Save to localStorage store
+    addArticle(newArticle)
+    
+    // Update local state
     setNewsItems((prev) => [newArticle, ...prev])
+    
+    // Clear draft on publish
+    if (status === 'Published') {
+      clearDraft()
+    }
+    
     setCreateOpen(false)
     setToast({
       tone: status === 'Published' ? 'success' : 'info',

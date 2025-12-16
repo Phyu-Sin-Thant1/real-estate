@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StatusBadge from '../../../components/delivery/StatusBadge';
 import Table from '../../../components/delivery/Table';
 import Modal from '../../../components/delivery/Modal';
-import { deliveryOrders } from '../../../mock/deliveryData';
+import { getOrdersByPartner, updateOrder } from '../../../store/deliveryOrdersStore';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const BusinessDeliveryOrdersPage = () => {
-  const [orders, setOrders] = useState(deliveryOrders);
+  const { user } = useUnifiedAuth();
+  const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('전체');
   const [internalMemo, setInternalMemo] = useState('');
   const [assignedDriver, setAssignedDriver] = useState('');
   const [assignedVehicle, setAssignedVehicle] = useState('');
+
+  // Load orders for this partner
+  useEffect(() => {
+    if (user?.email) {
+      const partnerOrders = getOrdersByPartner(user.email);
+      setOrders(partnerOrders);
+    }
+  }, [user?.email]);
 
   const tabs = [
     { key: '전체', label: '전체' },
@@ -60,9 +70,21 @@ const BusinessDeliveryOrdersPage = () => {
     { id: 6, name: '모터 1호' }
   ];
 
+  // Map store statuses to UI statuses for filtering
+  const statusMap = {
+    'NEW': '신규',
+    'IN_PROGRESS': '배차 대기',
+    'COMPLETED': '배송 완료',
+    'FAILED': '실패',
+    'CANCELLED': '취소',
+  };
+
   const filteredOrders = activeTab === '전체' 
     ? orders 
-    : orders.filter(order => order.orderStatus === activeTab);
+    : orders.filter(order => {
+      const uiStatus = statusMap[order.status] || order.status;
+      return uiStatus === activeTab || order.status === activeTab;
+    });
 
   const handleRowClick = (order) => {
     setSelectedOrder(order);
@@ -80,13 +102,52 @@ const BusinessDeliveryOrdersPage = () => {
         return;
       }
 
-      const updatedOrders = orders.map(order => 
-        order.id === selectedOrder.id 
-          ? { ...order, orderStatus: newStatus, internalMemo } 
-          : order
-      );
-      setOrders(updatedOrders);
+      // Update order in store
+      updateOrder(selectedOrder.id, { 
+        status: newStatus === '신규' ? 'NEW' : 
+                newStatus === '배차 대기' ? 'IN_PROGRESS' :
+                newStatus === '배송 완료' ? 'COMPLETED' :
+                newStatus === '취소' ? 'CANCELLED' : 'IN_PROGRESS',
+        internalMemo 
+      });
+
+      // Refresh orders
+      if (user?.email) {
+        const partnerOrders = getOrdersByPartner(user.email);
+        setOrders(partnerOrders);
+      }
+      
       setSelectedOrder({ ...selectedOrder, orderStatus: newStatus, internalMemo });
+    }
+  };
+
+  const handleMarkFailed = (orderId) => {
+    if (window.confirm('이 주문을 실패로 표시하시겠습니까? 관리자에게 알림이 전송됩니다.')) {
+      updateOrder(orderId, { 
+        status: 'FAILED',
+        flagged: true 
+      });
+      
+      // Refresh orders
+      if (user?.email) {
+        const partnerOrders = getOrdersByPartner(user.email);
+        setOrders(partnerOrders);
+      }
+    }
+  };
+
+  const handleOpenDispute = (orderId) => {
+    if (window.confirm('이 주문에 대해 분쟁을 열겠습니까? 관리자에게 알림이 전송됩니다.')) {
+      updateOrder(orderId, { 
+        disputeStatus: 'OPEN',
+        flagged: true 
+      });
+      
+      // Refresh orders
+      if (user?.email) {
+        const partnerOrders = getOrdersByPartner(user.email);
+        setOrders(partnerOrders);
+      }
     }
   };
 
@@ -123,21 +184,47 @@ const BusinessDeliveryOrdersPage = () => {
       case 'customer':
         return (
           <div>
-            <div className="font-medium">{row.customer.name}</div>
-            <div className="text-gray-500 text-sm">{row.customer.phone}</div>
+            <div className="font-medium">{row.customerName || 'N/A'}</div>
+            <div className="text-gray-500 text-sm">{row.customerPhone || 'N/A'}</div>
           </div>
         );
       case 'actions':
         return (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRowClick(row);
-            }}
-            className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
-          >
-            상세
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRowClick(row);
+              }}
+              className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
+            >
+              상세
+            </button>
+            {(row.status === 'IN_PROGRESS' || row.status === 'COMPLETED') && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMarkFailed(row.id);
+                  }}
+                  className="text-red-600 hover:text-red-800 text-xs"
+                  title="실패로 표시"
+                >
+                  실패
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenDispute(row.id);
+                  }}
+                  className="text-orange-600 hover:text-orange-800 text-xs"
+                  title="분쟁 열기"
+                >
+                  분쟁
+                </button>
+              </>
+            )}
+          </div>
         );
       default:
         return row[columnKey];
@@ -229,11 +316,13 @@ const BusinessDeliveryOrdersPage = () => {
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm text-gray-500">주문번호</p>
-                    <p className="font-medium">{selectedOrder.id}</p>
+                    <p className="font-medium">{selectedOrder.orderNo || selectedOrder.id}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">접수일시</p>
-                    <p className="font-medium">{selectedOrder.createdAt}</p>
+                    <p className="font-medium">
+                      {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleString() : 'N/A'}
+                    </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">픽업주소</p>
@@ -245,15 +334,15 @@ const BusinessDeliveryOrdersPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">고객명</p>
-                    <p className="font-medium">{selectedOrder.customer.name}</p>
+                    <p className="font-medium">{selectedOrder.customerName || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">연락처</p>
-                    <p className="font-medium">{selectedOrder.customer.phone}</p>
+                    <p className="font-medium">{selectedOrder.customerPhone || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">상품</p>
-                    <p className="font-medium">{selectedOrder.product}</p>
+                    <p className="font-medium">{selectedOrder.product || 'N/A'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">결제상태</p>
@@ -275,7 +364,7 @@ const BusinessDeliveryOrdersPage = () => {
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-500 mb-2">고객 요청사항</p>
-                    <p className="bg-gray-50 p-3 rounded-lg">{selectedOrder.notes}</p>
+                    <p className="bg-gray-50 p-3 rounded-lg">{selectedOrder.notes || '없음'}</p>
                   </div>
                   
                   <div>

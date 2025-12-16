@@ -1,5 +1,5 @@
-import { loadBusinessAccounts } from '../lib/helpers/realEstateStorage';
 import React, { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { getBusinessAccounts, findBusinessAccountByEmail } from '../store/businessAccountsStore'
 
 const STORAGE_KEY = 'tofu-auth-session'
 
@@ -72,7 +72,35 @@ export const UnifiedAuthProvider = ({ children }) => {
 
     const normalizedEmail = email.trim().toLowerCase()
 
-    // Check for business accounts
+    // Check stored business accounts from localStorage first
+    const storedAccount = findBusinessAccountByEmail(normalizedEmail)
+    if (storedAccount) {
+      if (password !== storedAccount.password) {
+        return { success: false, error: '잘못된 계정 정보입니다.' }
+      }
+
+      const session = {
+        email: storedAccount.email,
+        name: storedAccount.companyName || storedAccount.email.split('@')[0],
+        role: storedAccount.role,
+        loginAt: new Date().toISOString(),
+      }
+
+      setUser(session)
+      
+      // Check if temp password needs to be changed
+      if (storedAccount.isTempPassword === true) {
+        return { 
+          success: true, 
+          user: session, 
+          requiresPasswordChange: true 
+        }
+      }
+
+      return { success: true, user: session }
+    }
+
+    // Check for hardcoded business accounts (backward compatibility)
     if (BUSINESS_ACCOUNTS[normalizedEmail]) {
       const businessAccount = BUSINESS_ACCOUNTS[normalizedEmail]
       if (password !== businessAccount.password) {
@@ -116,26 +144,6 @@ export const UnifiedAuthProvider = ({ children }) => {
       };
       setUser(session);
       return { success: true, user: session };
-    }
-
-    // Check stored business accounts
-    const storedAccounts = loadBusinessAccounts();
-    const matchedAccount = storedAccounts.find(
-      (acct) => acct.email.trim().toLowerCase() === normalizedEmail
-    );
-    if (matchedAccount) {
-      const expectedPwd = matchedAccount.tempPassword || matchedAccount.password;
-      if (password === expectedPwd) {
-        const session = {
-          email: matchedAccount.email,
-          name: matchedAccount.companyName || matchedAccount.email.split('@')[0],
-          role: matchedAccount.role,
-          loginAt: new Date().toISOString(),
-        };
-        setUser(session);
-        return { success: true, user: session };
-      }
-      return { success: false, error: '잘못된 계정 정보입니다.' };
     }
 
     // Regular user login (for now, accept any non-empty credentials)

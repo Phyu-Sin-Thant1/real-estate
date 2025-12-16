@@ -1,34 +1,81 @@
-import React from 'react';
-import { adminKpis, partners, users, deliveryOrders } from '../../mock/adminData';
+import React, { useMemo } from 'react';
+import { getApprovals } from '../../store/approvalsStore';
+import { getListings } from '../../store/realEstateListingsStore';
+import { getFlaggedOrders } from '../../store/deliveryOrdersStore';
+import { getBusinessAccounts } from '../../store/businessAccountsStore';
+import { getAllTickets } from '../../store/supportTicketsStore';
 
 const AdminDashboardHomePage = () => {
-  // Combine recent activities from partners, users, and orders
-  const recentActivities = [
-    ...partners.slice(0, 2).map(partner => ({
-      id: partner.id,
-      type: 'Partner',
-      action: 'Registered',
-      name: partner.companyName,
-      time: partner.createdAt,
-      status: partner.status
-    })),
-    ...users.slice(0, 2).map(user => ({
-      id: user.id,
-      type: 'User',
-      action: 'Signed Up',
-      name: user.name,
-      time: user.lastLoginAt,
-      status: user.status
-    })),
-    ...deliveryOrders.slice(0, 1).map(order => ({
-      id: order.id,
-      type: 'Order',
-      action: 'Created',
-      name: order.orderNo,
-      time: order.createdAt,
-      status: order.status
-    }))
-  ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5);
+  // Get data from stores
+  const approvals = getApprovals();
+  const listings = getListings();
+  const flaggedOrders = getFlaggedOrders();
+  const businessAccounts = getBusinessAccounts();
+  const tickets = getAllTickets();
+
+  // Calculate KPIs from stores
+  const kpis = useMemo(() => {
+    const activeListings = listings.filter(l => l.status === 'LIVE').length;
+    const today = new Date().toISOString().split('T')[0];
+    const todayOrders = flaggedOrders.filter(o => 
+      o.createdAt && o.createdAt.startsWith(today)
+    ).length;
+
+    return {
+      totalUsers: 150, // Mock - would come from user store
+      totalPartners: businessAccounts.length,
+      activeListings,
+      todayOrders,
+    };
+  }, [listings, flaggedOrders, businessAccounts]);
+
+  // Build recent activities from stores
+  const recentActivities = useMemo(() => {
+    const activities = [];
+
+    // Partner applications submitted
+    const recentApprovals = approvals
+      .filter(a => a.status === 'PENDING')
+      .slice(0, 3)
+      .map(approval => ({
+        id: approval.id,
+        type: approval.type === 'PARTNER_APPLICATION' ? 'Partner Application' : 'Listing Submission',
+        action: 'Submitted',
+        name: approval.meta?.partnerName || approval.submittedBy,
+        time: approval.submittedAt,
+        status: approval.status,
+      }));
+
+    // Disputes created
+    const recentDisputes = flaggedOrders
+      .filter(o => o.disputeStatus === 'OPEN')
+      .slice(0, 2)
+      .map(order => ({
+        id: order.id,
+        type: 'Dispute',
+        action: 'Created',
+        name: order.orderNo,
+        time: order.createdAt,
+        status: order.disputeStatus,
+      }));
+
+    // Tickets submitted
+    const recentTickets = tickets
+      .filter(t => t.status === 'OPEN')
+      .slice(0, 2)
+      .map(ticket => ({
+        id: ticket.id,
+        type: 'Ticket',
+        action: 'Submitted',
+        name: ticket.subject || `Ticket #${ticket.id.slice(-6)}`,
+        time: ticket.createdAt,
+        status: ticket.status,
+      }));
+
+    return [...recentApprovals, ...recentDisputes, ...recentTickets]
+      .sort((a, b) => new Date(b.time) - new Date(a.time))
+      .slice(0, 5);
+  }, [approvals, flaggedOrders, tickets]);
 
   // KPI Cards
   const KpiCard = ({ title, value, icon, subtitle }) => (
@@ -102,10 +149,10 @@ const AdminDashboardHomePage = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard title="Total Users" value={adminKpis.totalUsers} icon="👥" />
-        <KpiCard title="Total Partners" value={adminKpis.totalPartners} icon="🏢" />
-        <KpiCard title="Active Listings" value={adminKpis.activeListings} icon="🏠" subtitle="Real-Estate" />
-        <KpiCard title="Today's Orders" value={adminKpis.todayOrders} icon="🚚" subtitle="Delivery" />
+        <KpiCard title="Total Users" value={kpis.totalUsers} icon="👥" />
+        <KpiCard title="Total Partners" value={kpis.totalPartners} icon="🏢" />
+        <KpiCard title="Active Listings" value={kpis.activeListings} icon="🏠" subtitle="Real-Estate" />
+        <KpiCard title="Today's Orders" value={kpis.todayOrders} icon="🚚" subtitle="Delivery" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -113,11 +160,17 @@ const AdminDashboardHomePage = () => {
         <div className="lg:col-span-1 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h2>
           <div className="flow-root">
-            <ul className="divide-y divide-gray-200">
-              {recentActivities.map((activity) => (
-                <ActivityItem key={activity.id} activity={activity} />
-              ))}
-            </ul>
+            {recentActivities.length > 0 ? (
+              <ul className="divide-y divide-gray-200">
+                {recentActivities.map((activity) => (
+                  <ActivityItem key={activity.id} activity={activity} />
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>No recent activity</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -21,14 +21,33 @@ export const translations = {
       auditLogs: '감사 로그',
       systemStatus: '시스템 상태',
       newsContent: '뉴스 / 콘텐츠',
-      settings: '설정'
+      settings: '설정',
+      // Business menu
+      contracts: '계약 내역',
+      properties: '매물 관리',
+      reservations: '예약 관리',
+      leads: '문의 / 리드 관리',
+      inquiries: '문의 / 리드 관리',
+      analytics: '정산 / 통계',
+      customers: '고객 관리',
+      ads: '광고 / 프로모션',
+      movingRequests: '이사 / 견적 요청',
+      deliveryOrders: '배달 주문 관리',
+      schedule: '스케줄 / 차량 관리',
+      businessDashboard: '비즈니스 대시보드',
+      adminDashboard: '관리자 대시보드',
+      adminPanel: '관리자 패널',
+      realEstatePartner: '부동산 파트너',
+      deliveryPartner: '배송 파트너',
+      businessUser: '비즈니스 사용자'
     },
     common: {
       search: '검색',
       viewWebsite: '웹사이트로 이동',
       submit: '제출',
       cancel: '취소',
-      saveChanges: '변경사항 저장'
+      saveChanges: '변경사항 저장',
+      logout: '로그아웃'
     },
     dashboard: {
       overview: '대시보드',
@@ -66,14 +85,33 @@ export const translations = {
       auditLogs: 'Audit Logs',
       systemStatus: 'System Status',
       newsContent: 'News / Content',
-      settings: 'Settings'
+      settings: 'Settings',
+      // Business menu
+      contracts: 'Contracts',
+      properties: 'Properties',
+      reservations: 'Reservations',
+      leads: 'Leads / Inquiries',
+      inquiries: 'Leads / Inquiries',
+      analytics: 'Settlement / Statistics',
+      customers: 'Customers',
+      ads: 'Ads / Promotions',
+      movingRequests: 'Moving / Quote Requests',
+      deliveryOrders: 'Delivery Orders',
+      schedule: 'Schedule / Vehicle Management',
+      businessDashboard: 'Business Dashboard',
+      adminDashboard: 'Admin Dashboard',
+      adminPanel: 'Admin Panel',
+      realEstatePartner: 'Real-Estate Partner',
+      deliveryPartner: 'Delivery Partner',
+      businessUser: 'Business User'
     },
     common: {
       search: 'Search...',
       viewWebsite: 'View Website',
       submit: 'Submit',
       cancel: 'Cancel',
-      saveChanges: 'Save Changes'
+      saveChanges: 'Save Changes',
+      logout: 'Logout'
     },
     dashboard: {
       overview: 'Dashboard Overview',

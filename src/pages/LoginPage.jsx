@@ -30,6 +30,12 @@ const LoginPage = () => {
         } else {
           navigate(fromPath, { replace: true });
         }
+      } else if (isBusinessRealEstate) {
+        // Real estate partners go to their dashboard
+        navigate('/business/real-estate/dashboard', { replace: true })
+      } else if (isBusinessDelivery) {
+        // Delivery partners go to their dashboard
+        navigate('/business/dashboard', { replace: true })
       } else {
         // Everyone else goes to home page after login
         const redirectTarget = location.state?.from || '/'
@@ -79,6 +85,12 @@ const LoginPage = () => {
 
     if (!result.success) {
       setError(result.error || '로그인에 실패했습니다.')
+      return
+    }
+
+    // Check if password change is required
+    if (result.requiresPasswordChange) {
+      navigate('/auth/change-password', { replace: true })
       return
     }
 

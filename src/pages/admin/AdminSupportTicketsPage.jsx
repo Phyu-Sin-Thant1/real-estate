@@ -98,53 +98,8 @@ const AdminSupportTicketsPage = () => {
         <p className="text-gray-600 mt-1">Manage customer support tickets</p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              {statuses.map(status => (
-                <option key={status} value={status}>
-                  {status === 'ALL' ? 'All Statuses' : status.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Issue Type</label>
-            <select
-              value={issueFilter}
-              onChange={(e) => setIssueFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              {['ALL', 'DELIVERY', 'REAL_ESTATE', 'ACCOUNT', 'OTHER'].map((iss) => (
-                <option key={iss} value={iss}>
-                  {iss === 'ALL' ? 'All Issue Types' : iss.replace('_', ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setStatusFilter('ALL');
-                setIssueFilter('ALL');
-              }}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Reset Filters
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0 p-3 rounded-lg bg-red-100 text-red-800">
@@ -210,6 +165,53 @@ const AdminSupportTicketsPage = () => {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
+            >
+              {statuses.map(status => (
+                <option key={status} value={status}>
+                  {status === 'ALL' ? 'All Statuses' : status.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Issue Type</label>
+            <select
+              value={issueFilter}
+              onChange={(e) => setIssueFilter(e.target.value)}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
+            >
+              {['ALL', 'DELIVERY', 'REAL_ESTATE', 'ACCOUNT', 'OTHER'].map((iss) => (
+                <option key={iss} value={iss}>
+                  {iss === 'ALL' ? 'All Issue Types' : iss.replace('_', ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Reset Filters Button - Secondary Action */}
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              setStatusFilter('ALL');
+              setIssueFilter('ALL');
+            }}
+            className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors"
+          >
+            Clear filters
+          </button>
+        </div>
+      </div>
+
       {/* Tickets Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
@@ -251,7 +253,14 @@ const AdminSupportTicketsPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredTickets.map((ticket) => (
+              {filteredTickets.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
+                    No tickets found
+                  </td>
+                </tr>
+              ) : (
+                filteredTickets.map((ticket) => (
                 <tr key={ticket.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
@@ -332,7 +341,8 @@ const AdminSupportTicketsPage = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>

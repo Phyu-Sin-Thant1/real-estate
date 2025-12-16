@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import {
-  addPartnerApplicationWithApproval
-} from '../lib/helpers/realEstateStorage';
+import { addApplication } from '../store/partnerApplicationsStore';
+import { addApproval } from '../store/approvalsStore';
 
 const initialForm = {
   type: '',
@@ -79,16 +78,28 @@ const PartnerApplyPage = () => {
       createdAt: now,
     };
 
+    // Save application
+    addApplication(application);
+
+    // Create approval request
     const approval = {
       id: `approval-${applicationId}`,
       type: 'PARTNER_APPLICATION',
       entityId: applicationId,
-      partnerType: form.type,
+      entityType: 'PARTNER_APP',
       status: 'PENDING',
+      submittedBy: form.email,
       submittedAt: now,
+      meta: {
+        partnerId: form.email,
+        partnerName: form.companyName,
+        summary: `${form.companyName} - ${form.type === 'REAL_ESTATE' ? 'Real Estate' : 'Delivery'} Partner Application`,
+      },
     };
 
-    addPartnerApplicationWithApproval({ application, approval });
+    // Save approval
+    addApproval(approval);
+    
     setSubmitted(true);
   };
 

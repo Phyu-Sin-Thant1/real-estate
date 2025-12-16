@@ -91,53 +91,8 @@ const AdminAuditLogsPage = () => {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
-            <select
-              value={actionFilter}
-              onChange={(e) => setActionFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              {actions.map(action => (
-                <option key={action} value={action}>
-                  {action === 'ALL' ? 'All Actions' : action.replace(/_/g, ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
-            <select
-              value={userFilter}
-              onChange={(e) => setUserFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              {users.map(user => (
-                <option key={user} value={user}>
-                  {user === 'ALL' ? 'All Users' : user}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button
-              onClick={() => {
-                setActionFilter('ALL');
-                setUserFilter('ALL');
-              }}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Reset Filters
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0 p-3 rounded-lg bg-blue-100 text-blue-800">
@@ -204,6 +159,53 @@ const AdminAuditLogsPage = () => {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Action</label>
+            <select
+              value={actionFilter}
+              onChange={(e) => setActionFilter(e.target.value)}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
+            >
+              {actions.map(action => (
+                <option key={action} value={action}>
+                  {action === 'ALL' ? 'All Actions' : action.replace(/_/g, ' ')}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">User</label>
+            <select
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value)}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
+            >
+              {users.map(user => (
+                <option key={user} value={user}>
+                  {user === 'ALL' ? 'All Users' : user}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Reset Filters Button - Secondary Action */}
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => {
+              setActionFilter('ALL');
+              setUserFilter('ALL');
+            }}
+            className="text-sm text-gray-600 hover:text-gray-900 hover:underline transition-colors"
+          >
+            Clear filters
+          </button>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
 import { translations } from '../i18n/translations';
 
 const STORAGE_KEY = 'tofu-lang';
@@ -50,15 +50,15 @@ export const I18nProvider = ({ children }) => {
     }
   }, [lang]);
 
-  const t = (key) => {
+  const t = useCallback((key) => {
     const currentDict = translations[lang] || translations.en;
     const enDict = translations.en;
     return resolveKey(currentDict, key, enDict);
-  };
+  }, [lang]);
 
-  const setLang = (nextLang) => {
+  const setLang = useCallback((nextLang) => {
     setLangState(nextLang);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -66,7 +66,7 @@ export const I18nProvider = ({ children }) => {
       setLang,
       t,
     }),
-    [lang]
+    [lang, setLang, t]
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

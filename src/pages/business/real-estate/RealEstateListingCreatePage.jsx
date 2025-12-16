@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
-import { addListingWithApproval } from '../../../lib/helpers/realEstateStorage';
+import { addListing } from '../../../store/realEstateListingsStore';
+import { addApproval } from '../../../store/approvalsStore';
 
 const initialForm = {
   title: '',
@@ -81,11 +82,16 @@ const RealEstateListingCreatePage = () => {
     const listingId = Date.now();
     const now = new Date().toISOString();
 
+    // Create summary for approval meta
+    const summary = `${form.title} - ${form.area}㎡ - ${form.price ? form.price + '원' : '가격 협의'}`;
+
     const listing = {
       id: listingId,
       createdAt: now,
       createdBy,
       partnerEmail,
+      partnerId: partnerEmail,
+      partnerName: user?.name || 'Real Estate Partner',
       status: 'PENDING',
       title: form.title,
       address: form.address,
@@ -104,16 +110,28 @@ const RealEstateListingCreatePage = () => {
       images: [],
     };
 
+    // Save listing
+    addListing(listing);
+
+    // Create approval request
     const approval = {
       id: `approval-${listingId}`,
       type: 'REAL_ESTATE_LISTING_CREATE',
-      entityId: listingId,
+      entityId: String(listingId),
+      entityType: 'LISTING',
       status: 'PENDING',
       submittedBy: partnerEmail || 'unknown',
       submittedAt: now,
+      meta: {
+        partnerId: partnerEmail,
+        partnerName: user?.name || 'Real Estate Partner',
+        summary: summary,
+      },
     };
 
-    addListingWithApproval({ listing, approval });
+    // Save approval
+    addApproval(approval);
+
     navigate('/business/real-estate/listings');
   };
 

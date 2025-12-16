@@ -1,25 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { approvalsQueue } from '../../mock/adminData';
-import {
-  loadApprovals,
-  saveApprovals,
-  updateApprovalStatus,
-  updateListingStatus,
-  loadPartnerApplications,
-  updatePartnerApplicationStatus,
-  addBusinessAccountFromApplication
-} from '../../lib/helpers/realEstateStorage';
+import { getApprovals, updateApproval, getApprovalById } from '../../store/approvalsStore';
+import { updateListing, getListingById } from '../../store/realEstateListingsStore';
+import { getApplicationById, updateApplication } from '../../store/partnerApplicationsStore';
+import { createBusinessAccountFromApplication } from '../../store/businessAccountsStore';
 
 const AdminApprovalsPage = () => {
-  const [approvals, setApprovals] = useState(() => loadApprovals().length ? loadApprovals() : approvalsQueue);
-  const [partnerApps, setPartnerApps] = useState(() => loadPartnerApplications());
+  const [approvals, setApprovals] = useState(() => getApprovals());
   const [selectedApprovals, setSelectedApprovals] = useState([]);
   const [filterType, setFilterType] = useState('ALL');
   const [activeApproval, setActiveApproval] = useState(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [approvalToReject, setApprovalToReject] = useState(null);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [credentials, setCredentials] = useState(null);
 
+  // Refresh approvals when component mounts
   useEffect(() => {
-    saveApprovals(approvals);
-  }, [approvals]);
+    setApprovals(getApprovals());
+  }, []);
 
   const handleSelectApproval = (approvalId) => {
     setSelectedApprovals(prev => 
@@ -40,40 +39,93 @@ const AdminApprovalsPage = () => {
 
   const handleApprove = (approvalId) => {
     const target = approvals.find((item) => item.id === approvalId);
-    const nextApprovals = updateApprovalStatus(approvalId, 'APPROVED');
+    if (!target) return;
 
-    if (target?.type === 'REAL_ESTATE_LISTING_CREATE' && target.entityId) {
-      updateListingStatus(target.entityId, 'LIVE');
+    const decidedAt = new Date().toISOString();
+    
+    // Update approval status
+    updateApproval(approvalId, { 
+      status: 'APPROVED', 
+      decidedAt 
+    });
+
+    // Handle listing approval
+    if (target.type === 'REAL_ESTATE_LISTING_CREATE' && target.entityId) {
+      updateListing(Number(target.entityId), { 
+        status: 'LIVE' 
+      });
     }
-    if (target?.type === 'PARTNER_APPLICATION' && target.entityId) {
-      const app = partnerApps.find((p) => p.id === target.entityId);
+
+    // Handle partner application approval
+    if (target.type === 'PARTNER_APPLICATION' && target.entityId) {
+      const app = getApplicationById(target.entityId);
       if (app) {
-        const tempPassword = 'Temp123!';
-        addBusinessAccountFromApplication({ application: app, tempPassword });
-        const nextApps = updatePartnerApplicationStatus(app.id, 'APPROVED');
-        setPartnerApps(nextApps);
+        // Create business account with temp password (or get existing)
+        const { account, tempPassword, dashboardUrl } = createBusinessAccountFromApplication(app);
+        
+        // Update application status
+        updateApplication(app.id, { status: 'APPROVED' });
+        
+        // Show credentials modal
+        setCredentials({
+          email: account.email,
+          tempPassword,
+          role: account.role,
+          dashboardUrl,
+          companyName: account.companyName,
+        });
+        setShowCredentialsModal(true);
       }
     }
 
-    setApprovals(nextApprovals);
+    // Refresh approvals
+    setApprovals(getApprovals());
     setSelectedApprovals((prev) => prev.filter((id) => id !== approvalId));
   };
 
-  const handleReject = (approvalId) => {
-    const target = approvals.find((item) => item.id === approvalId);
-    const reason = window.prompt('반려 사유를 입력하세요 (선택)', '') || undefined;
-    const nextApprovals = updateApprovalStatus(approvalId, 'REJECTED', { rejectReason: reason });
+  const openRejectModal = (approvalId) => {
+    setApprovalToReject(approvalId);
+    setRejectReason('');
+    setShowRejectModal(true);
+  };
 
-    if (target?.type === 'REAL_ESTATE_LISTING_CREATE' && target.entityId) {
-      updateListingStatus(target.entityId, 'REJECTED');
-    }
-    if (target?.type === 'PARTNER_APPLICATION' && target.entityId) {
-      const nextApps = updatePartnerApplicationStatus(target.entityId, 'REJECTED', reason);
-      setPartnerApps(nextApps);
+  const handleReject = () => {
+    if (!approvalToReject) return;
+
+    const target = approvals.find((item) => item.id === approvalToReject);
+    if (!target) return;
+
+    const decidedAt = new Date().toISOString();
+    const reason = rejectReason.trim() || undefined;
+
+    // Update approval status
+    updateApproval(approvalToReject, { 
+      status: 'REJECTED', 
+      rejectReason: reason,
+      decidedAt 
+    });
+
+    // Handle listing rejection
+    if (target.type === 'REAL_ESTATE_LISTING_CREATE' && target.entityId) {
+      updateListing(Number(target.entityId), { 
+        status: 'REJECTED',
+        rejectReason: reason 
+      });
     }
 
-    setApprovals(nextApprovals);
-    setSelectedApprovals((prev) => prev.filter((id) => id !== approvalId));
+    // Handle partner application rejection
+    if (target.type === 'PARTNER_APPLICATION' && target.entityId) {
+      updateApplication(target.entityId, { status: 'REJECTED', rejectReason: reason });
+    }
+
+    // Refresh approvals
+    setApprovals(getApprovals());
+    setSelectedApprovals((prev) => prev.filter((id) => id !== approvalToReject));
+    
+    // Close modal
+    setShowRejectModal(false);
+    setApprovalToReject(null);
+    setRejectReason('');
   };
 
   const getStatusClass = (status) => {
@@ -99,15 +151,24 @@ const AdminApprovalsPage = () => {
   };
 
   const filteredApprovals = useMemo(() => {
-    if (filterType === 'ALL') return approvals;
-    if (filterType === 'PARTNER') return approvals.filter((a) => a.type === 'PARTNER_APPLICATION');
-    return approvals;
+    let filtered = approvals;
+    if (filterType === 'PARTNER') {
+      filtered = filtered.filter((a) => a.type === 'PARTNER_APPLICATION');
+    } else if (filterType === 'LISTING') {
+      filtered = filtered.filter((a) => a.type === 'REAL_ESTATE_LISTING_CREATE');
+    } else if (filterType === 'REFUND') {
+      filtered = filtered.filter((a) => a.type === 'DELIVERY_REFUND_REQUEST');
+    }
+    return filtered;
   }, [approvals, filterType]);
 
   const openDetail = (approval) => {
     if (approval.type === 'PARTNER_APPLICATION') {
-      const app = partnerApps.find((p) => p.id === approval.entityId);
+      const app = getApplicationById(approval.entityId);
       setActiveApproval({ approval, application: app });
+    } else if (approval.type === 'REAL_ESTATE_LISTING_CREATE') {
+      const listing = getListingById(Number(approval.entityId));
+      setActiveApproval({ approval, listing });
     } else {
       setActiveApproval({ approval });
     }
@@ -132,6 +193,18 @@ const AdminApprovalsPage = () => {
           className={`px-3 py-1 rounded-full text-sm border ${filterType === 'PARTNER' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
         >
           파트너 신청
+        </button>
+        <button
+          onClick={() => setFilterType('LISTING')}
+          className={`px-3 py-1 rounded-full text-sm border ${filterType === 'LISTING' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
+        >
+          매물 등록
+        </button>
+        <button
+          onClick={() => setFilterType('REFUND')}
+          className={`px-3 py-1 rounded-full text-sm border ${filterType === 'REFUND' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
+        >
+          환불 요청
         </button>
       </div>
 
@@ -221,56 +294,70 @@ const AdminApprovalsPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredApprovals.map((approval) => (
-                <tr key={approval.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openDetail(approval)}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      checked={selectedApprovals.includes(approval.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={() => handleSelectApproval(approval.id)}
-                      className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
-                    />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{getTypeLabel(approval.type)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {approval.requester}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {approval.requesterType.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {approval.requestedAt}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(approval.status)}`}>
-                      {approval.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {approval.status === 'PENDING' && (
-                      <div className="flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleApprove(approval.id)}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(approval.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    )}
+              {filteredApprovals.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                    No approvals found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredApprovals.map((approval) => (
+                  <tr key={approval.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => openDetail(approval)}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedApprovals.includes(approval.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={() => handleSelectApproval(approval.id)}
+                        className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{getTypeLabel(approval.type)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {approval.submittedBy || approval.meta?.partnerName || 'Unknown'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {approval.meta?.partnerName ? 'Partner' : 'User'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {approval.submittedAt ? new Date(approval.submittedAt).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(approval.status)}`}>
+                        {approval.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {approval.status === 'PENDING' && (
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(approval.id);
+                            }}
+                            className="text-green-600 hover:text-green-900"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openRejectModal(approval.id);
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -337,20 +424,62 @@ const AdminApprovalsPage = () => {
                   )}
                 </div>
               )}
+
+              {activeApproval.approval.type === 'REAL_ESTATE_LISTING_CREATE' && activeApproval.listing && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500">제목</p>
+                    <p className="text-sm text-gray-900">{activeApproval.listing.title}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">주소</p>
+                    <p className="text-sm text-gray-900">{activeApproval.listing.address || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">도시</p>
+                    <p className="text-sm text-gray-900">{activeApproval.listing.city || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">가격</p>
+                    <p className="text-sm text-gray-900">{activeApproval.listing.price ? `${activeApproval.listing.price}원` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">면적</p>
+                    <p className="text-sm text-gray-900">{activeApproval.listing.area ? `${activeApproval.listing.area}㎡` : 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">파트너</p>
+                    <p className="text-sm text-gray-900">{activeApproval.listing.partnerName || activeApproval.listing.partnerEmail || 'N/A'}</p>
+                  </div>
+                  {activeApproval.listing.description && (
+                    <div>
+                      <p className="text-xs text-gray-500">설명</p>
+                      <p className="text-sm text-gray-900 whitespace-pre-line">{activeApproval.listing.description}</p>
+                    </div>
+                  )}
+                  {activeApproval.listing.rejectReason && (
+                    <div>
+                      <p className="text-xs text-gray-500">반려 사유</p>
+                      <p className="text-sm text-red-600">{activeApproval.listing.rejectReason}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {activeApproval.approval.status === 'PENDING' && (
               <div className="p-4 border-t border-gray-200 flex justify-end space-x-3">
                 <button
+                  type="button"
                   onClick={() => {
-                    handleReject(activeApproval.approval.id);
-                    setActiveApproval(null);
+                    openRejectModal(activeApproval.approval.id);
                   }}
                   className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                 >
                   반려
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     handleApprove(activeApproval.approval.id);
                     setActiveApproval(null);
@@ -361,6 +490,107 @@ const AdminApprovalsPage = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">반려 사유 입력</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              반려 사유를 입력해주세요. (선택사항)
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="반려 사유를 입력하세요..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary mb-4"
+              rows={4}
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowRejectModal(false);
+                  setApprovalToReject(null);
+                  setRejectReason('');
+                }}
+                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleReject}
+                className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+              >
+                반려
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Credentials Modal */}
+      {showCredentialsModal && credentials && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Partner Account Created</h3>
+              <button
+                onClick={() => {
+                  setShowCredentialsModal(false);
+                  setCredentials(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Send this to partner owner:
+            </p>
+            
+            <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+              <div id="credentials-message" className="text-sm text-gray-800 whitespace-pre-line font-mono">
+                {`[TOFU Partner Account Approved]
+
+Email: ${credentials.email}
+Temporary Password: ${credentials.tempPassword}
+Login: /login
+Dashboard: ${credentials.dashboardUrl}
+
+Please log in and change your password immediately.`}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  const message = document.getElementById('credentials-message').textContent;
+                  navigator.clipboard.writeText(message).then(() => {
+                    alert('Credentials copied to clipboard!');
+                  }).catch(() => {
+                    alert('Failed to copy. Please select and copy manually.');
+                  });
+                }}
+                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Copy to Clipboard
+              </button>
+              <button
+                onClick={() => {
+                  setShowCredentialsModal(false);
+                  setCredentials(null);
+                }}
+                className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
