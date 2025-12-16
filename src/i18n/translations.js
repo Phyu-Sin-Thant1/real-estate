@@ -21,6 +21,8 @@ export const translations = {
       auditLogs: '감사 로그',
       systemStatus: '시스템 상태',
       newsContent: '뉴스 / 콘텐츠',
+      banners: '배너 관리',
+      reviews: '리뷰 관리',
       settings: '설정',
       // Business menu
       contracts: '계약 내역',
@@ -85,6 +87,8 @@ export const translations = {
       auditLogs: 'Audit Logs',
       systemStatus: 'System Status',
       newsContent: 'News / Content',
+      banners: 'Banner Management',
+      reviews: 'Review Management',
       settings: 'Settings',
       // Business menu
       contracts: 'Contracts',

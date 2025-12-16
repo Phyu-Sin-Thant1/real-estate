@@ -20,6 +20,8 @@ const menuItems = [
   { key: 'audit', translationKey: 'nav.auditLogs', path: '/admin/security/audit-logs', icon: '📝' },
   { key: 'system', translationKey: 'nav.systemStatus', path: '/admin/system/status', icon: '⚙️' },
   { key: 'content', translationKey: 'nav.newsContent', path: '/admin/content/news', icon: '📰' },
+  { key: 'banners', translationKey: 'nav.banners', path: '/admin/content/banners', icon: '🖼️' },
+  { key: 'reviews', translationKey: 'nav.reviews', path: '/admin/reviews', icon: '⭐' },
   { key: 'settings', translationKey: 'nav.settings', path: '/admin/settings', icon: '⚙️' }
 ];
 
