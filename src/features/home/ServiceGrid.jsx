@@ -48,7 +48,7 @@ const ServiceGrid = () => {
   ]
 
   return (
-    <section className="py-16 bg-dabang-background">
+    <section className="py-16 bg-dabang-background w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -66,15 +66,15 @@ const ServiceGrid = () => {
             <div
               key={property.id}
               onClick={() => navigate(`/category/${encodeURIComponent(property.title)}`)}
-              className="category-card hover:scale-105 transform transition-all duration-200 relative overflow-hidden cursor-pointer"
+              className="category-card hover:scale-105 transform transition-all duration-200 relative overflow-hidden cursor-pointer h-full flex flex-col"
             >
               {property.isNew && (
-                <div className="absolute top-4 right-4 bg-dabang-accent text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute top-4 right-4 bg-dabang-accent text-white px-3 py-1 rounded-full text-sm font-medium z-10">
                   신규 매물
                 </div>
               )}
               
-              <div className={`bg-gradient-to-br ${property.color} w-16 h-16 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg`}>
+              <div className={`bg-gradient-to-br ${property.color} w-16 h-16 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg flex-shrink-0`}>
                 {property.icon}
               </div>
               
@@ -82,7 +82,7 @@ const ServiceGrid = () => {
                 {property.title}
               </h3>
               
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-4 flex-grow">
                 {property.description}
               </p>
               
@@ -91,7 +91,7 @@ const ServiceGrid = () => {
                   e.stopPropagation()
                   navigate(`/category/${encodeURIComponent(property.title)}`)
                 }}
-                className="text-dabang-primary font-medium hover:text-dabang-primary/80 transition-colors"
+                className="text-dabang-primary font-medium hover:text-dabang-primary/80 transition-colors mt-auto"
               >
                 매물 보러가기 →
               </button>
@@ -99,17 +99,17 @@ const ServiceGrid = () => {
           ))}
 
           {/* Additional Service Banner */}
-          <Link to="/moving-service" className="category-card bg-gradient-to-br from-dabang-secondary to-orange-600 text-white col-span-1 md:col-span-2 lg:col-span-1 hover:scale-105 transform transition-all duration-200 relative overflow-hidden cursor-pointer">
-            <div className="flex items-center space-x-4">
-              <div className="text-4xl">🚛</div>
-              <div>
+          <Link to="/moving-service" className="category-card bg-gradient-to-br from-dabang-secondary to-orange-600 text-white col-span-1 md:col-span-2 lg:col-span-1 hover:scale-105 transform transition-all duration-200 relative overflow-hidden cursor-pointer h-full flex flex-col">
+            <div className="flex items-start space-x-4 flex-grow">
+              <div className="text-4xl flex-shrink-0">🚛</div>
+              <div className="flex-1">
                 <h3 className="text-xl font-bold mb-2">이사 서비스</h3>
                 <p className="text-orange-100 mb-4">1분 무료 견적으로 저렴한 이사 비용</p>
-                <button className="bg-white text-dabang-secondary font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  견적 받기
-                </button>
               </div>
             </div>
+            <button className="bg-white text-dabang-secondary font-medium px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors mt-auto w-full">
+              견적 받기
+            </button>
           </Link>
         </div>
 

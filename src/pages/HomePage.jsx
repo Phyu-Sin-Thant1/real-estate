@@ -58,19 +58,20 @@ const HomePage = () => {
           </div>
         </div>
       )}
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-8">
-            <SearchHero />
-            <ServiceGrid />
-            <MarketFeed />
-          </div>
-          
-          {/* Sidebar with Banners */}
-          <div className="lg:col-span-1">
-            {sidebarBanners.length > 0 && (
+
+      {/* Hero - full-bleed background with centered content */}
+      <SearchHero />
+
+      {/* Centered sections (full-width background handled inside each component) */}
+      <ServiceGrid />
+      <MarketFeed />
+
+      {/* Sidebar banners section (if needed for future content) */}
+      {sidebarBanners.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3"></div>
+            <div className="lg:col-span-1">
               <div className="space-y-4 sticky top-4">
                 {sidebarBanners.map((banner) => (
                   <div
@@ -89,10 +90,10 @@ const HomePage = () => {
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       
       {/* Bottom Banners */}
       {bottomBanners.length > 0 && (
