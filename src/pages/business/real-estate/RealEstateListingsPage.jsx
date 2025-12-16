@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useListings } from '../../../context/ListingsContext';
-import { listings as mockListings, listingTypes, transactionTypes, listingStatuses, listingRegions } from '../../../mock/realEstateData';
+import { listingTypes, transactionTypes, listingStatuses, listingRegions } from '../../../mock/realEstateData';
 import { getListingsByPartner, updateListing } from '../../../store/realEstateListingsStore';
 import { getApprovalById } from '../../../store/approvalsStore';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateListingsPage = () => {
   const navigate = useNavigate();
-  const { listings: contextListings, updateListing } = useListings();
   const { user } = useUnifiedAuth();
   const [storedListings, setStoredListings] = useState([]);
   const [transactionTypeFilter, setTransactionTypeFilter] = useState('전체');
@@ -26,10 +24,9 @@ const RealEstateListingsPage = () => {
   }, [user?.email]);
 
   const allListings = useMemo(() => {
-    // Use stored listings from the new store (these are the real ones)
-    // Keep mock listings for demo purposes
-    return [...storedListings, ...mockListings];
-  }, [storedListings, mockListings]);
+    // Only show partner's own listings - no mock data
+    return storedListings;
+  }, [storedListings]);
 
   const statusFilterOptions = useMemo(
     () => [...listingStatuses, '심사중', '반려'],
@@ -43,7 +40,7 @@ const RealEstateListingsPage = () => {
       statusFilter === '전체' ||
       listing.status === statusFilter ||
       statusLabel(listing.status) === statusFilter;
-    const regionMatch = regionFilter === '서울 전체' || listing.region.includes(regionFilter);
+    const regionMatch = regionFilter === '서울 전체' || (listing.address || listing.region || listing.city || '').includes(regionFilter);
     return transactionMatch && statusMatch && regionMatch;
   });
 
@@ -84,7 +81,7 @@ const RealEstateListingsPage = () => {
     if (currentStatus === '거래완료') return;
     
     const newStatus = currentStatus === '노출중' || currentStatus === 'LIVE' ? 'HIDDEN' : 'LIVE';
-    updateListing(id, { status: newStatus });
+    updateListing(Number(id), { status: newStatus });
     // Refresh listings
     if (user?.email) {
       const partnerListings = getListingsByPartner(user.email);
@@ -94,7 +91,8 @@ const RealEstateListingsPage = () => {
 
   // Mark listing as completed
   const markAsCompleted = (id) => {
-    updateListing(id, { status: '거래완료' });
+    if (!id) return;
+    updateListing(Number(id), { status: 'COMPLETED' });
     setShowCompleteModal(false);
     setListingToComplete(null);
     // Refresh listings
@@ -214,25 +212,42 @@ const RealEstateListingsPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredListings.map((listing) => (
-                <tr key={listing.id}>
+              {filteredListings.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="px-6 py-12 text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">매물 데이터가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">새로운 매물을 등록해보세요.</p>
+                    <button
+                      onClick={() => navigate('/business/real-estate/listings/create')}
+                      className="mt-4 px-4 py-2 bg-dabang-primary text-white rounded-lg hover:bg-dabang-primary/90 transition-colors"
+                    >
+                      매물 등록하기
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filteredListings.map((listing) => (
+                  <tr key={listing.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {listing.name}
+                    {listing.title || listing.name || 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {listing.region}
+                    {listing.address || listing.region || listing.city || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {listing.type}
+                    {listing.propertyType || listing.type || 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {listing.transactionType}
+                    {listing.transactionType || 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {listing.price}
+                    {listing.price ? `₩${Number(listing.price).toLocaleString()}` : listing.monthly ? `보증금 ${listing.deposit ? Number(listing.deposit).toLocaleString() : 'N/A'} / 월 ${Number(listing.monthly).toLocaleString()}` : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex flex-col">
@@ -247,7 +262,7 @@ const RealEstateListingsPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {listing.createdAt}
+                    {listing.createdAt ? new Date(listing.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex space-x-2">
@@ -299,8 +314,9 @@ const RealEstateListingsPage = () => {
                       )}
                     </div>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

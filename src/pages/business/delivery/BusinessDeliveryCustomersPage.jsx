@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import StatusBadge from '../../../components/delivery/StatusBadge';
 import Modal from '../../../components/delivery/Modal';
-import { customers, customerOrders, customerSummary } from '../../../mock/deliveryCustomersData';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const BusinessDeliveryCustomersPage = () => {
-  const [customerList, setCustomerList] = useState(customers);
+  const { user } = useUnifiedAuth();
+  // Partner's customers - empty for now (would come from a store in real app)
+  const [customerList, setCustomerList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [tagFilter, setTagFilter] = useState('전체');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -20,24 +22,28 @@ const BusinessDeliveryCustomersPage = () => {
     memo: ''
   });
 
-  // Summary cards data
-  const summaryCards = [
+  // Summary cards data - calculated from partner's customers
+  const summaryCards = useMemo(() => [
     {
       title: '전체 고객 수',
-      value: customerSummary.totalCustomers,
+      value: customerList.length,
       change: null
     },
     {
       title: '이번 달 신규 고객',
-      value: customerSummary.newCustomersThisMonth,
+      value: customerList.filter(c => {
+        const created = new Date(c.createdAt || c.lastOrderDate);
+        const now = new Date();
+        return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+      }).length,
       change: null
     },
     {
       title: '블랙리스트 고객 수',
-      value: customerSummary.blacklistedCustomers,
+      value: customerList.filter(c => c.tag === '블랙리스트').length,
       change: null
     }
-  ];
+  ], [customerList]);
 
   // Tag filter options
   const tagFilters = [
@@ -411,7 +417,7 @@ const BusinessDeliveryCustomersPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {customerOrders[selectedCustomer.id]?.map((order, index) => (
+                    {[]?.map((order, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {order.id}

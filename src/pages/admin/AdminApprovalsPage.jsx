@@ -3,6 +3,7 @@ import { getApprovals, updateApproval, getApprovalById } from '../../store/appro
 import { updateListing, getListingById } from '../../store/realEstateListingsStore';
 import { getApplicationById, updateApplication } from '../../store/partnerApplicationsStore';
 import { createBusinessAccountFromApplication } from '../../store/businessAccountsStore';
+import { addNotification } from '../../store/businessNotificationsStore';
 
 const AdminApprovalsPage = () => {
   const [approvals, setApprovals] = useState(() => getApprovals());
@@ -51,9 +52,24 @@ const AdminApprovalsPage = () => {
 
     // Handle listing approval
     if (target.type === 'REAL_ESTATE_LISTING_CREATE' && target.entityId) {
-      updateListing(Number(target.entityId), { 
-        status: 'LIVE' 
-      });
+      const listing = getListingById(Number(target.entityId));
+      if (listing) {
+        updateListing(Number(target.entityId), { 
+          status: 'LIVE' 
+        });
+        
+        // Add notification to partner
+        const partnerEmail = listing.partnerEmail || listing.createdBy;
+        if (partnerEmail) {
+          addNotification({
+            partnerEmail,
+            type: 'LISTING_APPROVED',
+            title: '매물이 승인되었습니다',
+            message: `${listing.title || listing.name || '매물'}이 노출되었습니다.`,
+            relatedEntityId: listing.id,
+          });
+        }
+      }
     }
 
     // Handle partner application approval
@@ -65,6 +81,14 @@ const AdminApprovalsPage = () => {
         
         // Update application status
         updateApplication(app.id, { status: 'APPROVED' });
+        
+        // Add notification to partner
+        addNotification({
+          partnerEmail: account.email,
+          type: 'ACCOUNT_APPROVED',
+          title: '파트너 계정 승인 완료',
+          message: '대시보드에 로그인하실 수 있습니다.',
+        });
         
         // Show credentials modal
         setCredentials({
@@ -107,10 +131,25 @@ const AdminApprovalsPage = () => {
 
     // Handle listing rejection
     if (target.type === 'REAL_ESTATE_LISTING_CREATE' && target.entityId) {
-      updateListing(Number(target.entityId), { 
-        status: 'REJECTED',
-        rejectReason: reason 
-      });
+      const listing = getListingById(Number(target.entityId));
+      if (listing) {
+        updateListing(Number(target.entityId), { 
+          status: 'REJECTED',
+          rejectReason: reason 
+        });
+        
+        // Add notification to partner
+        const partnerEmail = listing.partnerEmail || listing.createdBy;
+        if (partnerEmail) {
+          addNotification({
+            partnerEmail,
+            type: 'LISTING_REJECTED',
+            title: '매물이 반려되었습니다',
+            message: reason ? `사유: ${reason}` : '매물이 반려되었습니다.',
+            relatedEntityId: listing.id,
+          });
+        }
+      }
     }
 
     // Handle partner application rejection

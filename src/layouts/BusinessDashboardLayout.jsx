@@ -92,7 +92,7 @@ const BusinessDashboardLayout = () => {
           title={getPageTitle()}
           showSearch={false}
           showViewWebsite={true}
-          showNotifications={false}
+          showNotifications={true}
           user={user}
           onLogout={handleLogout}
         />

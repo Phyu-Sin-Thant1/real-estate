@@ -1,14 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import StatusBadge from '../../../components/delivery/StatusBadge';
 import Modal from '../../../components/delivery/Modal';
-import { kpis, dailyRevenue, orderStatusDistribution, settlements } from '../../../mock/deliveryStatsData';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
+import { getOrdersByPartner } from '../../../store/deliveryOrdersStore';
 
 const BusinessSettlementStatsPage = () => {
+  const { user } = useUnifiedAuth();
   const [activeDateRange, setActiveDateRange] = useState('이번 달');
   const [statusFilter, setStatusFilter] = useState('전체');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Get partner's orders
+  const partnerOrders = useMemo(() => {
+    if (!user?.email) return [];
+    return getOrdersByPartner(user.email);
+  }, [user?.email]);
+
+  // Calculate KPIs from partner's actual data
+  const kpis = useMemo(() => {
+    const completedOrders = partnerOrders.filter(o => o.status === 'COMPLETED');
+    const monthlySales = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const pendingSettlement = completedOrders.filter(o => !o.settled).reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const completedSettlement = completedOrders.filter(o => o.settled).reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    const refundAmount = partnerOrders.filter(o => o.status === 'CANCELLED' || o.status === 'FAILED').reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+    
+    return {
+      monthlySales: { value: monthlySales, delta: 0, deltaType: 'positive' },
+      pendingSettlement: { value: pendingSettlement, delta: 0, deltaType: 'positive' },
+      completedSettlement: { value: completedSettlement, delta: 0, deltaType: 'positive' },
+      refundAmount: { value: refundAmount, delta: 0, deltaType: 'positive' },
+    };
+  }, [partnerOrders]);
+
+  // Empty settlements for now (would come from a settlements store)
+  const settlements = useMemo(() => {
+    return [];
+  }, [partnerOrders]);
+
+  // Empty charts data
+  const dailyRevenue = useMemo(() => [], [partnerOrders]);
+  const orderStatusDistribution = useMemo(() => {
+    const statusCounts = {};
+    partnerOrders.forEach(order => {
+      statusCounts[order.status] = (statusCounts[order.status] || 0) + 1;
+    });
+    const total = partnerOrders.length;
+    if (total === 0) return [];
+    return Object.entries(statusCounts).map(([status, count]) => ({
+      status,
+      percentage: Math.round((count / total) * 100)
+    }));
+  }, [partnerOrders]);
 
   const dateRangeFilters = [
     { key: '오늘', label: '오늘' },
@@ -191,45 +235,57 @@ const BusinessSettlementStatsPage = () => {
           {/* Daily Revenue Chart Placeholder */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">일별 매출 추이</h3>
-            <div className="space-y-2">
-              {dailyRevenue.slice(-10).map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="w-16 text-sm text-gray-500">{item.date.split('-')[2]}</div>
-                  <div className="flex-1 ml-2">
-                    <div 
-                      className="h-6 bg-dabang-primary rounded"
-                      style={{ width: `${(item.amount / Math.max(...dailyRevenue.map(d => d.amount))) * 100}%` }}
-                    ></div>
+            {dailyRevenue.length > 0 ? (
+              <div className="space-y-2">
+                {dailyRevenue.slice(-10).map((item, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="w-16 text-sm text-gray-500">{item.date.split('-')[2]}</div>
+                    <div className="flex-1 ml-2">
+                      <div 
+                        className="h-6 bg-dabang-primary rounded"
+                        style={{ width: `${(item.amount / Math.max(...dailyRevenue.map(d => d.amount))) * 100}%` }}
+                      ></div>
+                    </div>
+                    <div className="w-20 text-right text-sm font-medium">
+                      {formatCurrency(item.amount)}
+                    </div>
                   </div>
-                  <div className="w-20 text-right text-sm font-medium">
-                    {formatCurrency(item.amount)}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                매출 데이터가 없습니다
+              </div>
+            )}
           </div>
 
           {/* Order Status Distribution Chart Placeholder */}
           <div className="bg-gray-50 rounded-lg p-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">상태별 주문 비율</h3>
-            <div className="space-y-3">
-              {orderStatusDistribution.map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="w-24 text-sm text-gray-600">{item.status}</div>
-                  <div className="flex-1 mx-2">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-dabang-primary h-2 rounded-full"
-                        style={{ width: `${item.percentage}%` }}
-                      ></div>
+            {orderStatusDistribution.length > 0 ? (
+              <div className="space-y-3">
+                {orderStatusDistribution.map((item, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="w-24 text-sm text-gray-600">{item.status}</div>
+                    <div className="flex-1 mx-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-dabang-primary h-2 rounded-full"
+                          style={{ width: `${item.percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="w-12 text-right text-sm font-medium">
+                      {formatPercentage(item.percentage)}
                     </div>
                   </div>
-                  <div className="w-12 text-right text-sm font-medium">
-                    {formatPercentage(item.percentage)}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 text-sm">
+                주문 데이터가 없습니다
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { customers } from '../../../mock/realEstateData';
+import React, { useState, useMemo } from 'react';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateCustomersPage = () => {
+  const { user } = useUnifiedAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [customerForm, setCustomerForm] = useState({
@@ -11,11 +12,19 @@ const RealEstateCustomersPage = () => {
     memo: ''
   });
 
+  // Partner's customers - empty for now (would come from a store in real app)
+  const partnerCustomers = useMemo(() => {
+    // In a real app, this would come from a customers store filtered by partnerEmail
+    return [];
+  }, [user?.email]);
+
   // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => 
-    customer.name.includes(searchTerm) || 
-    customer.phone.includes(searchTerm)
-  );
+  const filteredCustomers = useMemo(() => {
+    return partnerCustomers.filter(customer => 
+      customer.name?.includes(searchTerm) || 
+      customer.phone?.includes(searchTerm)
+    );
+  }, [partnerCustomers, searchTerm]);
 
   // Customer registration handlers
   const handleOpenRegistrationModal = () => {
@@ -127,25 +136,37 @@ const RealEstateCustomersPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCustomers.map((customer) => (
-                <tr key={customer.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.phone}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.lastActivity}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {customer.totalContracts}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {customer.memo}
+              {filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-12 text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">고객 데이터가 없습니다</h3>
+                    <p className="mt-1 text-sm text-gray-500">새로운 고객을 등록해보세요.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <tr key={customer.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.phone}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.lastActivity}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {customer.totalContracts}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {customer.memo}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
