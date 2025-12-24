@@ -73,6 +73,44 @@ export const banners = [
   },
 ];
 
+export const events = [
+  {
+    id: 1,
+    title: '신규 회원 첫 거래 수수료 50% 할인',
+    subtitle: '지금 가입하고 첫 거래 시 수수료를 절반으로! 한정 기간 특가 혜택',
+    image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800',
+    link: '/register',
+    cta: '지금 가입하기',
+    tag: '특가',
+    discount: '50',
+    date: '2024.01.01 - 2024.01.31',
+    remaining: '마감 임박',
+  },
+  {
+    id: 2,
+    title: '강남구 신규 매물 특별 이벤트',
+    subtitle: '강남구 신규 등록 매물 최대 15% 할인 혜택을 놓치지 마세요',
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
+    link: '/category/all?area=강남구',
+    cta: '매물 보기',
+    tag: '신규',
+    discount: '15',
+    date: '2024.01.15 - 2024.02.15',
+    remaining: '12일 남음',
+  },
+  {
+    id: 3,
+    title: '이사 서비스 견적 요청 시 현금 환급',
+    subtitle: '이사 견적 요청만 해도 5,000원 현금 환급! 추가 할인까지',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+    link: '/moving',
+    cta: '견적 받기',
+    tag: '프로모션',
+    date: '2024.01.10 - 2024.02.10',
+    remaining: '18일 남음',
+  },
+];
+
 export const trendingListings = [
   {
     id: 1,

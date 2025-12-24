@@ -11,6 +11,9 @@ import ReviewSection from '../components/home/ReviewSection'
 import WhyChooseUs from '../components/home/WhyChooseUs'
 import ScrollToTop from '../components/home/ScrollToTop'
 import SectionDivider from '../components/home/SectionDivider'
+import FinalCTA from '../components/home/FinalCTA'
+import AnnouncementBanner from '../components/home/AnnouncementBanner'
+import EventSection from '../components/home/EventSection'
 import { useNavigate } from 'react-router-dom'
 import {
   trendingListings,
@@ -20,6 +23,7 @@ import {
   marketNews,
   marketSignals,
   reviews,
+  events,
 } from '../mock/homeMockData'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -61,6 +65,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
+      <AnnouncementBanner />
       <Header />
       
       <main className="space-y-16 md:space-y-20">
@@ -87,6 +92,20 @@ const HomePage = () => {
         {/* 3) QUICK CATEGORY GRID */}
         <section className="py-12 md:py-16">
       <ServiceGrid />
+        </section>
+
+        {/* 3.5) EVENTS & PROMOTIONS */}
+        <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-white via-slate-50/30 to-white">
+          <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
+            <SectionHeader
+              title="진행 중인 이벤트"
+              subtitle="특별한 혜택과 프로모션을 놓치지 마세요"
+              badge="이벤트"
+              badgeColor="purple"
+              className="text-center"
+            />
+            <EventSection events={events} />
+          </div>
         </section>
 
         {/* 4) FEATURED LISTINGS */}
@@ -140,7 +159,7 @@ const HomePage = () => {
                 </div>
               ))}
       </div>
-      
+
             <div className="flex justify-end mt-8">
               <Button
                 variant="outline"
@@ -155,6 +174,31 @@ const HomePage = () => {
 
         {/* 5) MOVING SERVICE PROMO */}
         <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16">
+          <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto mb-10 md:mb-12">
+            <div className="text-center">
+              {/* Premium Badge */}
+              <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-orange-100 to-amber-100 border-2 border-orange-200/60 mb-4 shadow-md">
+                <span className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 animate-pulse shadow-lg" />
+                <p className="text-xs font-bold text-orange-700 uppercase tracking-wider">
+                  이사 서비스
+                </p>
+      </div>
+      
+              {/* Premium Title */}
+              <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold text-slate-900 text-center tracking-tight mb-3 leading-tight">
+                <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">
+                  이사 서비스
+                </span>
+              </h2>
+              
+              {/* Decorative Line */}
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="h-px w-12 bg-gradient-to-r from-transparent to-orange-300" />
+                <div className="w-2 h-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500" />
+                <div className="h-px w-12 bg-gradient-to-l from-transparent to-orange-300" />
+              </div>
+            </div>
+          </div>
           <div 
             className="max-w-7xl 2xl:max-w-[1600px] mx-auto rounded-2xl border-2 border-orange-200/50 bg-gradient-to-br from-orange-50/30 via-white to-amber-50/20 shadow-2xl overflow-hidden relative"
             style={{
@@ -535,12 +579,21 @@ const HomePage = () => {
                   </div>
                 ))}
               </div>
-            </div>
           </div>
-        </section>
+        </div>
+      </section>
+      
+        {/* 9) FINAL CTA SECTION */}
+        <FinalCTA
+          onGetStarted={() => navigate('/register')}
+          onSignUp={(email) => {
+            console.log('Newsletter signup:', email)
+            // Add your newsletter signup logic here
+          }}
+        />
       </main>
 
-      {/* 9) FOOTER */}
+      {/* 10) FOOTER */}
       <Footer />
 
       {/* Floating Scroll to Top Button */}
