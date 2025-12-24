@@ -1,4 +1,4 @@
-// Banners store - manages promotional banners
+// Banners store - manages promotional banners with localStorage
 const STORAGE_KEY = 'tofu-banners';
 
 const safeRead = (key, fallback = []) => {
@@ -22,73 +22,144 @@ const safeWrite = (key, value) => {
 };
 
 /**
+ * Seed initial banners if storage is empty
+ * Returns empty array - no mock data seeded
+ */
+export const seedBannersIfEmpty = () => {
+  const existing = getAllBanners();
+  if (existing.length > 0) return existing;
+
+  // Initialize with empty array - no mock banners
+  const seedBanners = [];
+  safeWrite(STORAGE_KEY, seedBanners);
+  return seedBanners;
+};
+
+/**
  * Load all banners
  * @returns {Array} Array of banner objects
  */
-export const loadBanners = () => {
+export const getAllBanners = () => {
   return safeRead(STORAGE_KEY, []);
 };
 
 /**
- * Add a new banner
- * @param {Object} banner - Banner object
- * @returns {Array} Updated banners array
+ * Load all banners (alias for getAllBanners for backward compatibility)
+ * @returns {Array} Array of banner objects
  */
-export const addBanner = (banner) => {
-  const banners = loadBanners();
+export const loadBanners = () => {
+  return getAllBanners();
+};
+
+/**
+ * Get active banners filtered by placement, service scope, and date
+ * @param {Object} options - Filter options
+ * @param {string} options.placement - Banner placement
+ * @param {string} options.serviceScope - Service scope filter ('ALL', 'REAL_ESTATE', 'DELIVERY')
+ * @param {string} options.lang - Language code ('ko' or 'en')
+ * @param {Date} options.now - Current date (defaults to now)
+ * @returns {Array} Filtered and sorted active banners
+ */
+export const getActiveBanners = ({ placement, serviceScope, lang = 'ko', now = new Date() }) => {
+  const banners = getAllBanners();
+  const nowDate = now instanceof Date ? now : new Date(now);
+
+  const filtered = banners.filter((banner) => {
+    // Must match placement
+    if (banner.placement !== placement) return false;
+
+    // Must be ACTIVE
+    if (banner.status !== 'ACTIVE') return false;
+
+    // Check service scope
+    if (serviceScope && banner.serviceScope !== 'ALL' && banner.serviceScope !== serviceScope) {
+      return false;
+    }
+
+    // Check date range
+    const startAt = banner.startAt ? new Date(banner.startAt) : null;
+    const endAt = banner.endAt ? new Date(banner.endAt) : null;
+
+    if (startAt && nowDate < startAt) return false;
+    if (endAt && nowDate > endAt) return false;
+
+    return true;
+  });
+
+  // Sort by priority (higher first), then createdAt (newer first)
+  return filtered.sort((a, b) => {
+    if (b.priority !== a.priority) {
+      return b.priority - a.priority;
+    }
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+};
+
+/**
+ * Create a new banner
+ * @param {Object} banner - Banner object (without id, createdAt)
+ * @returns {Object} Created banner with id and timestamps
+ */
+export const createBanner = (banner) => {
+  const banners = getAllBanners();
   const newBanner = {
     id: `banner-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    status: 'ACTIVE',
+    status: banner.status || 'PENDING',
     createdAt: new Date().toISOString(),
+    createdBy: banner.createdBy || 'user',
     ...banner,
   };
   const nextBanners = [newBanner, ...banners];
   safeWrite(STORAGE_KEY, nextBanners);
-  return nextBanners;
+  return newBanner;
+};
+
+/**
+ * Add a new banner (alias for createBanner for backward compatibility)
+ * @param {Object} banner - Banner object (without id, createdAt)
+ * @returns {Object} Created banner with id and timestamps
+ */
+export const addBanner = (banner) => {
+  return createBanner(banner);
 };
 
 /**
  * Update banner by ID
  * @param {string} id - Banner ID
  * @param {Object} patch - Fields to update
- * @returns {Array} Updated banners array
+ * @returns {Object|null} Updated banner or null if not found
  */
 export const updateBanner = (id, patch) => {
-  const banners = loadBanners();
-  const nextBanners = banners.map((banner) =>
-    banner.id === id
-      ? { ...banner, ...patch, updatedAt: new Date().toISOString() }
-      : banner
-  );
-  safeWrite(STORAGE_KEY, nextBanners);
-  return nextBanners;
+  const banners = getAllBanners();
+  const bannerIndex = banners.findIndex((b) => b.id === id);
+  if (bannerIndex === -1) return null;
+
+  const updatedBanner = {
+    ...banners[bannerIndex],
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  };
+  banners[bannerIndex] = updatedBanner;
+  safeWrite(STORAGE_KEY, banners);
+  return updatedBanner;
 };
 
 /**
- * Get active banners by placement within date range
- * @param {string} placement - Banner placement (e.g., 'HOME_TOP', 'HOME_SIDEBAR')
- * @returns {Array} Filtered active banners array
+ * Remove banner (soft delete - set to DISABLED)
+ * @param {string} id - Banner ID
+ * @returns {Object|null} Updated banner or null if not found
  */
-export const getActiveBannersByPlacement = (placement) => {
-  const banners = loadBanners();
-  const now = new Date();
-  
-  return banners.filter((banner) => {
-    // Must match placement
-    if (banner.placement !== placement) return false;
-    
-    // Must be ACTIVE
-    if (banner.status !== 'ACTIVE') return false;
-    
-    // Check date range
-    const startAt = banner.startAt ? new Date(banner.startAt) : null;
-    const endAt = banner.endAt ? new Date(banner.endAt) : null;
-    
-    if (startAt && now < startAt) return false;
-    if (endAt && now > endAt) return false;
-    
-    return true;
-  });
+export const removeBanner = (id) => {
+  return updateBanner(id, { status: 'DISABLED' });
+};
+
+/**
+ * Delete banner (alias for removeBanner for backward compatibility)
+ * @param {string} id - Banner ID
+ * @returns {Object|null} Updated banner or null if not found
+ */
+export const deleteBanner = (id) => {
+  return removeBanner(id);
 };
 
 /**
@@ -97,19 +168,6 @@ export const getActiveBannersByPlacement = (placement) => {
  * @returns {Object|null} Banner object or null
  */
 export const getBannerById = (id) => {
-  const banners = loadBanners();
+  const banners = getAllBanners();
   return banners.find((banner) => banner.id === id) || null;
 };
-
-/**
- * Delete banner by ID
- * @param {string} id - Banner ID
- * @returns {Array} Updated banners array
- */
-export const deleteBanner = (id) => {
-  const banners = loadBanners();
-  const nextBanners = banners.filter((banner) => banner.id !== id);
-  safeWrite(STORAGE_KEY, nextBanners);
-  return nextBanners;
-};
-

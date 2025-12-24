@@ -4,6 +4,7 @@ import { updateListing, getListingById } from '../../store/realEstateListingsSto
 import { getApplicationById, updateApplication } from '../../store/partnerApplicationsStore';
 import { createBusinessAccountFromApplication } from '../../store/businessAccountsStore';
 import { addNotification } from '../../store/businessNotificationsStore';
+import { updateDiscount, getDiscountById } from '../../store/discountsStore';
 
 const AdminApprovalsPage = () => {
   const [approvals, setApprovals] = useState(() => getApprovals());
@@ -102,6 +103,26 @@ const AdminApprovalsPage = () => {
       }
     }
 
+    // Handle discount approval
+    if ((target.type === 'DISCOUNT_CREATE' || target.type === 'DISCOUNT_UPDATE') && target.entityId) {
+      const discount = getDiscountById(target.entityId);
+      if (discount) {
+        updateDiscount(target.entityId, { status: 'ACTIVE' });
+        
+        // Add notification to partner
+        const partnerEmail = discount.partnerId || discount.createdBy;
+        if (partnerEmail) {
+          addNotification({
+            partnerEmail,
+            type: 'DISCOUNT_APPROVED',
+            title: '쿠폰이 승인되었습니다',
+            message: `${discount.code || discount.name || '쿠폰'}이 활성화되었습니다.`,
+            relatedEntityId: discount.id,
+          });
+        }
+      }
+    }
+
     // Refresh approvals
     setApprovals(getApprovals());
     setSelectedApprovals((prev) => prev.filter((id) => id !== approvalId));
@@ -157,6 +178,26 @@ const AdminApprovalsPage = () => {
       updateApplication(target.entityId, { status: 'REJECTED', rejectReason: reason });
     }
 
+    // Handle discount rejection
+    if ((target.type === 'DISCOUNT_CREATE' || target.type === 'DISCOUNT_UPDATE') && target.entityId) {
+      const discount = getDiscountById(target.entityId);
+      if (discount) {
+        updateDiscount(target.entityId, { status: 'REJECTED', rejectReason: reason });
+        
+        // Add notification to partner
+        const partnerEmail = discount.partnerId || discount.createdBy;
+        if (partnerEmail) {
+          addNotification({
+            partnerEmail,
+            type: 'DISCOUNT_REJECTED',
+            title: '쿠폰이 반려되었습니다',
+            message: reason ? `사유: ${reason}` : '쿠폰이 반려되었습니다.',
+            relatedEntityId: discount.id,
+          });
+        }
+      }
+    }
+
     // Refresh approvals
     setApprovals(getApprovals());
     setSelectedApprovals((prev) => prev.filter((id) => id !== approvalToReject));
@@ -185,6 +226,8 @@ const AdminApprovalsPage = () => {
       case 'CONTENT_REVIEW': return 'Content Review';
       case 'USER_REPORT': return 'User Report';
       case 'PARTNER_UPDATE': return 'Partner Update';
+      case 'DISCOUNT_CREATE': return 'Discount Create';
+      case 'DISCOUNT_UPDATE': return 'Discount Update';
       default: return type;
     }
   };

@@ -21,6 +21,7 @@ export const realEstateMenu = [
   { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/real-estate/stats' },
   { key: BUSINESS_MENU_KEYS.CUSTOMERS, translationKey: 'nav.customers', path: '/business/real-estate/customers' },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/real-estate/reviews' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts' },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/real-estate/settings' }
 ];
 
@@ -32,6 +33,7 @@ export const deliveryMenu = [
   { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/stats' },
   { key: BUSINESS_MENU_KEYS.CUSTOMERS, translationKey: 'nav.customers', path: '/business/customers' },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/reviews' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/discounts' },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/settings' }
 ];
 

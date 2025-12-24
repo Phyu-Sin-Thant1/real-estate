@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
+import BannerSlot from '../components/banners/BannerSlot'
 import { usePropertySearch } from '../hooks/usePropertySearch'
 import { useFavorites } from '../hooks/useFavorites'
 import { useUnifiedAuth } from '../context/UnifiedAuthContext'
@@ -154,6 +155,11 @@ const CategoryPage = () => {
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Category Banner - Top area above filters/list */}
+        <div className="mb-6">
+          <BannerSlot placement="CATEGORY_TOP" serviceScope="REAL_ESTATE" />
+        </div>
+        
         {/* Category Title */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">

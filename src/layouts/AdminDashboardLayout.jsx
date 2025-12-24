@@ -13,6 +13,7 @@ const menuItems = [
   { key: 'approvals', translationKey: 'nav.approvalsReviews', path: '/admin/approvals', icon: '✅' },
   { key: 'finance', translationKey: 'nav.paymentsSettlement', path: '/admin/finance/settlements', icon: '💰' },
   { key: 'pricing', translationKey: 'nav.commissionsPricing', path: '/admin/finance/rules', icon: '📋' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/admin/discounts', icon: '🎫' },
   { key: 'support', translationKey: 'nav.supportTickets', path: '/admin/support/tickets', icon: '🎫' },
   { key: 'reports', translationKey: 'nav.reportsAnalytics', path: '/admin/reports', icon: '📈' },
   { key: 'notifications', translationKey: 'nav.notifications', path: '/admin/notifications', icon: '🔔' },

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
+import BannerSlot from '../components/banners/BannerSlot'
 import InteractiveMap from '../features/map/InteractiveMap'
 import MapErrorBoundary from '../components/MapErrorBoundary'
 import { useUnifiedAuth } from '../context/UnifiedAuthContext'
@@ -537,6 +538,11 @@ const MapPage = () => {
       <div className='container mx-auto p-4'>
         <div className='bg-white rounded-lg shadow-lg overflow-hidden' style={{ height: 'calc(100vh - 140px)' }}>
           <div className='flex flex-col h-full'>
+            {/* Map Banner - Top area above map toolbar */}
+            <div className='px-4 pt-4 pb-2'>
+              <BannerSlot placement="MAP_TOP" serviceScope="REAL_ESTATE" />
+            </div>
+            
             {/* Search Bar */}
             <MapSearchBar 
               searchQuery={searchQuery}

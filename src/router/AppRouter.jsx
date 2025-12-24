@@ -88,8 +88,11 @@ import AdminAuditLogsPage from '../pages/admin/AdminAuditLogsPage'
 import AdminSystemStatusPage from '../pages/admin/AdminSystemStatusPage'
 import AdminReviewsPage from '../pages/admin/AdminReviewsPage'
 import AdminBannersPage from '../pages/admin/AdminBannersPage'
+import AdminDiscountsPage from '../pages/admin/AdminDiscountsPage'
 import RealEstateReviewsPage from '../pages/business/real-estate/RealEstateReviewsPage'
 import BusinessReviewsPage from '../pages/business/delivery/BusinessReviewsPage'
+import RealEstateDiscountsPage from '../pages/business/real-estate/RealEstateDiscountsPage'
+import BusinessDiscountsPage from '../pages/business/delivery/BusinessDiscountsPage'
 
 // User protected pages
 import UserProtectedRoute from './UserProtectedRoute'
@@ -184,6 +187,7 @@ const AppRouter = () => {
           <Route path="content/news" element={<NewsManagementPage />} />
           <Route path="content/banners" element={<AdminBannersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="discounts" element={<AdminDiscountsPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
         
@@ -225,6 +229,7 @@ const AppRouter = () => {
           <Route path="schedule" element={<BusinessSchedulePage />} />
           <Route path="customers" element={<BusinessCustomersPage />} />
           <Route path="reviews" element={<BusinessReviewsPage />} />
+          <Route path="discounts" element={<BusinessDiscountsPage />} />
           <Route path="settings" element={<BusinessSettingsPage />} />
         </Route>
 
@@ -249,6 +254,7 @@ const AppRouter = () => {
           <Route path="analytics" element={<RealEstateAnalyticsPage />} />
           <Route path="customers" element={<RealEstateCustomersPage />} />
           <Route path="reviews" element={<RealEstateReviewsPage />} />
+          <Route path="discounts" element={<RealEstateDiscountsPage />} />
           <Route path="settings" element={<RealEstateSettingsPage />} />
           {/* Reservation routes */}
           <Route path="reservations" element={<ReservationsListPage />} />

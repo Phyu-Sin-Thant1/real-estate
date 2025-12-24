@@ -36,7 +36,7 @@ const SearchHero = () => {
   }
 
   return (
-    <section className="relative min-h-[600px] bg-gradient-to-br from-gray-900 via-blue-900 to-dabang-primary overflow-hidden">
+    <section className="relative min-h-[600px] bg-gradient-to-br from-gray-900 via-blue-900 to-dabang-primary overflow-hidden m-0 mt-0 pt-0" style={{ marginTop: 0, paddingTop: 0 }}>
       {/* Background Image Overlay */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -45,7 +45,7 @@ const SearchHero = () => {
         }}
       />
       
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center min-h-[400px]">
           {/* Left Column: Search & Action (60% Width) */}
           <div className="lg:col-span-3 space-y-6">
@@ -93,6 +93,34 @@ const SearchHero = () => {
                 />
               </div>
             </form>
+
+            {/* Quick Action Chips */}
+            <div className="flex flex-wrap gap-3 max-w-2xl">
+              <button
+                onClick={() => navigate('/map')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm transition-all font-body"
+              >
+                🗺️ {t('home.hero.quickActions.map')}
+              </button>
+              <button
+                onClick={() => navigate('/category/월세')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm transition-all font-body"
+              >
+                💰 {t('home.hero.quickActions.monthlyRent')}
+              </button>
+              <button
+                onClick={() => navigate('/category/전세')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm transition-all font-body"
+              >
+                🏠 {t('home.hero.quickActions.jeonse')}
+              </button>
+              <button
+                onClick={() => navigate('/moving')}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-white/20 text-white border border-white/30 hover:bg-white/30 backdrop-blur-sm transition-all font-body"
+              >
+                🚚 {t('home.hero.quickActions.movingQuote')}
+              </button>
+            </div>
 
             {/* New Listings Counter */}
             <div className="text-left">

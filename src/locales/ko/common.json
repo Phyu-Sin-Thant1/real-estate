@@ -10,9 +10,63 @@
     "hero": {
       "eyebrow": "복잡한 부동산 정보, 이제 그만.",
       "title": "당신에게 맞는 집을 찾으세요!",
-      "subtitle": "빅데이터 기반의 추천과 실시간 시세 정보로 스마트하게 결정하세요."
+      "subtitle": "빅데이터 기반의 추천과 실시간 시세 정보로 스마트하게 결정하세요.",
+      "quickActions": {
+        "map": "지도 검색",
+        "monthlyRent": "월세",
+        "jeonse": "전세",
+        "movingQuote": "이사 견적"
+      }
     },
     "searchPlaceholder": "지역, 지하철, 대학, 단지명 또는 매물번호를 입력해주세요",
-    "priceMore": "시세 더보기"
+    "priceMore": "시세 더보기",
+    "banners": {
+      "title": "특별 이벤트"
+    },
+    "newListings": {
+      "title": "신규 매물",
+      "subtitle": "방금 등록된 최신 매물을 확인하세요",
+      "viewAll": "전체 보기",
+      "like": "좋아요",
+      "views": "조회",
+      "new": "신규"
+    },
+    "mapPreview": {
+      "title": "지도에서 찾기",
+      "subtitle": "인기 지역을 지도에서 확인하세요",
+      "viewMap": "지도에서 보기",
+      "popularAreas": "인기 지역"
+    },
+    "movingPromo": {
+      "title": "안전하고 빠른 이사 서비스",
+      "subtitle": "3단계로 끝나는 간편한 이사",
+      "getQuote": "견적 받기",
+      "completedJobs": "완료된 이사",
+      "avgRating": "평균 평점",
+      "responseTime": "평균 응답 시간"
+    },
+    "trustProof": {
+      "title": "믿을 수 있는 TOFU",
+      "subtitle": "실제 데이터로 증명하는 신뢰"
+    },
+    "reviews": {
+      "title": "실제 고객 후기",
+      "subtitle": "TOFU를 이용한 고객들의 생생한 후기",
+      "viewAll": "전체 후기 보기",
+      "verified": "인증됨"
+    },
+    "partnerCTA": {
+      "title": "파트너와 함께 성장하세요",
+      "subtitle": "부동산 또는 이사 파트너로 등록하고 더 많은 고객을 만나보세요",
+      "realEstate": {
+        "title": "부동산 파트너",
+        "description": "매물을 등록하고 더 많은 고객을 만나보세요"
+      },
+      "delivery": {
+        "title": "이사 파트너",
+        "description": "이사 서비스를 제공하고 수익을 올려보세요"
+      },
+      "apply": "파트너 신청"
+    }
   }
 }

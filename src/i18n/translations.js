@@ -23,6 +23,7 @@ export const translations = {
       newsContent: '뉴스 / 콘텐츠',
       banners: '배너 관리',
       reviews: '리뷰 관리',
+      discounts: '할인/쿠폰',
       settings: '설정',
       // Business menu
       contracts: '계약 내역',
@@ -89,6 +90,7 @@ export const translations = {
       newsContent: 'News / Content',
       banners: 'Banner Management',
       reviews: 'Review Management',
+      discounts: 'Discounts / Coupons',
       settings: 'Settings',
       // Business menu
       contracts: 'Contracts',

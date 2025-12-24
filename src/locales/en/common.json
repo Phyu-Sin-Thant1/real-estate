@@ -10,9 +10,63 @@
     "hero": {
       "eyebrow": "No more complicated real estate information.",
       "title": "Find the perfect home for you!",
-      "subtitle": "Make smart decisions with big data recommendations and real-time market information."
+      "subtitle": "Make smart decisions with big data recommendations and real-time market information.",
+      "quickActions": {
+        "map": "Map Search",
+        "monthlyRent": "Monthly Rent",
+        "jeonse": "Jeonse",
+        "movingQuote": "Moving Quote"
+      }
     },
     "searchPlaceholder": "Enter region, subway, university, complex name or property number",
-    "priceMore": "View More Prices"
+    "priceMore": "View More Prices",
+    "banners": {
+      "title": "Special Events"
+    },
+    "newListings": {
+      "title": "New Listings",
+      "subtitle": "Check out the latest properties just registered",
+      "viewAll": "View All",
+      "like": "Like",
+      "views": "Views",
+      "new": "New"
+    },
+    "mapPreview": {
+      "title": "Find on Map",
+      "subtitle": "Check popular areas on the map",
+      "viewMap": "View on Map",
+      "popularAreas": "Popular Areas"
+    },
+    "movingPromo": {
+      "title": "Safe and Fast Moving Service",
+      "subtitle": "Easy moving in 3 steps",
+      "getQuote": "Get Quote",
+      "completedJobs": "Completed Moves",
+      "avgRating": "Average Rating",
+      "responseTime": "Avg Response Time"
+    },
+    "trustProof": {
+      "title": "Trusted TOFU",
+      "subtitle": "Trust proven by real data"
+    },
+    "reviews": {
+      "title": "Customer Reviews",
+      "subtitle": "Real reviews from TOFU customers",
+      "viewAll": "View All Reviews",
+      "verified": "Verified"
+    },
+    "partnerCTA": {
+      "title": "Grow with Partners",
+      "subtitle": "Register as a real estate or moving partner and meet more customers",
+      "realEstate": {
+        "title": "Real Estate Partner",
+        "description": "List properties and meet more customers"
+      },
+      "delivery": {
+        "title": "Moving Partner",
+        "description": "Provide moving services and increase revenue"
+      },
+      "apply": "Apply as Partner"
+    }
   }
 }

@@ -31,6 +31,8 @@
     font-family: 'Pretendard Variable', ui-sans-serif, system-ui;
     background-color: #ffffff; /* force white */
     color: var(--dabang-text);
+    margin: 0;
+    padding: 0;
   }
 
   body {
@@ -38,6 +40,11 @@
     background-color: #ffffff; /* force white */
     color: var(--dabang-text);
     line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+
+  #root {
     margin: 0;
     padding: 0;
   }
@@ -89,6 +96,15 @@
     @apply text-gray-400 hover:text-dabang-primary transition-colors cursor-pointer;
   }
   
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+
   .category-card {
     @apply bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 cursor-pointer border border-gray-100;
   }
@@ -160,5 +176,54 @@
   
   .border-dabang-primary {
     border-color: var(--dabang-primary);
+  }
+
+  /* Remove hover overlays from notification CTA button */
+  .notification-cta-button::before,
+  .notification-cta-button::after {
+    content: none !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  .notification-cta-button *::before,
+  .notification-cta-button *::after {
+    content: none !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  .notification-cta-button:hover::before,
+  .notification-cta-button:hover::after {
+    content: none !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* Ensure no absolute positioned overlays */
+  .notification-cta-button .hover-text,
+  .notification-cta-button .hover-label,
+  .notification-cta-button [class*="tooltip"],
+  .notification-cta-button [class*="hover"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* Prevent any white background overlays on hover */
+  .notification-cta-button:hover {
+    position: relative;
+  }
+
+  .notification-cta-button:hover::before,
+  .notification-cta-button:hover::after {
+    content: none !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    background: none !important;
   }
 }

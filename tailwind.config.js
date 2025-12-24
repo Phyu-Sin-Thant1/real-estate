@@ -47,6 +47,15 @@ export default {
         'admin-card': '0 10px 30px -15px rgba(15, 23, 42, 0.35)',
         'admin-soft': '0 20px 45px -25px rgba(15, 23, 42, 0.45)',
       },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        fadeIn: 'fadeIn 0.6s ease-out forwards',
+      },
     },
   },
   plugins: [],
