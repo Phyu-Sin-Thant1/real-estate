@@ -17,21 +17,25 @@ const SectionHeader = ({ title, subtitle, className = '', badge, badgeColor = 'i
     emerald: 'bg-emerald-500',
   }
 
+  const isCentered = className.includes('text-center')
+  
   return (
     <div className={`mb-8 md:mb-12 ${className}`}>
       {badge && (
-        <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${badgeColors[badgeColor]}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${pulseColors[badgeColor]} animate-pulse`} />
-          <p className="text-xs font-semibold uppercase tracking-wider">
-            {badge}
-          </p>
+        <div className={`${isCentered ? 'flex justify-center' : ''}`}>
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 ${badgeColors[badgeColor]}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${pulseColors[badgeColor]} animate-pulse`} />
+            <p className="text-xs font-semibold uppercase tracking-wider">
+              {badge}
+            </p>
+          </div>
         </div>
       )}
-      <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight leading-tight">
+      <h2 className={`text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 tracking-tight leading-tight ${isCentered ? 'text-center' : ''}`}>
         {title}
       </h2>
       {subtitle && (
-        <p className="text-base md:text-lg text-slate-600 max-w-2xl leading-relaxed">
+        <p className={`text-base md:text-lg text-slate-600 max-w-2xl leading-relaxed ${isCentered ? 'mx-auto text-center' : ''}`}>
           {subtitle}
         </p>
       )}

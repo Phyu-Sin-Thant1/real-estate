@@ -5,7 +5,7 @@ const ListingCard = ({ listing, isLiked, onToggleLike, onClick }) => {
   return (
     <Card 
       variant="default" 
-      className="overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:shadow-xl rounded-2xl border-2 border-slate-100"
+      className="overflow-hidden group cursor-pointer transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl rounded-2xl border-2 border-slate-100 hover:border-indigo-200"
       onClick={onClick}
     >
       <div className="relative aspect-[4/3] bg-gray-200 overflow-hidden">
@@ -13,7 +13,7 @@ const ListingCard = ({ listing, isLiked, onToggleLike, onClick }) => {
           {listing.tags.map((tag, idx) => (
             <span
               key={idx}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg backdrop-blur-sm ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded-lg backdrop-blur-sm shadow-md ${
                 tag === '신규' ? 'bg-red-500/90 text-white' :
                 tag === '인기' ? 'bg-orange-500/90 text-white' :
                 'bg-blue-500/90 text-white'
@@ -29,9 +29,9 @@ const ListingCard = ({ listing, isLiked, onToggleLike, onClick }) => {
               e.stopPropagation()
               onToggleLike(listing.id)
             }}
-            className={`p-2 rounded-full backdrop-blur-sm transition-all ${
+            className={`p-2 rounded-full backdrop-blur-sm transition-all shadow-md ${
               isLiked
-                ? 'bg-red-500 text-white shadow-md'
+                ? 'bg-red-500 text-white shadow-lg'
                 : 'bg-white/90 text-gray-600 hover:bg-white hover:scale-110'
             }`}
           >
@@ -40,11 +40,14 @@ const ListingCard = ({ listing, isLiked, onToggleLike, onClick }) => {
             </svg>
           </button>
         </div>
-        <img
-          src={listing.image}
-          alt={listing.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        <div className="relative w-full h-full overflow-hidden">
+          <img
+            src={listing.image}
+            alt={listing.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        </div>
       </div>
       <div className="p-5">
         <h3 className="font-semibold text-gray-900 mb-1.5 line-clamp-1 text-base">{listing.title}</h3>

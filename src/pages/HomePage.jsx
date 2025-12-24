@@ -7,6 +7,10 @@ import SectionHeader from '../components/home/SectionHeader'
 import ListingCard from '../components/home/ListingCard'
 import NewsPanel from '../components/home/NewsPanel'
 import TrustBand from '../components/home/TrustBand'
+import ReviewSection from '../components/home/ReviewSection'
+import WhyChooseUs from '../components/home/WhyChooseUs'
+import ScrollToTop from '../components/home/ScrollToTop'
+import SectionDivider from '../components/home/SectionDivider'
 import { useNavigate } from 'react-router-dom'
 import {
   trendingListings,
@@ -15,6 +19,7 @@ import {
   platformKPIs,
   marketNews,
   marketSignals,
+  reviews,
 } from '../mock/homeMockData'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -65,14 +70,33 @@ const HomePage = () => {
         {/* 2) TRUST METRICS (Premium Trust Band) */}
         <TrustBand kpis={platformKPIs} />
 
+        {/* 2.5) WHY CHOOSE US */}
+        <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-white via-indigo-50/20 to-white">
+          <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
+            <SectionHeader
+              title="왜 TOFU를 선택해야 할까요?"
+              subtitle="신뢰할 수 있는 서비스와 투명한 거래로 더 나은 부동산 경험을 제공합니다"
+              badge="핵심 가치"
+              badgeColor="indigo"
+              className="text-center"
+            />
+            <WhyChooseUs />
+      </div>
+        </section>
+
         {/* 3) QUICK CATEGORY GRID */}
         <section className="py-12 md:py-16">
-          <ServiceGrid />
+      <ServiceGrid />
         </section>
 
         {/* 4) FEATURED LISTINGS */}
-        <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-white via-slate-50/30 to-white">
-          <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
+        <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-white via-slate-50/30 to-white relative overflow-hidden">
+          {/* Premium Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%234F46E5' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+          }} />
+          
+          <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto relative z-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-8">
               <SectionHeader
                 title="인기 매물"
@@ -99,17 +123,24 @@ const HomePage = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-              {filteredListings.map((listing) => (
-                <ListingCard
+              {filteredListings.map((listing, idx) => (
+                <div
                   key={listing.id}
-                  listing={listing}
-                  isLiked={likedProperties.has(listing.id)}
-                  onToggleLike={toggleLike}
-                  onClick={() => navigate(`/property/${listing.id}`)}
-                />
+                  className="transform transition-all duration-500 hover:scale-[1.02]"
+                  style={{
+                    animationDelay: `${idx * 50}ms`,
+                  }}
+                >
+                  <ListingCard
+                    listing={listing}
+                    isLiked={likedProperties.has(listing.id)}
+                    onToggleLike={toggleLike}
+                    onClick={() => navigate(`/property/${listing.id}`)}
+                  />
+                </div>
               ))}
-            </div>
-
+      </div>
+      
             <div className="flex justify-end mt-8">
               <Button
                 variant="outline"
@@ -357,7 +388,7 @@ const HomePage = () => {
                     파트너 신청
                   </Button>
                 </div>
-              </div>
+      </div>
 
               <div 
                 className="relative rounded-2xl border-2 border-orange-200/50 bg-gradient-to-br from-orange-50/30 via-white to-amber-50/20 p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl overflow-hidden group"
@@ -398,9 +429,73 @@ const HomePage = () => {
               </div>
           </div>
         </div>
+        </section>
+
+        {/* 7) CUSTOMER REVIEWS */}
+        <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-white via-slate-50/30 to-white">
+          <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
+            <SectionHeader
+              title="고객 후기"
+              subtitle="실제 이용 고객들의 생생한 후기를 확인하세요"
+              badge="고객 후기"
+              badgeColor="emerald"
+              className="text-center"
+            />
+            
+            {/* Premium Stats Bar */}
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 mb-10 p-6 rounded-2xl border-2 border-emerald-100/50 bg-gradient-to-br from-emerald-50/30 via-white to-slate-50/20 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">4.8</p>
+                  <p className="text-xs text-slate-600 font-medium">평균 평점</p>
+                </div>
+              </div>
+              <div className="h-12 w-px bg-slate-200" />
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">12,345+</p>
+                  <p className="text-xs text-slate-600 font-medium">총 리뷰 수</p>
+                </div>
+              </div>
+              <div className="h-12 w-px bg-slate-200" />
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-900">98%</p>
+                  <p className="text-xs text-slate-600 font-medium">만족도</p>
+                </div>
+              </div>
+      </div>
+      
+            <ReviewSection reviews={reviews} />
+
+            <div className="flex justify-center mt-10">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/reviews')}
+                className="h-12 px-8 rounded-xl border-2 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50 font-semibold transition-all shadow-sm hover:shadow-md"
+              >
+                모든 후기 보기 →
+              </Button>
+          </div>
+        </div>
       </section>
       
-        {/* 7) NEWS / MARKET INSIGHTS */}
+        {/* 8) NEWS / MARKET INSIGHTS */}
         <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-slate-50/50 to-white">
           <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
             <SectionHeader
@@ -445,8 +540,11 @@ const HomePage = () => {
         </section>
       </main>
 
-      {/* 8) FOOTER */}
+      {/* 9) FOOTER */}
       <Footer />
+
+      {/* Floating Scroll to Top Button */}
+      <ScrollToTop />
     </div>
   )
 }
