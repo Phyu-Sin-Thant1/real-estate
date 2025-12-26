@@ -20,9 +20,7 @@ export const realEstateMenu = [
   { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/real-estate/stats', group: null },
   { key: BUSINESS_MENU_KEYS.CUSTOMERS, translationKey: 'nav.customers', path: '/business/real-estate/customers', group: null },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/real-estate/reviews', group: null },
-  // Marketing group
-  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts', group: 'marketing' },
-  { key: 'promotions', translationKey: 'nav.promotions', path: '/business/real-estate/promotions', group: 'marketing' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts', group: null },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/real-estate/settings', group: null }
 ];
 
@@ -34,9 +32,7 @@ export const deliveryMenu = [
   { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/stats', group: null },
   { key: BUSINESS_MENU_KEYS.CUSTOMERS, translationKey: 'nav.customers', path: '/business/customers', group: null },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/reviews', group: null },
-  // Marketing group
-  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/discounts', group: 'marketing' },
-  { key: 'promotions', translationKey: 'nav.promotions', path: '/business/delivery/promotions', group: 'marketing' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/discounts', group: null },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/settings', group: null }
 ];
 

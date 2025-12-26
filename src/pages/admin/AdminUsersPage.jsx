@@ -50,14 +50,17 @@ const AdminUsersPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Users Management</h1>
-        <p className="text-gray-600 mt-1">Manage platform users and their roles</p>
+    <div className="space-y-8">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-dabang-primary/10 via-indigo-50/50 to-purple-50/30 rounded-2xl p-6 border border-dabang-primary/20">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-dabang-primary to-indigo-600 bg-clip-text text-transparent">
+          Users Management
+        </h1>
+        <p className="text-gray-600 mt-2 font-medium">Manage platform users and their roles</p>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      {/* Premium Filters */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-shadow duration-300">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
@@ -93,7 +96,7 @@ const AdminUsersPage = () => {
                 setRoleFilter('ALL');
                 setStatusFilter('ALL');
               }}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="px-5 py-2.5 border border-gray-300 text-sm font-semibold rounded-xl text-gray-700 bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 shadow-sm hover:shadow-md transition-all duration-200"
             >
               Reset Filters
             </button>
@@ -101,11 +104,11 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Premium Users Table */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <input
@@ -135,9 +138,9 @@ const AdminUsersPage = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+                <tr key={user.id} className="hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 transition-all duration-200 border-b border-gray-100">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
@@ -167,14 +170,14 @@ const AdminUsersPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
-                      <select className="text-sm rounded border-gray-300 focus:border-dabang-primary focus:ring-dabang-primary">
+                      <select className="text-sm rounded-lg border-gray-300 focus:border-dabang-primary focus:ring-2 focus:ring-dabang-primary shadow-sm px-3 py-1.5 font-medium">
                         <option>Change Role</option>
                         <option>USER</option>
                         <option>BUSINESS_REAL_ESTATE</option>
                         <option>BUSINESS_DELIVERY</option>
                         <option>ADMIN</option>
                       </select>
-                      <button className="text-red-600 hover:text-red-800">
+                      <button className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors shadow-sm hover:shadow-md">
                         Deactivate
                       </button>
                     </div>

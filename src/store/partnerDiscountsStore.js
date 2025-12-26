@@ -186,7 +186,9 @@ export const seedPartnerDiscounts = () => {
       isActive: false,
       stacking: 'ALLOW',
       relatedEntityType: 'LISTING',
-      relatedEntityId: 'listing-1',
+      relatedEntityId: '1', // Use numeric ID for compatibility
+      listingId: '1',
+      listingTitle: '강남 아파트 A동 101호',
       minAmount: 200000,
       usageLimit: 50,
       usedCount: 8,
@@ -253,7 +255,9 @@ export const seedPartnerDiscounts = () => {
       isActive: false,
       stacking: 'NONE',
       relatedEntityType: 'LISTING',
-      relatedEntityId: 'listing-2',
+      relatedEntityId: '2', // Use numeric ID for compatibility
+      listingId: '2',
+      listingTitle: '송파 오피스텔 B동 502호',
       minAmount: 500000,
       maxDiscount: 200000,
       usageLimit: 30,

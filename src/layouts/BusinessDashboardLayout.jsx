@@ -4,7 +4,6 @@ import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import { realEstateMenu, deliveryMenu } from '../config/businessMenu';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
-import MarketingDropdown from '../components/layout/MarketingDropdown';
 
 const getMenuForUser = (user) => {
   if (!user) return realEstateMenu;
@@ -64,59 +63,22 @@ const BusinessDashboardLayout = () => {
         
         <nav className="flex-1 px-3 py-6 overflow-y-auto">
           <ul className="space-y-1.5">
-            {menuItems.map((item) => {
-              // Skip marketing items as they'll be in dropdown
-              if (item.group === 'marketing') return null;
-              
-              return (
-                <li key={item.key}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
-                        isActive
-                          ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
-                          : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
-                      }`
-                    }
-                  >
-                    {t(item.translationKey)}
-                  </NavLink>
-                </li>
-              );
-            })}
-            {/* Marketing Dropdown */}
-            {(() => {
-              const marketingItems = menuItems
-                .filter(item => item.group === 'marketing')
-                .map(item => {
-                  // Extract just the last part of the path (discounts or promotions)
-                  let pathPart = item.path.split('/').pop();
-                  // If path includes 'delivery', handle it differently
-                  if (item.path.includes('/delivery/')) {
-                    pathPart = item.path.split('/delivery/')[1];
-                  } else if (item.path.includes('/real-estate/')) {
-                    pathPart = item.path.split('/real-estate/')[1];
-                  } else if (item.path.includes('/business/')) {
-                    pathPart = item.path.split('/business/')[1];
+            {menuItems.map((item) => (
+              <li key={item.key}>
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
+                    }`
                   }
-                  
-                  return {
-                    key: item.key,
-                    translationKey: item.translationKey,
-                    path: pathPart,
-                    icon: null
-                  };
-                });
-              
-              const basePath = user?.role === 'BUSINESS_REAL_ESTATE' 
-                ? '/business/real-estate' 
-                : '/business';
-              
-              return marketingItems.length > 0 ? (
-                <MarketingDropdown items={marketingItems} basePath={basePath} />
-              ) : null;
-            })()}
+                >
+                  {t(item.translationKey)}
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </nav>
         

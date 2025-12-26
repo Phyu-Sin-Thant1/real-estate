@@ -3,7 +3,6 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
-import MarketingDropdown from '../components/layout/MarketingDropdown';
 
 const menuItems = [
   { key: 'dashboard', translationKey: 'nav.dashboard', path: '/admin/dashboard', icon: '📊' },
@@ -23,12 +22,9 @@ const menuItems = [
   { key: 'content', translationKey: 'nav.newsContent', path: '/admin/content/news', icon: '📰' },
   { key: 'banners', translationKey: 'nav.banners', path: '/admin/content/banners', icon: '🖼️' },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/admin/reviews', icon: '⭐' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/admin/marketing/discounts', icon: '🎫' },
+  { key: 'promotions', translationKey: 'nav.promotions', path: '/admin/marketing/promotions', icon: '📢' },
   { key: 'settings', translationKey: 'nav.settings', path: '/admin/settings', icon: '⚙️' }
-];
-
-const marketingItems = [
-  { key: 'discounts', translationKey: 'nav.discounts', path: 'discounts', icon: '🎫' },
-  { key: 'promotions', translationKey: 'nav.promotions', path: 'promotions', icon: '📢' }
 ];
 
 const AdminDashboardLayout = () => {
@@ -48,25 +44,32 @@ const AdminDashboardLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">{t('nav.adminDashboard')}</h2>
-          <p className="text-sm text-gray-500 mt-1">{t('nav.adminPanel')}</p>
+      <div className="w-64 bg-white shadow-2xl border-r border-gray-200/50 flex flex-col backdrop-blur-sm">
+        <div className="p-6 border-b border-gray-200/60 bg-gradient-to-br from-white to-gray-50/50">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-dabang-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-dabang-primary/30">
+              <span className="text-white font-bold text-xl">A</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t('nav.adminDashboard')}</h2>
+              <p className="text-xs text-gray-500 font-medium">{t('nav.adminPanel')}</p>
+            </div>
+          </div>
         </div>
         
-        <nav className="flex-1 px-4 py-6">
-          <ul className="space-y-1">
+        <nav className="flex-1 px-3 py-6 overflow-y-auto">
+          <ul className="space-y-1.5">
             {menuItems.map((item) => (
               <li key={item.key}>
                 <NavLink
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                    `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                       isActive
-                        ? 'bg-dabang-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
                     }`
                   }
                 >
@@ -75,15 +78,13 @@ const AdminDashboardLayout = () => {
                 </NavLink>
               </li>
             ))}
-            {/* Marketing Dropdown */}
-            <MarketingDropdown items={marketingItems} basePath="/admin" />
           </ul>
         </nav>
         
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200/60 bg-gradient-to-b from-white to-gray-50/30">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300/60 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:border-red-200 hover:text-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
           >
             {t('common.logout')}
           </button>
@@ -103,7 +104,7 @@ const AdminDashboardLayout = () => {
         />
         
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 bg-transparent">
           <Outlet />
         </main>
       </div>

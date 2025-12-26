@@ -15,3 +15,4 @@ export const getPromotionSlots = () => {
   return safeRead(STORAGE_KEY, []);
 };
 
+

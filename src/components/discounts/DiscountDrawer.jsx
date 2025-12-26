@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useI18n } from '../../context/I18nContext';
+import { useUnifiedAuth } from '../../context/UnifiedAuthContext';
+import { getListingsByPartner } from '../../store/realEstateListingsStore';
 
 const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'campaign', partnerId = null, scope = 'REAL_ESTATE' }) => {
   const { t } = useI18n();
+  const { user } = useUnifiedAuth();
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -21,10 +24,32 @@ const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'camp
     usageLimit: '',
     relatedEntityType: mode === 'discount' ? 'NONE' : undefined,
     relatedEntityId: mode === 'discount' ? null : undefined,
+    listingId: mode === 'discount' ? null : undefined,
+    listingTitle: mode === 'discount' ? null : undefined,
     isActive: mode === 'discount' ? true : undefined,
     partnerName: '',
   });
   const [errors, setErrors] = useState({});
+  const [availableListings, setAvailableListings] = useState([]);
+
+  // Load listings when drawer opens and scope is REAL_ESTATE
+  useEffect(() => {
+    if (isOpen && mode === 'discount' && scope === 'REAL_ESTATE' && user?.email) {
+      try {
+        const listings = getListingsByPartner(user.email);
+        // Filter to only LIVE listings (and optionally PENDING)
+        const eligibleListings = listings.filter((listing) => 
+          listing.status === 'LIVE' || listing.status === 'PENDING'
+        );
+        setAvailableListings(eligibleListings);
+      } catch (error) {
+        console.warn('Error loading listings:', error);
+        setAvailableListings([]);
+      }
+    } else {
+      setAvailableListings([]);
+    }
+  }, [isOpen, mode, scope, user?.email]);
 
   useEffect(() => {
     if (discount) {
@@ -45,7 +70,9 @@ const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'camp
         maxDiscount: discount.maxDiscount || '',
         usageLimit: discount.usageLimit || '',
         relatedEntityType: discount.relatedEntityType || 'NONE',
-        relatedEntityId: discount.relatedEntityId || null,
+        relatedEntityId: discount.relatedEntityId || discount.listingId || null,
+        listingId: discount.listingId || discount.relatedEntityId || null,
+        listingTitle: discount.listingTitle || null,
         isActive: discount.isActive !== undefined ? discount.isActive : true,
         partnerName: discount.partnerName || '',
       });
@@ -68,6 +95,8 @@ const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'camp
         usageLimit: '',
         relatedEntityType: mode === 'discount' ? 'NONE' : undefined,
         relatedEntityId: mode === 'discount' ? null : undefined,
+        listingId: mode === 'discount' ? null : undefined,
+        listingTitle: mode === 'discount' ? null : undefined,
         isActive: mode === 'discount' ? true : undefined,
         partnerName: '',
       });
@@ -91,8 +120,12 @@ const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'camp
     if (form.startAt && form.endAt && new Date(form.endAt) <= new Date(form.startAt)) {
       newErrors.endAt = t('discounts.validation.endAfterStart');
     }
-    if (form.relatedEntityType && form.relatedEntityType !== 'NONE' && !form.relatedEntityId) {
-      newErrors.relatedEntityId = t('discounts.validation.entityIdRequired');
+    if (form.relatedEntityType && form.relatedEntityType !== 'NONE' && !form.relatedEntityId && !form.listingId) {
+      newErrors.listingId = t('discounts.validation.entityIdRequired') || '매물을 선택해주세요';
+    }
+    // For LISTING type, require listingId
+    if (form.relatedEntityType === 'LISTING' && !form.listingId) {
+      newErrors.listingId = '매물을 선택해주세요';
     }
     if (form.usageLimit && form.usageLimit < (discount?.usedCount || 0)) {
       newErrors.usageLimit = t('discounts.validation.usageLimitValid');
@@ -105,6 +138,17 @@ const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'camp
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
+
+    // If LISTING type, ensure listingId and listingTitle are set
+    if (form.relatedEntityType === 'LISTING' && form.listingId) {
+      const selectedListing = availableListings.find(l => 
+        l.id === form.listingId || l.id?.toString() === form.listingId?.toString()
+      );
+      if (selectedListing) {
+        form.listingTitle = selectedListing.title || selectedListing.address || `Listing ${form.listingId}`;
+        form.relatedEntityId = form.listingId; // Keep for backward compatibility
+      }
+    }
 
     const data = {
       ...form,
@@ -314,7 +358,56 @@ const DiscountDrawer = ({ isOpen, onClose, onSave, discount = null, mode = 'camp
                 </select>
               </div>
 
-              {form.relatedEntityType !== 'NONE' && (
+              {form.relatedEntityType === 'LISTING' && scope === 'REAL_ESTATE' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    적용 매물 *
+                  </label>
+                  {availableListings.length === 0 ? (
+                    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                      <p className="text-sm text-gray-600 mb-3">매물이 없습니다. 먼저 매물을 등록하세요.</p>
+                      <a
+                        href="/business/real-estate/listings"
+                        className="text-sm text-dabang-primary hover:underline font-medium"
+                      >
+                        매물 등록하기 →
+                      </a>
+                    </div>
+                  ) : (
+                    <select
+                      value={form.listingId || ''}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedListing = availableListings.find(l => 
+                          l.id === selectedId || l.id?.toString() === selectedId?.toString()
+                        );
+                        setForm({ 
+                          ...form, 
+                          listingId: selectedId || null,
+                          listingTitle: selectedListing?.title || selectedListing?.address || null,
+                          relatedEntityId: selectedId || null, // Keep for backward compatibility
+                        });
+                      }}
+                      className={`w-full border rounded-lg px-3 py-2 ${errors.listingId ? 'border-red-500' : 'border-gray-300'}`}
+                      required
+                    >
+                      <option value="">매물을 선택하세요</option>
+                      {availableListings.map((listing) => {
+                        const statusBadge = listing.status === 'LIVE' ? '🟢' : listing.status === 'PENDING' ? '🟡' : '⚪';
+                        const priceSummary = listing.price || listing.originalPrice || '가격 미정';
+                        const district = listing.address?.split(' ').slice(0, 2).join(' ') || listing.district || '';
+                        return (
+                          <option key={listing.id} value={listing.id}>
+                            {statusBadge} {listing.title || listing.address || `Listing ${listing.id}`} · {district} · {priceSummary}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                  {errors.listingId && <p className="text-red-500 text-xs mt-1">{errors.listingId}</p>}
+                </div>
+              )}
+              {form.relatedEntityType !== 'NONE' && form.relatedEntityType !== 'LISTING' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {t('discounts.form.relatedEntityId')} *

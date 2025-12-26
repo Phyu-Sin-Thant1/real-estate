@@ -3,7 +3,6 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
-import MarketingDropdown from '../components/layout/MarketingDropdown';
 
 const realEstateMenu = [
   { key: 'dashboard', translationKey: 'nav.dashboard', path: '/business/real-estate/dashboard', group: null },
@@ -14,9 +13,7 @@ const realEstateMenu = [
   { key: 'analytics', translationKey: 'nav.analytics', path: '/business/real-estate/analytics', group: null },
   { key: 'customers', translationKey: 'nav.customers', path: '/business/real-estate/customers', group: null },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/real-estate/reviews', group: null },
-  // Marketing group
-  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts', group: 'marketing' },
-  { key: 'promotions', translationKey: 'nav.promotions', path: '/business/real-estate/promotions', group: 'marketing' },
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts', group: null },
   { key: 'settings', translationKey: 'nav.settings', path: '/business/real-estate/settings', group: null }
 ];
 
@@ -59,46 +56,22 @@ const RealEstateBusinessLayout = () => {
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto py-4 px-3">
             <ul className="space-y-1.5">
-              {realEstateMenu.map((item) => {
-                // Skip marketing items as they'll be in dropdown
-                if (item.group === 'marketing') return null;
-                
-                return (
-                  <li key={item.key}>
-                    <NavLink
-                      to={item.path}
-                      className={({ isActive }) =>
-                        `block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          isActive
-                            ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
-                            : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
-                        }`
-                      }
-                    >
-                      {t(item.translationKey)}
-                    </NavLink>
-                  </li>
-                );
-              })}
-              {/* Marketing Dropdown */}
-              {(() => {
-                const marketingItems = realEstateMenu
-                  .filter(item => item.group === 'marketing')
-                  .map(item => {
-                    // Extract just the last part (discounts or promotions)
-                    const pathPart = item.path.split('/').pop();
-                    return {
-                      key: item.key,
-                      translationKey: item.translationKey,
-                      path: pathPart,
-                      icon: null
-                    };
-                  });
-                
-                return marketingItems.length > 0 ? (
-                  <MarketingDropdown items={marketingItems} basePath="/business/real-estate" />
-                ) : null;
-              })()}
+              {realEstateMenu.map((item) => (
+                <li key={item.key}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isActive
+                          ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                          : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
+                      }`
+                    }
+                  >
+                    {t(item.translationKey)}
+                  </NavLink>
+                </li>
+              ))}
             </ul>
           </nav>
 

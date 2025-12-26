@@ -93,9 +93,7 @@ import AdminPromotionsPage from '../pages/admin/AdminPromotionsPage'
 import RealEstateReviewsPage from '../pages/business/real-estate/RealEstateReviewsPage'
 import BusinessReviewsPage from '../pages/business/delivery/BusinessReviewsPage'
 import BusinessRealEstateDiscountsPage from '../pages/business/real-estate/BusinessRealEstateDiscountsPage'
-import BusinessRealEstatePromotionsPage from '../pages/business/real-estate/BusinessRealEstatePromotionsPage'
 import BusinessDeliveryDiscountsPage from '../pages/business/delivery/BusinessDeliveryDiscountsPage'
-import BusinessDeliveryPromotionsPage from '../pages/business/delivery/BusinessDeliveryPromotionsPage'
 
 // User protected pages
 import UserProtectedRoute from './UserProtectedRoute'
@@ -237,10 +235,8 @@ const AppRouter = () => {
           <Route path="customers" element={<BusinessCustomersPage />} />
           <Route path="reviews" element={<BusinessReviewsPage />} />
           <Route path="marketing/discounts" element={<BusinessDeliveryDiscountsPage />} />
-          <Route path="marketing/promotions" element={<BusinessDeliveryPromotionsPage />} />
           {/* Legacy routes for backward compatibility */}
           <Route path="discounts" element={<BusinessDeliveryDiscountsPage />} />
-          <Route path="promotions" element={<BusinessDeliveryPromotionsPage />} />
           <Route path="settings" element={<BusinessSettingsPage />} />
         </Route>
 
@@ -266,10 +262,8 @@ const AppRouter = () => {
           <Route path="customers" element={<RealEstateCustomersPage />} />
           <Route path="reviews" element={<RealEstateReviewsPage />} />
           <Route path="marketing/discounts" element={<BusinessRealEstateDiscountsPage />} />
-          <Route path="marketing/promotions" element={<BusinessRealEstatePromotionsPage />} />
           {/* Legacy routes for backward compatibility */}
           <Route path="discounts" element={<BusinessRealEstateDiscountsPage />} />
-          <Route path="promotions" element={<BusinessRealEstatePromotionsPage />} />
           <Route path="settings" element={<RealEstateSettingsPage />} />
           {/* Reservation routes */}
           <Route path="reservations" element={<ReservationsListPage />} />

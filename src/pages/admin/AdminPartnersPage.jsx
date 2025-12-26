@@ -91,23 +91,26 @@ const AdminPartnersPage = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Partners Management</h1>
-        <p className="text-gray-600 mt-1">Manage real estate and delivery partners</p>
+    <div className="space-y-8">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-dabang-primary/10 via-indigo-50/50 to-purple-50/30 rounded-2xl p-6 border border-dabang-primary/20">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-dabang-primary to-indigo-600 bg-clip-text text-transparent">
+          Partners Management
+        </h1>
+        <p className="text-gray-600 mt-2 font-medium">Manage real estate and delivery partners</p>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      {/* Premium Tabs */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 p-1">
+        <nav className="flex space-x-2">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`flex-1 whitespace-nowrap py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeTab === tab.key
-                  ? 'border-dabang-primary text-dabang-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
             >
               {tab.label}
@@ -116,18 +119,18 @@ const AdminPartnersPage = () => {
         </nav>
       </div>
 
-      {/* Partners Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Premium Partners Table */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                   <input
                     type="checkbox"
                     checked={selectedPartners.length === filteredPartners.length && filteredPartners.length > 0}
                     onChange={handleSelectAll}
-                    className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
+                    className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary focus:ring-2"
                   />
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -161,7 +164,7 @@ const AdminPartnersPage = () => {
                 filteredPartners.map((partner) => (
                   <tr 
                     key={partner.email} 
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className="hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/30 cursor-pointer transition-all duration-200 border-b border-gray-100"
                     onClick={() => handleRowClick(partner)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -179,12 +182,12 @@ const AdminPartnersPage = () => {
                       <div className="text-sm text-gray-900">{partner.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleClass(partner.role)}`}>
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm ${getRoleClass(partner.role)}`}>
                         {getRoleLabel(partner.role)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(partner.status)}`}>
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full shadow-sm ${getStatusClass(partner.status)}`}>
                         {partner.status}
                       </span>
                     </td>
@@ -196,14 +199,14 @@ const AdminPartnersPage = () => {
                         {partner.status === 'ACTIVE' ? (
                           <button 
                             onClick={() => handleSuspend(partner.email)}
-                            className="text-yellow-600 hover:text-yellow-800"
+                            className="px-3 py-1.5 text-xs font-semibold text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded-lg transition-colors shadow-sm hover:shadow-md"
                           >
                             Suspend
                           </button>
                         ) : (
                           <button 
                             onClick={() => handleReactivate(partner.email)}
-                            className="text-green-600 hover:text-green-800"
+                            className="px-3 py-1.5 text-xs font-semibold text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors shadow-sm hover:shadow-md"
                           >
                             Reactivate
                           </button>
@@ -218,13 +221,13 @@ const AdminPartnersPage = () => {
         </div>
       </div>
 
-      {/* Detail Drawer */}
+      {/* Premium Detail Drawer */}
       {showDetailDrawer && selectedPartner && (
-        <div className="fixed inset-0 bg-black/30 flex justify-end z-50">
-          <div className="bg-white w-full max-w-md h-full shadow-xl border-l border-gray-200 flex flex-col">
-            <div className="p-6 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-end z-50">
+          <div className="bg-white w-full max-w-md h-full shadow-2xl border-l border-gray-200/50 flex flex-col">
+            <div className="p-6 border-b border-gray-200/60 bg-gradient-to-r from-dabang-primary/5 to-indigo-50/30">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Partner Details</h2>
+                <h2 className="text-xl font-bold bg-gradient-to-r from-dabang-primary to-indigo-600 bg-clip-text text-transparent">Partner Details</h2>
                 <button
                   onClick={() => {
                     setShowDetailDrawer(false);
@@ -266,7 +269,7 @@ const AdminPartnersPage = () => {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
+            <div className="p-6 border-t border-gray-200/60 bg-gradient-to-b from-gray-50/50 to-white">
               <div className="flex space-x-3">
                 {selectedPartner.status === 'ACTIVE' ? (
                   <button
@@ -274,7 +277,7 @@ const AdminPartnersPage = () => {
                       handleSuspend(selectedPartner.email);
                       setShowDetailDrawer(false);
                     }}
-                    className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700"
+                    className="flex-1 px-4 py-3 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     Suspend Partner
                   </button>
@@ -284,7 +287,7 @@ const AdminPartnersPage = () => {
                       handleReactivate(selectedPartner.email);
                       setShowDetailDrawer(false);
                     }}
-                    className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                    className="flex-1 px-4 py-3 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     Reactivate Partner
                   </button>

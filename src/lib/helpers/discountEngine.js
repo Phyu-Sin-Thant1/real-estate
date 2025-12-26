@@ -69,8 +69,20 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
   try {
     const partnerDiscounts = getPartnerDiscounts();
     const applicableDiscount = partnerDiscounts.find((discount) => {
-      // Must match partner
-      if (discount.partnerId !== partnerId) return false;
+      // Must match partner (handle different formats)
+      // Discounts use format: 'partner-{email-prefix}' (e.g., 'partner-seoulrealestate')
+      // Listings use format: email (e.g., 'seoulrealestate@tofu.com') or 'partner-{prefix}'
+      const discountPartnerId = discount.partnerId || '';
+      const discountPrefix = discountPartnerId.replace('partner-', '');
+      const inputPrefix = partnerId.replace('partner-', '').split('@')[0];
+      
+      // Match if exact match, or if prefixes match
+      const isMatch = discount.partnerId === partnerId || 
+                      discountPrefix === inputPrefix ||
+                      discountPartnerId === partnerId ||
+                      (partnerId.includes('@') && partnerId.split('@')[0] === discountPrefix);
+      
+      if (!isMatch) return false;
 
       // Must be active (status ACTIVE and isActive true)
       if (discount.status !== 'ACTIVE' || !discount.isActive) return false;
@@ -87,7 +99,9 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
       // Check entity linking
       if (discount.relatedEntityType !== 'NONE') {
         if (discount.relatedEntityType !== entityType) return false;
-        if (discount.relatedEntityId && discount.relatedEntityId !== entityId) return false;
+        // Check both listingId (new) and relatedEntityId (backward compatibility)
+        const discountEntityId = discount.listingId || discount.relatedEntityId;
+        if (discountEntityId && discountEntityId.toString() !== entityId?.toString()) return false;
       }
 
       // Check usage limit
@@ -167,3 +181,21 @@ export function applyDiscount(amount, discount) {
   };
 }
 
+/**
+ * Get applicable discount for a specific listing
+ * @param {string|number} listingId - Listing ID
+ * @param {string} partnerId - Partner ID
+ * @param {Date} now - Current date (defaults to now)
+ * @returns {Object|null} Applicable discount object or null
+ */
+export function getApplicableDiscountForListing(listingId, partnerId, now = new Date()) {
+  if (!listingId || !partnerId) return null;
+
+  return getApplicableDiscount({
+    partnerId,
+    scope: 'REAL_ESTATE',
+    entityType: 'LISTING',
+    entityId: listingId.toString(),
+    now,
+  });
+}

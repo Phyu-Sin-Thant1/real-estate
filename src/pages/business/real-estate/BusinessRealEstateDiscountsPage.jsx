@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../../context/I18nContext';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 import {
@@ -10,12 +11,13 @@ import {
   submitPartnerDiscount,
   seedPartnerDiscounts,
 } from '../../../store/partnerDiscountsStore';
-import { getListingsByPartner } from '../../../store/realEstateListingsStore';
+import { getListingsByPartner, getListingById } from '../../../store/realEstateListingsStore';
 import DiscountDrawer from '../../../components/discounts/DiscountDrawer';
 
 const BusinessRealEstateDiscountsPage = () => {
   const { t } = useI18n();
   const { user } = useUnifiedAuth();
+  const navigate = useNavigate();
   const [discounts, setDiscounts] = useState([]);
   const [showDrawer, setShowDrawer] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState(null);
@@ -308,7 +310,29 @@ const BusinessRealEstateDiscountsPage = () => {
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{t('discounts.form.relatedEntityType')}:</span>
                     <span>{t(`discounts.entityTypes.${discount.relatedEntityType}`)}</span>
-                    {discount.relatedEntityId && <span className="text-xs">({discount.relatedEntityId})</span>}
+                    {discount.relatedEntityType === 'LISTING' && discount.listingTitle && (
+                      <span className="text-xs text-dabang-primary font-medium">
+                        {discount.listingTitle}
+                      </span>
+                    )}
+                    {discount.relatedEntityType === 'LISTING' && discount.listingId && !discount.listingTitle && (
+                      <span className="text-xs">(ID: {discount.listingId})</span>
+                    )}
+                    {discount.relatedEntityType === 'LISTING' && (discount.listingId || discount.relatedEntityId) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const listingId = discount.listingId || discount.relatedEntityId;
+                          navigate(`/business/real-estate/listings?view=${listingId}`);
+                        }}
+                        className="text-xs text-dabang-primary hover:underline font-medium ml-1"
+                      >
+                        매물 보기 →
+                      </button>
+                    )}
+                    {discount.relatedEntityType !== 'LISTING' && discount.relatedEntityId && (
+                      <span className="text-xs">({discount.relatedEntityId})</span>
+                    )}
                   </div>
                 )}
                 {discount.usageLimit && (

@@ -257,83 +257,106 @@ const AdminApprovalsPage = () => {
   };
 
   return (
-    <div className="space-y-6 h-full">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Approvals & Reviews</h1>
-        <p className="text-gray-600 mt-1">Manage pending approvals and reviews</p>
+    <div className="space-y-8 h-full">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-dabang-primary/10 via-indigo-50/50 to-purple-50/30 rounded-2xl p-6 border border-dabang-primary/20">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-dabang-primary to-indigo-600 bg-clip-text text-transparent">
+          Approvals & Reviews
+        </h1>
+        <p className="text-gray-600 mt-2 font-medium">Manage pending approvals and reviews</p>
       </div>
 
-      <div className="flex items-center space-x-3">
+      {/* Premium Filter Buttons */}
+      <div className="flex items-center space-x-3 bg-white rounded-2xl shadow-lg border border-gray-200/50 p-4">
         <button
           onClick={() => setFilterType('ALL')}
-          className={`px-3 py-1 rounded-full text-sm border ${filterType === 'ALL' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+            filterType === 'ALL' 
+              ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white border-transparent shadow-lg shadow-dabang-primary/30' 
+              : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+          }`}
         >
           전체
         </button>
         <button
           onClick={() => setFilterType('PARTNER')}
-          className={`px-3 py-1 rounded-full text-sm border ${filterType === 'PARTNER' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+            filterType === 'PARTNER' 
+              ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white border-transparent shadow-lg shadow-dabang-primary/30' 
+              : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+          }`}
         >
           파트너 신청
         </button>
         <button
           onClick={() => setFilterType('LISTING')}
-          className={`px-3 py-1 rounded-full text-sm border ${filterType === 'LISTING' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+            filterType === 'LISTING' 
+              ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white border-transparent shadow-lg shadow-dabang-primary/30' 
+              : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+          }`}
         >
           매물 등록
         </button>
         <button
           onClick={() => setFilterType('REFUND')}
-          className={`px-3 py-1 rounded-full text-sm border ${filterType === 'REFUND' ? 'bg-dabang-primary text-white border-dabang-primary' : 'border-gray-200 text-gray-700'}`}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all duration-200 ${
+            filterType === 'REFUND' 
+              ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white border-transparent shadow-lg shadow-dabang-primary/30' 
+              : 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+          }`}
         >
           환불 요청
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Premium Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 rounded-lg bg-yellow-100 text-yellow-800">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-yellow-500 to-orange-600 opacity-5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-10 transition-opacity" />
+          <div className="flex items-center relative z-10">
+            <div className="flex-shrink-0 p-4 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 text-white shadow-lg">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Pending</h3>
-              <p className="text-2xl font-semibold text-gray-900">
+              <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Pending</h3>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
                 {approvals.filter(a => a.status === 'PENDING').length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 rounded-lg bg-green-100 text-green-800">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 opacity-5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-10 transition-opacity" />
+          <div className="flex items-center relative z-10">
+            <div className="flex-shrink-0 p-4 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Approved</h3>
-              <p className="text-2xl font-semibold text-gray-900">
+              <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Approved</h3>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
                 {approvals.filter(a => a.status === 'APPROVED').length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 rounded-lg bg-red-100 text-red-800">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-500 to-pink-600 opacity-5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:opacity-10 transition-opacity" />
+          <div className="flex items-center relative z-10">
+            <div className="flex-shrink-0 p-4 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 text-white shadow-lg">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Rejected</h3>
-              <p className="text-2xl font-semibold text-gray-900">
+              <h3 className="text-sm font-medium text-gray-600 uppercase tracking-wide">Rejected</h3>
+              <p className="text-3xl font-bold text-gray-900 mt-1">
                 {approvals.filter(a => a.status === 'REJECTED').length}
               </p>
             </div>
@@ -341,8 +364,8 @@ const AdminApprovalsPage = () => {
         </div>
       </div>
 
-      {/* Approvals Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {/* Premium Approvals Table */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden hover:shadow-xl transition-shadow duration-300">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
