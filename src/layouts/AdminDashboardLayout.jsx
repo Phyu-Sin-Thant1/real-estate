@@ -3,6 +3,7 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
+import MarketingDropdown from '../components/layout/MarketingDropdown';
 
 const menuItems = [
   { key: 'dashboard', translationKey: 'nav.dashboard', path: '/admin/dashboard', icon: '📊' },
@@ -13,7 +14,6 @@ const menuItems = [
   { key: 'approvals', translationKey: 'nav.approvalsReviews', path: '/admin/approvals', icon: '✅' },
   { key: 'finance', translationKey: 'nav.paymentsSettlement', path: '/admin/finance/settlements', icon: '💰' },
   { key: 'pricing', translationKey: 'nav.commissionsPricing', path: '/admin/finance/rules', icon: '📋' },
-  { key: 'discounts', translationKey: 'nav.discounts', path: '/admin/discounts', icon: '🎫' },
   { key: 'support', translationKey: 'nav.supportTickets', path: '/admin/support/tickets', icon: '🎫' },
   { key: 'reports', translationKey: 'nav.reportsAnalytics', path: '/admin/reports', icon: '📈' },
   { key: 'notifications', translationKey: 'nav.notifications', path: '/admin/notifications', icon: '🔔' },
@@ -24,6 +24,11 @@ const menuItems = [
   { key: 'banners', translationKey: 'nav.banners', path: '/admin/content/banners', icon: '🖼️' },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/admin/reviews', icon: '⭐' },
   { key: 'settings', translationKey: 'nav.settings', path: '/admin/settings', icon: '⚙️' }
+];
+
+const marketingItems = [
+  { key: 'discounts', translationKey: 'nav.discounts', path: 'discounts', icon: '🎫' },
+  { key: 'promotions', translationKey: 'nav.promotions', path: 'promotions', icon: '📢' }
 ];
 
 const AdminDashboardLayout = () => {
@@ -70,6 +75,8 @@ const AdminDashboardLayout = () => {
                 </NavLink>
               </li>
             ))}
+            {/* Marketing Dropdown */}
+            <MarketingDropdown items={marketingItems} basePath="/admin" />
           </ul>
         </nav>
         

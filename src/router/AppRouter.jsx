@@ -89,10 +89,13 @@ import AdminSystemStatusPage from '../pages/admin/AdminSystemStatusPage'
 import AdminReviewsPage from '../pages/admin/AdminReviewsPage'
 import AdminBannersPage from '../pages/admin/AdminBannersPage'
 import AdminDiscountsPage from '../pages/admin/AdminDiscountsPage'
+import AdminPromotionsPage from '../pages/admin/AdminPromotionsPage'
 import RealEstateReviewsPage from '../pages/business/real-estate/RealEstateReviewsPage'
 import BusinessReviewsPage from '../pages/business/delivery/BusinessReviewsPage'
-import RealEstateDiscountsPage from '../pages/business/real-estate/RealEstateDiscountsPage'
-import BusinessDiscountsPage from '../pages/business/delivery/BusinessDiscountsPage'
+import BusinessRealEstateDiscountsPage from '../pages/business/real-estate/BusinessRealEstateDiscountsPage'
+import BusinessRealEstatePromotionsPage from '../pages/business/real-estate/BusinessRealEstatePromotionsPage'
+import BusinessDeliveryDiscountsPage from '../pages/business/delivery/BusinessDeliveryDiscountsPage'
+import BusinessDeliveryPromotionsPage from '../pages/business/delivery/BusinessDeliveryPromotionsPage'
 
 // User protected pages
 import UserProtectedRoute from './UserProtectedRoute'
@@ -187,7 +190,11 @@ const AppRouter = () => {
           <Route path="content/news" element={<NewsManagementPage />} />
           <Route path="content/banners" element={<AdminBannersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="marketing/discounts" element={<AdminDiscountsPage />} />
+          <Route path="marketing/promotions" element={<AdminPromotionsPage />} />
+          {/* Legacy routes for backward compatibility */}
           <Route path="discounts" element={<AdminDiscountsPage />} />
+          <Route path="promotions" element={<AdminPromotionsPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
         
@@ -229,7 +236,11 @@ const AppRouter = () => {
           <Route path="schedule" element={<BusinessSchedulePage />} />
           <Route path="customers" element={<BusinessCustomersPage />} />
           <Route path="reviews" element={<BusinessReviewsPage />} />
-          <Route path="discounts" element={<BusinessDiscountsPage />} />
+          <Route path="marketing/discounts" element={<BusinessDeliveryDiscountsPage />} />
+          <Route path="marketing/promotions" element={<BusinessDeliveryPromotionsPage />} />
+          {/* Legacy routes for backward compatibility */}
+          <Route path="discounts" element={<BusinessDeliveryDiscountsPage />} />
+          <Route path="promotions" element={<BusinessDeliveryPromotionsPage />} />
           <Route path="settings" element={<BusinessSettingsPage />} />
         </Route>
 
@@ -254,7 +265,11 @@ const AppRouter = () => {
           <Route path="analytics" element={<RealEstateAnalyticsPage />} />
           <Route path="customers" element={<RealEstateCustomersPage />} />
           <Route path="reviews" element={<RealEstateReviewsPage />} />
-          <Route path="discounts" element={<RealEstateDiscountsPage />} />
+          <Route path="marketing/discounts" element={<BusinessRealEstateDiscountsPage />} />
+          <Route path="marketing/promotions" element={<BusinessRealEstatePromotionsPage />} />
+          {/* Legacy routes for backward compatibility */}
+          <Route path="discounts" element={<BusinessRealEstateDiscountsPage />} />
+          <Route path="promotions" element={<BusinessRealEstatePromotionsPage />} />
           <Route path="settings" element={<RealEstateSettingsPage />} />
           {/* Reservation routes */}
           <Route path="reservations" element={<ReservationsListPage />} />

@@ -23,8 +23,14 @@ const UserProtectedRoute = ({ allowedRoles, children }) => {
     );
   }
 
-  // Logged in but with wrong role → go home (or a 403 page)
+  // Logged in but with wrong role → redirect appropriately
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    // If ADMIN tries to access business routes, redirect to admin dashboard
+    const isBusinessRoute = allowedRoles.includes('BUSINESS_REAL_ESTATE') || allowedRoles.includes('BUSINESS_DELIVERY');
+    if (user?.role === 'ADMIN' && isBusinessRoute) {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    // Otherwise redirect to home
     return <Navigate to="/" replace />;
   }
 

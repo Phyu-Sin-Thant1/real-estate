@@ -3,16 +3,21 @@ import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
+import MarketingDropdown from '../components/layout/MarketingDropdown';
 
 const realEstateMenu = [
-  { key: 'dashboard', translationKey: 'nav.dashboard', path: '/business/real-estate/dashboard' },
-  { key: 'contracts', translationKey: 'nav.contracts', path: '/business/real-estate/contracts' },
-  { key: 'listings', translationKey: 'nav.properties', path: '/business/real-estate/listings' },
-  { key: 'reservations', translationKey: 'nav.reservations', path: '/business/real-estate/reservations' },
-  { key: 'leads', translationKey: 'nav.leads', path: '/business/real-estate/leads' },
-  { key: 'analytics', translationKey: 'nav.analytics', path: '/business/real-estate/analytics' },
-  { key: 'customers', translationKey: 'nav.customers', path: '/business/real-estate/customers' },
-  { key: 'settings', translationKey: 'nav.settings', path: '/business/real-estate/settings' }
+  { key: 'dashboard', translationKey: 'nav.dashboard', path: '/business/real-estate/dashboard', group: null },
+  { key: 'contracts', translationKey: 'nav.contracts', path: '/business/real-estate/contracts', group: null },
+  { key: 'listings', translationKey: 'nav.properties', path: '/business/real-estate/listings', group: null },
+  { key: 'reservations', translationKey: 'nav.reservations', path: '/business/real-estate/reservations', group: null },
+  { key: 'leads', translationKey: 'nav.leads', path: '/business/real-estate/leads', group: null },
+  { key: 'analytics', translationKey: 'nav.analytics', path: '/business/real-estate/analytics', group: null },
+  { key: 'customers', translationKey: 'nav.customers', path: '/business/real-estate/customers', group: null },
+  { key: 'reviews', translationKey: 'nav.reviews', path: '/business/real-estate/reviews', group: null },
+  // Marketing group
+  { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts', group: 'marketing' },
+  { key: 'promotions', translationKey: 'nav.promotions', path: '/business/real-estate/promotions', group: 'marketing' },
+  { key: 'settings', translationKey: 'nav.settings', path: '/business/real-estate/settings', group: null }
 ];
 
 const RealEstateBusinessLayout = () => {
@@ -34,48 +39,80 @@ const RealEstateBusinessLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex">
       {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200 shadow-sm z-10">
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200/50 shadow-2xl z-10 backdrop-blur-sm">
         <div className="h-full flex flex-col">
           {/* Logo/Brand */}
-          <div className="h-16 flex items-center justify-center border-b border-gray-200 px-4">
-            <h1 className="text-xl font-bold text-dabang-primary">TOFU Business</h1>
+          <div className="h-20 flex items-center justify-center border-b border-gray-200/60 px-4 bg-gradient-to-br from-white to-gray-50/50">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-dabang-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-dabang-primary/30">
+                <span className="text-white font-bold text-xl">T</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">TOFU Business</h1>
+                <p className="text-xs text-gray-500 font-medium">Real Estate</p>
+              </div>
+            </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4 px-2">
-            <ul className="space-y-1">
-              {realEstateMenu.map((item) => (
-                <li key={item.key}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `block px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-dabang-primary text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`
-                    }
-                  >
-                    {t(item.translationKey)}
-                  </NavLink>
-                </li>
-              ))}
+          <nav className="flex-1 overflow-y-auto py-4 px-3">
+            <ul className="space-y-1.5">
+              {realEstateMenu.map((item) => {
+                // Skip marketing items as they'll be in dropdown
+                if (item.group === 'marketing') return null;
+                
+                return (
+                  <li key={item.key}>
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                            : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
+                        }`
+                      }
+                    >
+                      {t(item.translationKey)}
+                    </NavLink>
+                  </li>
+                );
+              })}
+              {/* Marketing Dropdown */}
+              {(() => {
+                const marketingItems = realEstateMenu
+                  .filter(item => item.group === 'marketing')
+                  .map(item => {
+                    // Extract just the last part (discounts or promotions)
+                    const pathPart = item.path.split('/').pop();
+                    return {
+                      key: item.key,
+                      translationKey: item.translationKey,
+                      path: pathPart,
+                      icon: null
+                    };
+                  });
+                
+                return marketingItems.length > 0 ? (
+                  <MarketingDropdown items={marketingItems} basePath="/business/real-estate" />
+                ) : null;
+              })()}
             </ul>
           </nav>
 
           {/* User Info */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
+          <div className="border-t border-gray-200/60 p-4 bg-gradient-to-b from-white to-gray-50/30">
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">{user?.name || 'Business User'}</p>
-                <p className="text-xs text-gray-500">{t('nav.realEstatePartner')}</p>
+                <p className="text-sm font-semibold text-gray-900">{user?.name || 'Business User'}</p>
+                <p className="text-xs text-gray-500 font-medium">{t('nav.realEstatePartner')}</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              className="w-full px-3 py-2.5 text-xs font-medium text-gray-700 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:border-red-200 hover:text-red-700 rounded-xl transition-all duration-200 border border-gray-300/60 bg-white shadow-sm hover:shadow-md"
             >
               {t('common.logout')}
             </button>
@@ -98,7 +135,7 @@ const RealEstateBusinessLayout = () => {
         </div>
 
         {/* Content Area */}
-        <main className="pt-20 p-6">
+        <main className="pt-20 p-6 bg-transparent">
           <Outlet />
         </main>
       </div>

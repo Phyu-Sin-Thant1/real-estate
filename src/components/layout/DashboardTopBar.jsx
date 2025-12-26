@@ -16,13 +16,15 @@ const DashboardTopBar = ({
   const { t, lang } = useI18n();
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-30">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          <div className="flex items-center space-x-4">
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{title}</h1>
+          </div>
+          <div className="flex items-center space-x-3">
             {/* Debug checkpoint */}
-            <span className="text-xs text-gray-400">lang: {lang}</span>
+            <span className="text-xs text-gray-400 hidden lg:block">lang: {lang}</span>
             
             {/* Search Input */}
             {showSearch && (
@@ -30,7 +32,7 @@ const DashboardTopBar = ({
                 <input
                   type="text"
                   placeholder={t('common.search')}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-dabang-primary focus:border-transparent"
+                  className="pl-10 pr-4 py-2 border border-gray-300/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-dabang-primary/50 focus:border-transparent bg-white/80 shadow-sm hover:shadow-md transition-all duration-200"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +52,7 @@ const DashboardTopBar = ({
             {showViewWebsite && (
               <button
                 onClick={() => navigate('/')}
-                className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300/60 text-sm font-medium rounded-xl text-gray-700 bg-white/80 hover:bg-gradient-to-r hover:from-dabang-primary/10 hover:to-indigo-50 hover:border-dabang-primary/30 hover:text-dabang-primary shadow-sm hover:shadow-md transition-all duration-200"
               >
                 {t('common.viewWebsite')}
               </button>
@@ -59,11 +61,11 @@ const DashboardTopBar = ({
             {/* Profile Dropdown */}
             {user && (
               <div className="relative">
-                <button className="flex items-center text-sm rounded-full focus:outline-none">
-                  <div className="w-8 h-8 rounded-full bg-dabang-primary flex items-center justify-center text-white font-medium">
+                <button className="flex items-center text-sm rounded-xl focus:outline-none hover:bg-gray-50/80 px-2 py-1.5 transition-all duration-200">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-dabang-primary to-indigo-600 flex items-center justify-center text-white font-semibold shadow-lg shadow-dabang-primary/30">
                     {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
-                  <span className="ml-2 text-gray-700 hidden sm:block">{user?.name || 'User'}</span>
+                  <span className="ml-2 text-gray-700 font-medium hidden sm:block">{user?.name || 'User'}</span>
                   <svg className="ml-1 w-4 h-4 text-gray-500 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>

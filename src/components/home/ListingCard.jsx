@@ -1,7 +1,54 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import Card from '../ui/Card'
+import { getApplicableDiscount, applyDiscount } from '../../lib/helpers/discountEngine'
 
 const ListingCard = ({ listing, isLiked, onToggleLike, onClick }) => {
+  // Get applicable discount for this listing
+  const discount = useMemo(() => {
+    if (!listing.partnerId) return null;
+    return getApplicableDiscount({
+      partnerId: listing.partnerId,
+      scope: 'REAL_ESTATE',
+      entityType: 'LISTING',
+      entityId: listing.id?.toString(),
+    });
+  }, [listing.partnerId, listing.id]);
+
+  // Calculate discounted price if discount exists
+  const priceInfo = useMemo(() => {
+    if (!discount || !listing.originalPrice) {
+      return { displayPrice: listing.price, savedAmount: 0, hasDiscount: false };
+    }
+    
+    // Extract numeric value from price string (e.g., "5억 5,000만원" -> 550000000)
+    // Simplified: assume price is in format like "5억" or "5,000만원"
+    const priceMatch = listing.originalPrice?.toString().match(/[\d,]+/);
+    const numericPrice = priceMatch ? parseInt(priceMatch[0].replace(/,/g, '')) : null;
+    
+    if (!numericPrice) {
+      return { displayPrice: listing.price, savedAmount: 0, hasDiscount: false };
+    }
+
+    const { newAmount, savedAmount } = applyDiscount(numericPrice, discount);
+    
+    // Format back to Korean currency (simplified)
+    const formatPrice = (amount) => {
+      if (amount >= 100000000) {
+        return `${Math.floor(amount / 100000000)}억 ${Math.floor((amount % 100000000) / 10000)}만원`;
+      } else if (amount >= 10000) {
+        return `${Math.floor(amount / 10000)}만원`;
+      }
+      return `${amount.toLocaleString()}원`;
+    };
+
+    return {
+      displayPrice: formatPrice(newAmount),
+      originalPrice: listing.originalPrice || listing.price,
+      savedAmount,
+      hasDiscount: savedAmount > 0,
+      discountTitle: discount.title,
+    };
+  }, [discount, listing.price, listing.originalPrice]);
   return (
     <Card 
       variant="default" 
@@ -53,11 +100,33 @@ const ListingCard = ({ listing, isLiked, onToggleLike, onClick }) => {
         <h3 className="font-semibold text-gray-900 mb-1.5 line-clamp-1 text-base">{listing.title}</h3>
         <p className="text-sm text-gray-600 mb-3 line-clamp-1">{listing.address}</p>
         <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-lg font-bold text-dabang-primary">{listing.price}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{listing.priceType}</p>
+          <div className="flex-1">
+            {priceInfo.hasDiscount ? (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-lg font-bold text-dabang-primary">{priceInfo.displayPrice}</p>
+                  <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded">
+                    할인
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-400 line-through">{priceInfo.originalPrice}</p>
+                  <p className="text-xs text-red-600 font-semibold">
+                    {priceInfo.savedAmount > 0 && `₩${priceInfo.savedAmount.toLocaleString()} 절약`}
+                  </p>
+                </div>
+                {priceInfo.discountTitle && (
+                  <p className="text-xs text-indigo-600 mt-1 font-medium">{priceInfo.discountTitle}</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-dabang-primary">{listing.price}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{listing.priceType}</p>
+              </>
+            )}
           </div>
-          <span className="text-sm text-gray-600 font-medium">{listing.area}</span>
+          <span className="text-sm text-gray-600 font-medium ml-2">{listing.area}</span>
         </div>
         <div className="flex items-center text-sm text-gray-500 border-t border-gray-100 pt-3">
           <span className="flex items-center gap-1.5">

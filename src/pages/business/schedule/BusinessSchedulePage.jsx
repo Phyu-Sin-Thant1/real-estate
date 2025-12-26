@@ -163,7 +163,7 @@ const BusinessSchedulePage = () => {
               setSelectedItem(row);
               setIsDetailModalOpen(true);
             }}
-            className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
+            className="px-3 py-1.5 text-dabang-primary hover:bg-gradient-to-r hover:from-dabang-primary/10 hover:to-indigo-50 rounded-lg font-semibold text-sm transition-all duration-200"
           >
             상세보기
           </button>
@@ -214,7 +214,7 @@ const BusinessSchedulePage = () => {
         return (
           <button 
             onClick={() => handleEditVehicle(row)}
-            className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
+            className="px-3 py-1.5 text-dabang-primary hover:bg-gradient-to-r hover:from-dabang-primary/10 hover:to-indigo-50 rounded-lg font-semibold text-sm transition-all duration-200"
           >
             수정
           </button>
@@ -232,7 +232,7 @@ const BusinessSchedulePage = () => {
         return (
           <button 
             onClick={() => handleEditDriver(row)}
-            className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
+            className="px-3 py-1.5 text-dabang-primary hover:bg-gradient-to-r hover:from-dabang-primary/10 hover:to-indigo-50 rounded-lg font-semibold text-sm transition-all duration-200"
           >
             수정
           </button>
@@ -802,22 +802,28 @@ const BusinessSchedulePage = () => {
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-        <h1 className="text-2xl font-semibold text-gray-900">스케줄 / 차량 관리</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-dabang-primary to-indigo-600 bg-clip-text text-transparent">스케줄 / 차량 관리</h1>
+          <p className="text-gray-600 mt-2 text-sm font-medium">운송 스케줄과 차량/기사를 관리합니다</p>
+        </div>
         
         {/* Tabs */}
-        <div className="mt-6 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="mt-6 border-b border-gray-200/60 bg-white rounded-t-2xl shadow-sm">
+          <nav className="-mb-px flex space-x-8 px-6">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`whitespace-nowrap py-4 px-1 border-b-2 font-semibold text-sm transition-all duration-200 relative ${
                   activeTab === tab.key
                     ? 'border-dabang-primary text-dabang-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 {tab.label}
+                {activeTab === tab.key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-dabang-primary to-indigo-600"></span>
+                )}
               </button>
             ))}
           </nav>
@@ -828,39 +834,77 @@ const BusinessSchedulePage = () => {
           <div className="mt-6 space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {summaryCards.map((card, index) => (
-                <div key={index} className="bg-white overflow-hidden shadow rounded-lg">
-                  <div className="px-4 py-5 sm:p-6">
-                    <div className="flex items-center">
-                      <div className={`flex-shrink-0 rounded-md p-3 ${card.color}`}>
-                        <div className="h-6 w-6 text-white"></div>
-                      </div>
-                      <div className="ml-5 w-0 flex-1">
-                        <dl>
-                          <dt className="text-sm font-medium text-gray-500 truncate">{card.title}</dt>
+              {summaryCards.map((card, index) => {
+                const colorConfig = {
+                  'bg-blue-500': {
+                    gradient: 'from-blue-500 via-blue-600 to-indigo-600',
+                    iconBg: 'bg-blue-100',
+                    iconColor: 'text-blue-600',
+                    border: 'border-blue-200/50',
+                    hoverBorder: 'hover:border-blue-300'
+                  },
+                  'bg-yellow-500': {
+                    gradient: 'from-yellow-500 via-orange-500 to-amber-600',
+                    iconBg: 'bg-yellow-100',
+                    iconColor: 'text-yellow-600',
+                    border: 'border-yellow-200/50',
+                    hoverBorder: 'hover:border-yellow-300'
+                  },
+                  'bg-green-500': {
+                    gradient: 'from-green-500 via-emerald-500 to-teal-600',
+                    iconBg: 'bg-green-100',
+                    iconColor: 'text-green-600',
+                    border: 'border-green-200/50',
+                    hoverBorder: 'hover:border-green-300'
+                  },
+                  'bg-red-500': {
+                    gradient: 'from-red-500 via-rose-500 to-pink-600',
+                    iconBg: 'bg-red-100',
+                    iconColor: 'text-red-600',
+                    border: 'border-red-200/50',
+                    hoverBorder: 'hover:border-red-300'
+                  }
+                };
+                const config = colorConfig[card.color] || colorConfig['bg-blue-500'];
+                
+                return (
+                  <div key={index} className={`group relative bg-white overflow-hidden rounded-2xl border-2 ${config.border} ${config.hoverBorder} shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2`}>
+                    {/* Gradient background overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
+                    
+                    {/* Decorative corner */}
+                    <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${config.gradient} opacity-5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2`}></div>
+                    
+                    <div className="px-6 py-6 relative z-10">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <dt className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{card.title}</dt>
                           <dd className="flex items-baseline">
-                            <div className="text-2xl font-semibold text-gray-900">{card.value}</div>
+                            <div className="text-4xl font-bold text-gray-900">{card.value}</div>
                           </dd>
-                        </dl>
+                        </div>
+                        <div className={`flex-shrink-0 rounded-xl p-3 bg-gradient-to-br ${config.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                          <div className="h-6 w-6 text-white"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Filters */}
-            <div className="bg-white shadow rounded-lg p-6">
+            <div className="bg-white shadow-lg rounded-2xl border border-gray-200/50 p-6 backdrop-blur-sm">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex space-x-2">
                   {['오늘', '이번 주', '이번 달'].map((range) => (
                     <button
                       key={range}
                       onClick={() => setDateRangeFilter(range)}
-                      className={`px-3 py-1 text-sm rounded-full ${
+                      className={`px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 ${
                         dateRangeFilter === range
-                          ? 'bg-dabang-primary text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-md'
                       }`}
                     >
                       {range}
@@ -868,11 +912,11 @@ const BusinessSchedulePage = () => {
                   ))}
                 </div>
                 
-                <div>
+                <div className="min-w-[150px]">
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-dabang-primary focus:border-dabang-primary sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2.5 text-sm border border-gray-300/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-dabang-primary/50 focus:border-dabang-primary bg-white shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     <option value="전체">전체 상태</option>
                     <option value="예정">예정</option>
@@ -882,39 +926,46 @@ const BusinessSchedulePage = () => {
                   </select>
                 </div>
                 
-                <div className="flex-1 min-w-[200px]">
-                  <input
-                    type="text"
-                    placeholder="고객명, 차량, 주소 검색..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-dabang-primary focus:border-dabang-primary sm:text-sm rounded-md"
-                  />
+                <div className="flex-1 min-w-[250px]">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="고객명, 차량, 주소 검색..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="block w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-dabang-primary/50 focus:border-dabang-primary bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Schedule Table */}
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">스케줄 목록</h2>
+            <div className="bg-white shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-200/60 bg-gradient-to-r from-gray-50 to-white">
+                <h2 className="text-lg font-bold text-gray-900">스케줄 목록</h2>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200/60">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                     <tr>
                       {scheduleColumns.map((column) => (
                         <th
                           key={column.key}
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
                         >
                           {column.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-200/40">
                     {filteredScheduleData.map((item) => (
                       <tr 
                         key={item.id}
@@ -922,12 +973,12 @@ const BusinessSchedulePage = () => {
                           setSelectedItem(item);
                           setIsDetailModalOpen(true);
                         }}
-                        className="cursor-pointer hover:bg-gray-50"
+                        className="cursor-pointer hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 transition-all duration-200"
                       >
                         {scheduleColumns.map((column) => (
                           <td
                             key={`${item.id}-${column.key}`}
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
                           >
                             {renderScheduleCell(item, column.key)}
                           </td>
@@ -948,39 +999,39 @@ const BusinessSchedulePage = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setIsAddVehicleModalOpen(true)}
-                className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-dabang-primary to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-dabang-primary/30 transition-all duration-200 text-sm font-semibold"
               >
                 새 차량 등록
               </button>
             </div>
 
             {/* Vehicles Table */}
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">차량 목록</h2>
+            <div className="bg-white shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-200/60 bg-gradient-to-r from-gray-50 to-white">
+                <h2 className="text-lg font-bold text-gray-900">차량 목록</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                     <tr>
                       {vehicleColumns.map((column) => (
                         <th
                           key={column.key}
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
                         >
                           {column.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-200/40">
                     {vehicleList.map((vehicle) => (
-                      <tr key={vehicle.id}>
+                      <tr key={vehicle.id} className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 transition-all duration-200">
                         {vehicleColumns.map((column) => (
                           <td
                             key={`${vehicle.id}-${column.key}`}
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
                           >
                             {renderVehicleCell(vehicle, column.key)}
                           </td>
@@ -1001,39 +1052,39 @@ const BusinessSchedulePage = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setIsAddDriverModalOpen(true)}
-                className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-dabang-primary to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-dabang-primary/30 transition-all duration-200 text-sm font-semibold"
               >
                 새 기사 등록
               </button>
             </div>
 
             {/* Drivers Table */}
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-medium text-gray-900">기사 목록</h2>
+            <div className="bg-white shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-200/60 bg-gradient-to-r from-gray-50 to-white">
+                <h2 className="text-lg font-bold text-gray-900">기사 목록</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                     <tr>
                       {driverColumns.map((column) => (
                         <th
                           key={column.key}
                           scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
                         >
                           {column.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-200/40">
                     {driverList.map((driver) => (
-                      <tr key={driver.id}>
+                      <tr key={driver.id} className="hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 transition-all duration-200">
                         {driverColumns.map((column) => (
                           <td
                             key={`${driver.id}-${column.key}`}
-                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
                           >
                             {renderDriverCell(driver, column.key)}
                           </td>

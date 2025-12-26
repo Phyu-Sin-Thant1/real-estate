@@ -14,6 +14,7 @@ import SectionDivider from '../components/home/SectionDivider'
 import FinalCTA from '../components/home/FinalCTA'
 import AnnouncementBanner from '../components/home/AnnouncementBanner'
 import EventSection from '../components/home/EventSection'
+import PromotionBanner from '../components/promotions/PromotionBanner'
 import { useNavigate } from 'react-router-dom'
 import {
   trendingListings,
@@ -66,6 +67,7 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <AnnouncementBanner />
+      <PromotionBanner />
       <Header />
       
       <main className="space-y-16 md:space-y-20">

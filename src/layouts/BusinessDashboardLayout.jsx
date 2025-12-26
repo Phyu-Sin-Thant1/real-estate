@@ -4,6 +4,7 @@ import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import { realEstateMenu, deliveryMenu } from '../config/businessMenu';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
+import MarketingDropdown from '../components/layout/MarketingDropdown';
 
 const getMenuForUser = (user) => {
   if (!user) return realEstateMenu;
@@ -46,39 +47,83 @@ const BusinessDashboardLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">{t('nav.businessDashboard')}</h2>
-          <p className="text-sm text-gray-500 mt-1">{getRoleLabel()}</p>
+      <div className="w-64 bg-white shadow-2xl border-r border-gray-200/50 flex flex-col backdrop-blur-sm">
+        <div className="p-6 border-b border-gray-200/60 bg-gradient-to-br from-white to-gray-50/50">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dabang-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-dabang-primary/30">
+              <span className="text-white font-bold text-lg">T</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">{t('nav.businessDashboard')}</h2>
+              <p className="text-xs text-gray-500 font-medium">{getRoleLabel()}</p>
+            </div>
+          </div>
         </div>
         
-        <nav className="flex-1 px-4 py-6">
-          <ul className="space-y-1">
-            {menuItems.map((item) => (
-              <li key={item.key}>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-dabang-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`
+        <nav className="flex-1 px-3 py-6 overflow-y-auto">
+          <ul className="space-y-1.5">
+            {menuItems.map((item) => {
+              // Skip marketing items as they'll be in dropdown
+              if (item.group === 'marketing') return null;
+              
+              return (
+                <li key={item.key}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                        isActive
+                          ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
+                          : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
+                      }`
+                    }
+                  >
+                    {t(item.translationKey)}
+                  </NavLink>
+                </li>
+              );
+            })}
+            {/* Marketing Dropdown */}
+            {(() => {
+              const marketingItems = menuItems
+                .filter(item => item.group === 'marketing')
+                .map(item => {
+                  // Extract just the last part of the path (discounts or promotions)
+                  let pathPart = item.path.split('/').pop();
+                  // If path includes 'delivery', handle it differently
+                  if (item.path.includes('/delivery/')) {
+                    pathPart = item.path.split('/delivery/')[1];
+                  } else if (item.path.includes('/real-estate/')) {
+                    pathPart = item.path.split('/real-estate/')[1];
+                  } else if (item.path.includes('/business/')) {
+                    pathPart = item.path.split('/business/')[1];
                   }
-                >
-                  {t(item.translationKey)}
-                </NavLink>
-              </li>
-            ))}
+                  
+                  return {
+                    key: item.key,
+                    translationKey: item.translationKey,
+                    path: pathPart,
+                    icon: null
+                  };
+                });
+              
+              const basePath = user?.role === 'BUSINESS_REAL_ESTATE' 
+                ? '/business/real-estate' 
+                : '/business';
+              
+              return marketingItems.length > 0 ? (
+                <MarketingDropdown items={marketingItems} basePath={basePath} />
+              ) : null;
+            })()}
           </ul>
         </nav>
         
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200/60 bg-gradient-to-b from-white to-gray-50/30">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="w-full flex items-center justify-center px-4 py-2.5 border border-gray-300/60 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 hover:border-red-200 hover:text-red-700 transition-all duration-200 shadow-sm hover:shadow-md"
           >
             {t('common.logout')}
           </button>
@@ -98,7 +143,7 @@ const BusinessDashboardLayout = () => {
         />
         
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-6 bg-transparent">
           <Outlet />
         </main>
       </div>
