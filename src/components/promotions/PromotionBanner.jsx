@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { getPromotionSlots, seedPromotionSlots } from '../../store/promotionSlotsStore';
-import { getPromotionRequests, seedPromotionRequests } from '../../store/promotionRequestsStore';
+import { getPromotionSlots } from '../../store/promotionSlotsStore';
+import { getPromotionRequests } from '../../store/promotionRequestsStore';
 
 const PromotionBanner = () => {
   const [activePromotion, setActivePromotion] = useState(null);
 
   useEffect(() => {
-    // Seed data if needed
-    seedPromotionSlots();
-    seedPromotionRequests();
-
     // Get active promotion from HOME_HERO_BANNER slot
     const slots = getPromotionSlots();
     const heroSlot = slots.find((s) => s.slotType === 'HOME_HERO_BANNER');
