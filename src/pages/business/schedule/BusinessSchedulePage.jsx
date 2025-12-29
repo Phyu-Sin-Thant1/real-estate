@@ -44,6 +44,8 @@ const BusinessSchedulePage = () => {
   const [isAddDriverModalOpen, setIsAddDriverModalOpen] = useState(false);
   const [isEditDriverModalOpen, setIsEditDriverModalOpen] = useState(false);
   const [currentDriver, setCurrentDriver] = useState(null);
+  const [scheduleList, setScheduleList] = useState(mockScheduleData);
+  const [isAddScheduleModalOpen, setIsAddScheduleModalOpen] = useState(false);
 
   const tabs = [
     { key: 'schedule', label: '스케줄' },
@@ -53,10 +55,10 @@ const BusinessSchedulePage = () => {
 
   // Summary cards data
   const today = new Date().toISOString().split('T')[0];
-  const todaySchedules = mockScheduleData.filter(item => item.date === today);
-  const ongoingSchedules = mockScheduleData.filter(item => item.status === '진행중');
-  const completedSchedules = mockScheduleData.filter(item => item.status === '완료');
-  const delayedSchedules = mockScheduleData.filter(item => item.status === '지연');
+  const todaySchedules = scheduleList.filter(item => item.date === today);
+  const ongoingSchedules = scheduleList.filter(item => item.status === '진행중');
+  const completedSchedules = scheduleList.filter(item => item.status === '완료');
+  const delayedSchedules = scheduleList.filter(item => item.status === '지연');
 
   const summaryCards = [
     { title: '오늘 일정', value: todaySchedules.length, color: 'bg-blue-500' },
@@ -66,7 +68,7 @@ const BusinessSchedulePage = () => {
   ];
 
   // Filter schedule data
-  const filteredScheduleData = mockScheduleData.filter(item => {
+  const filteredScheduleData = scheduleList.filter(item => {
     // Date range filter
     if (dateRangeFilter === '오늘') {
       if (item.date !== today) return false;
@@ -264,6 +266,15 @@ const BusinessSchedulePage = () => {
     );
     setIsEditDriverModalOpen(false);
     setCurrentDriver(null);
+  };
+
+  const handleAddSchedule = (newSchedule) => {
+    const schedule = {
+      id: scheduleList.length > 0 ? Math.max(...scheduleList.map(s => s.id)) + 1 : 1,
+      ...newSchedule
+    };
+    setScheduleList(prev => [...prev, schedule]);
+    setIsAddScheduleModalOpen(false);
   };
 
   // Vehicle Modal Components
@@ -799,6 +810,221 @@ const BusinessSchedulePage = () => {
     );
   };
 
+  // Schedule Modal Component
+  const AddScheduleModal = ({ isOpen, onClose, onAdd, vehicleList, driverList }) => {
+    const [formData, setFormData] = useState({
+      date: '',
+      time: '',
+      jobType: '이사',
+      pickupAddress: '',
+      deliveryAddress: '',
+      vehicle: '',
+      driver: '',
+      status: '예정'
+    });
+
+    const handleChange = (e) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      if (!formData.date || !formData.time) {
+        alert('날짜와 시간을 입력해주세요.');
+        return;
+      }
+      if (!formData.pickupAddress || !formData.deliveryAddress) {
+        alert('출발지와 도착지를 입력해주세요.');
+        return;
+      }
+      if (!formData.vehicle || !formData.driver) {
+        alert('차량과 기사를 선택해주세요.');
+        return;
+      }
+      
+      const scheduleData = {
+        date: formData.date,
+        time: formData.time,
+        jobType: formData.jobType,
+        addressSummary: `${formData.pickupAddress} → ${formData.deliveryAddress}`,
+        vehicle: formData.vehicle,
+        driver: formData.driver,
+        status: formData.status
+      };
+      
+      onAdd(scheduleData);
+      setFormData({
+        date: '',
+        time: '',
+        jobType: '이사',
+        pickupAddress: '',
+        deliveryAddress: '',
+        vehicle: '',
+        driver: '',
+        status: '예정'
+      });
+    };
+
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} title="새 스케줄 등록" size="md">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                날짜 *
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                시간 *
+              </label>
+              <input
+                type="time"
+                name="time"
+                value={formData.time}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                required
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              작업 유형 *
+            </label>
+            <select 
+              name="jobType"
+              value={formData.jobType}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              required
+            >
+              <option value="이사">이사</option>
+              <option value="배달">배달</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              출발지 *
+            </label>
+            <input
+              type="text"
+              name="pickupAddress"
+              value={formData.pickupAddress}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="예: 서울시 강남구"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              도착지 *
+            </label>
+            <input
+              type="text"
+              name="deliveryAddress"
+              value={formData.deliveryAddress}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              placeholder="예: 서울시 서초구"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              차량 *
+            </label>
+            <select 
+              name="vehicle"
+              value={formData.vehicle}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              required
+            >
+              <option value="">차량 선택</option>
+              {vehicleList.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.name}>
+                  {vehicle.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              기사 *
+            </label>
+            <select 
+              name="driver"
+              value={formData.driver}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+              required
+            >
+              <option value="">기사 선택</option>
+              {driverList.map((driver) => (
+                <option key={driver.id} value={driver.name}>
+                  {driver.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              상태
+            </label>
+            <select 
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+            >
+              <option value="예정">예정</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+              <option value="지연">지연</option>
+            </select>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
+            >
+              등록
+            </button>
+          </div>
+        </form>
+      </Modal>
+    );
+  };
+
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -947,8 +1173,14 @@ const BusinessSchedulePage = () => {
 
             {/* Schedule Table */}
             <div className="bg-white shadow-xl rounded-2xl border border-gray-200/50 overflow-hidden">
-              <div className="px-6 py-5 border-b border-gray-200/60 bg-gradient-to-r from-gray-50 to-white">
+              <div className="px-6 py-5 border-b border-gray-200/60 bg-gradient-to-r from-gray-50 to-white flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-900">스케줄 목록</h2>
+                <button
+                  onClick={() => setIsAddScheduleModalOpen(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-dabang-primary to-indigo-600 text-white rounded-xl hover:shadow-lg hover:shadow-dabang-primary/30 transition-all duration-200 text-sm font-semibold"
+                >
+                  새 스케줄 등록
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200/60">
@@ -1224,6 +1456,15 @@ const BusinessSchedulePage = () => {
         onClose={() => setIsEditDriverModalOpen(false)}
         driver={currentDriver}
         onUpdate={handleUpdateDriver}
+      />
+
+      {/* Add Schedule Modal */}
+      <AddScheduleModal 
+        isOpen={isAddScheduleModalOpen} 
+        onClose={() => setIsAddScheduleModalOpen(false)}
+        onAdd={handleAddSchedule}
+        vehicleList={vehicleList}
+        driverList={driverList}
       />
     </div>
   );

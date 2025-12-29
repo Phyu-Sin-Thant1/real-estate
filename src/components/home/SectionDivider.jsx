@@ -18,3 +18,6 @@ const SectionDivider = ({ className = '', variant = 'default' }) => {
 
 export default SectionDivider;
 
+
+
+
