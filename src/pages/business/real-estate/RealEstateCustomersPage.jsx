@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
+import { getCustomersByPartner, seedMockCustomers, addCustomer } from '../../../store/realEstateCustomersStore';
 
 const RealEstateCustomersPage = () => {
   const { user } = useUnifiedAuth();
@@ -11,11 +12,15 @@ const RealEstateCustomersPage = () => {
     email: '',
     memo: ''
   });
+  const [partnerCustomers, setPartnerCustomers] = useState([]);
 
-  // Partner's customers - empty for now (would come from a store in real app)
-  const partnerCustomers = useMemo(() => {
-    // In a real app, this would come from a customers store filtered by partnerEmail
-    return [];
+  // Load partner's customers from store
+  useEffect(() => {
+    seedMockCustomers(); // Seed mock data if empty
+    if (user?.email) {
+      const customers = getCustomersByPartner(user.email);
+      setPartnerCustomers(customers);
+    }
   }, [user?.email]);
 
   // Filter customers based on search term
@@ -59,18 +64,26 @@ const RealEstateCustomersPage = () => {
       return;
     }
     
-    // In a real app, this would send data to backend
-    // For now, we'll just create a local object and show success message
+    // Create customer data
     const customerData = {
       id: Date.now(), // Simple ID generation for demo
       ...customerForm,
       lastActivity: new Date().toISOString().split('T')[0],
       totalContracts: 0,
-      createdAt: new Date().toISOString()
+      partnerEmail: user?.email,
+      createdBy: user?.email,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
-    // Add to temp list (in a real app, this would be stored in context or state management)
-    console.log('New customer:', customerData);
+    // Add to store
+    addCustomer(customerData);
+    
+    // Refresh customer list
+    if (user?.email) {
+      const customers = getCustomersByPartner(user.email);
+      setPartnerCustomers(customers);
+    }
     
     // Show success message
     alert('새 고객이 등록되었습니다.');

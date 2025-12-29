@@ -4,6 +4,7 @@ import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useI18n } from '../context/I18nContext';
 import { realEstateMenu, deliveryMenu } from '../config/businessMenu';
 import DashboardTopBar from '../components/layout/DashboardTopBar';
+import getIconForMenu from '../components/icons/MenuIcon3D';
 
 const getMenuForUser = (user) => {
   if (!user) return realEstateMenu;
@@ -68,14 +69,21 @@ const BusinessDashboardLayout = () => {
                 <NavLink
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                    `flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
                       isActive
-                        ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30'
-                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm'
+                        ? 'bg-gradient-to-r from-dabang-primary to-indigo-600 text-white shadow-lg shadow-dabang-primary/30 transform scale-[1.02]'
+                        : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:shadow-sm hover:transform hover:scale-[1.01]'
                     }`
                   }
                 >
-                  {t(item.translationKey)}
+                  {({ isActive }) => (
+                    <>
+                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                        {getIconForMenu(item.key, isActive)}
+                      </span>
+                      <span className="flex-1">{t(item.translationKey)}</span>
+                    </>
+                  )}
                 </NavLink>
               </li>
             ))}

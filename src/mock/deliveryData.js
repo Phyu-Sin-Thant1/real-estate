@@ -262,56 +262,174 @@ export const deliveryOrders = [
   }
 ];
 
+// Helper function to get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
+
+// Helper function to get date N days from today
+const getDateFromToday = (days) => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split('T')[0];
+};
+
 // Schedule Data
 export const scheduleItems = [
+  // Today's schedules
   {
     id: 1,
-    date: '2025-12-15',
+    date: getTodayDate(),
     time: '09:00',
     jobType: '이사',
-    addressSummary: '강남구 → 서초구',
+    addressSummary: '서울시 강남구 역삼동 → 서울시 서초구 반포동',
     driver: '김운전',
     vehicle: '트럭 1호',
-    status: '예정'
+    status: '진행중'
   },
   {
     id: 2,
-    date: '2025-12-15',
-    time: '14:00',
+    date: getTodayDate(),
+    time: '11:30',
     jobType: '배달',
-    addressSummary: '마포구 → 용산구',
+    addressSummary: '서울시 마포구 상암동 → 서울시 용산구 이태원동',
     driver: '이기사',
     vehicle: '밴 2호',
     status: '진행중'
   },
   {
     id: 3,
-    date: '2025-12-16',
-    time: '10:30',
+    date: getTodayDate(),
+    time: '14:00',
     jobType: '이사',
-    addressSummary: '송파구 → 강동구',
+    addressSummary: '서울시 송파구 잠실동 → 서울시 강동구 천호동',
     driver: '박운전',
     vehicle: '트럭 3호',
     status: '예정'
   },
   {
     id: 4,
-    date: '2025-12-16',
+    date: getTodayDate(),
+    time: '16:30',
+    jobType: '배달',
+    addressSummary: '서울시 종로구 명동 → 서울시 중구 을지로',
+    driver: '최기사',
+    vehicle: '모터 1호',
+    status: '예정'
+  },
+  // Tomorrow's schedules
+  {
+    id: 5,
+    date: getDateFromToday(1),
+    time: '10:00',
+    jobType: '이사',
+    addressSummary: '서울시 성동구 성수동 → 서울시 광진구 자양동',
+    driver: '정운전',
+    vehicle: '트럭 2호',
+    status: '예정'
+  },
+  {
+    id: 6,
+    date: getDateFromToday(1),
+    time: '13:00',
+    jobType: '배달',
+    addressSummary: '서울시 영등포구 여의도 → 서울시 강서구 화곡동',
+    driver: '김운전',
+    vehicle: '밴 1호',
+    status: '예정'
+  },
+  // Completed schedules (yesterday)
+  {
+    id: 7,
+    date: getDateFromToday(-1),
+    time: '09:00',
+    jobType: '이사',
+    addressSummary: '서울시 노원구 상계동 → 서울시 도봉구 창동',
+    driver: '이기사',
+    vehicle: '트럭 1호',
+    status: '완료'
+  },
+  {
+    id: 8,
+    date: getDateFromToday(-1),
     time: '15:00',
     jobType: '배달',
-    addressSummary: '종로구 → 중구',
+    addressSummary: '서울시 은평구 불광동 → 서울시 서대문구 홍대',
+    driver: '박운전',
+    vehicle: '밴 2호',
+    status: '완료'
+  },
+  // Delayed schedules
+  {
+    id: 9,
+    date: getDateFromToday(-2),
+    time: '10:00',
+    jobType: '이사',
+    addressSummary: '서울시 양천구 목동 → 서울시 강서구 가양동',
+    driver: '최기사',
+    vehicle: '트럭 3호',
+    status: '지연'
+  },
+  {
+    id: 10,
+    date: getDateFromToday(-1),
+    time: '14:00',
+    jobType: '배달',
+    addressSummary: '서울시 구로구 구로동 → 서울시 금천구 가산동',
+    driver: '정운전',
+    vehicle: '모터 1호',
+    status: '지연'
+  },
+  // More upcoming schedules
+  {
+    id: 11,
+    date: getDateFromToday(2),
+    time: '09:30',
+    jobType: '이사',
+    addressSummary: '서울시 강북구 미아동 → 서울시 성북구 길음동',
+    driver: '김운전',
+    vehicle: '트럭 1호',
+    status: '예정'
+  },
+  {
+    id: 12,
+    date: getDateFromToday(2),
+    time: '14:30',
+    jobType: '배달',
+    addressSummary: '서울시 중랑구 면목동 → 서울시 동대문구 장안동',
+    driver: '이기사',
+    vehicle: '밴 2호',
+    status: '예정'
+  },
+  {
+    id: 13,
+    date: getDateFromToday(3),
+    time: '11:00',
+    jobType: '이사',
+    addressSummary: '서울시 관악구 신림동 → 서울시 서초구 방배동',
+    driver: '박운전',
+    vehicle: '트럭 2호',
+    status: '예정'
+  },
+  {
+    id: 14,
+    date: getDateFromToday(3),
+    time: '16:00',
+    jobType: '배달',
+    addressSummary: '서울시 금천구 독산동 → 서울시 영등포구 당산동',
     driver: '최기사',
     vehicle: '모터 1호',
     status: '예정'
   },
   {
-    id: 5,
-    date: '2025-12-17',
-    time: '11:00',
+    id: 15,
+    date: getDateFromToday(4),
+    time: '10:00',
     jobType: '이사',
-    addressSummary: '성동구 → 광진구',
+    addressSummary: '서울시 동작구 상도동 → 서울시 서초구 서초동',
     driver: '정운전',
-    vehicle: '트럭 2호',
+    vehicle: '트럭 3호',
     status: '예정'
   }
 ];
@@ -611,6 +729,186 @@ export const customers = [
     requestType: '배달',
     status: '취소',
     memo: '운동기구 운반, 고객 사정으로 취소'
+  },
+  {
+    id: 11,
+    name: '서해린',
+    phone: '010-1234-5679',
+    lastRequestDate: getTodayDate(),
+    requestType: '이사',
+    status: '활성',
+    memo: '신규 고객, 오늘 이사 예정, 조심스럽게 다뤄달라고 요청'
+  },
+  {
+    id: 12,
+    name: '남가람',
+    phone: '010-2345-6780',
+    lastRequestDate: getTodayDate(),
+    requestType: '배달',
+    status: '활성',
+    memo: '정기 배달 고객, 매주 화요일 배달'
+  },
+  {
+    id: 13,
+    name: '도빛나',
+    phone: '010-3456-7891',
+    lastRequestDate: getDateFromToday(-1),
+    requestType: '이사/배달',
+    status: '완료',
+    memo: '사무실 이사 완료, 다음 달에도 예정'
+  },
+  {
+    id: 14,
+    name: '배하영',
+    phone: '010-4567-8902',
+    lastRequestDate: getDateFromToday(-2),
+    requestType: '이사',
+    status: '완료',
+    memo: '가구가 많아 추가 차량 필요했음, 만족도 높음'
+  },
+  {
+    id: 15,
+    name: '강민지',
+    phone: '010-5678-9013',
+    lastRequestDate: getDateFromToday(-3),
+    requestType: '배달',
+    status: '완료',
+    memo: '음식 배달, 온도 유지 중요, 잘 처리됨'
+  },
+  {
+    id: 16,
+    name: '송지우',
+    phone: '010-6789-0124',
+    lastRequestDate: getDateFromToday(-5),
+    requestType: '이사',
+    status: '완료',
+    memo: '피아노 운반, 전문 업체와 협업 필요했음'
+  },
+  {
+    id: 17,
+    name: '유서연',
+    phone: '010-7890-1235',
+    lastRequestDate: getDateFromToday(-7),
+    requestType: '배달',
+    status: '완료',
+    memo: '화물 배달, 대량 주문 고객'
+  },
+  {
+    id: 18,
+    name: '조민준',
+    phone: '010-8901-2346',
+    lastRequestDate: getDateFromToday(-10),
+    requestType: '이사/배달',
+    status: '활성',
+    memo: '다음 주 재이사 예정, 연락 대기 중'
+  },
+  {
+    id: 19,
+    name: '황수빈',
+    phone: '010-9012-3457',
+    lastRequestDate: getDateFromToday(-12),
+    requestType: '이사',
+    status: '완료',
+    memo: '원룸 이사, 짐이 적어 소형 차량으로 충분'
+  },
+  {
+    id: 20,
+    name: '문예준',
+    phone: '010-0123-4568',
+    lastRequestDate: getDateFromToday(-15),
+    requestType: '배달',
+    status: '완료',
+    memo: '생일 선물 배달, 포장에 신경 써달라고 요청'
+  },
+  {
+    id: 21,
+    name: '신다은',
+    phone: '010-1234-5670',
+    lastRequestDate: getDateFromToday(-18),
+    requestType: '이사',
+    status: '완료',
+    memo: '학생 이사, 예산이 제한적이었음'
+  },
+  {
+    id: 22,
+    name: '오지훈',
+    phone: '010-2345-6781',
+    lastRequestDate: getDateFromToday(-20),
+    requestType: '이사/배달',
+    status: '활성',
+    memo: '사업 확장으로 인한 이사, 다음 달 추가 이사 예정'
+  },
+  {
+    id: 23,
+    name: '전소율',
+    phone: '010-3456-7892',
+    lastRequestDate: getDateFromToday(-22),
+    requestType: '배달',
+    status: '완료',
+    memo: '정기 배달 고객, 매월 말 배달'
+  },
+  {
+    id: 24,
+    name: '류현우',
+    phone: '010-4567-8903',
+    lastRequestDate: getDateFromToday(-25),
+    requestType: '이사',
+    status: '완료',
+    memo: '가전제품 많음, 포장 상태 확인 중요'
+  },
+  {
+    id: 25,
+    name: '나예린',
+    phone: '010-5678-9014',
+    lastRequestDate: getDateFromToday(-28),
+    requestType: '배달',
+    status: '완료',
+    memo: '화물 배달, 무거운 물건 주의 필요'
+  },
+  {
+    id: 26,
+    name: '백준호',
+    phone: '010-6789-0125',
+    lastRequestDate: getDateFromToday(-30),
+    requestType: '이사',
+    status: '완료',
+    memo: '오피스텔 이사, 엘리베이터 사용 가능'
+  },
+  {
+    id: 27,
+    name: '심채원',
+    phone: '010-7890-1236',
+    lastRequestDate: getDateFromToday(-1),
+    requestType: '배달',
+    status: '활성',
+    memo: '신규 고객, 오늘 첫 배달 예정'
+  },
+  {
+    id: 28,
+    name: '안도현',
+    phone: '010-8901-2347',
+    lastRequestDate: getDateFromToday(-3),
+    requestType: '이사',
+    status: '완료',
+    memo: '반려동물 동반 이사, 조용한 환경 유지 필요'
+  },
+  {
+    id: 29,
+    name: '진서아',
+    phone: '010-9012-3458',
+    lastRequestDate: getDateFromToday(-6),
+    requestType: '이사/배달',
+    status: '완료',
+    memo: '가구가 많아 2일 소요, 만족도 높음'
+  },
+  {
+    id: 30,
+    name: '허민서',
+    phone: '010-0123-4569',
+    lastRequestDate: getDateFromToday(-8),
+    requestType: '배달',
+    status: '완료',
+    memo: '음식 배달, 시간 엄수 잘 됨'
   }
 ];
 

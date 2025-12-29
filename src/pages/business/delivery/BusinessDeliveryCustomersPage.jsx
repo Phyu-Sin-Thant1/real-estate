@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react';
 import StatusBadge from '../../../components/delivery/StatusBadge';
 import Modal from '../../../components/delivery/Modal';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
+import { customers, customerOrders } from '../../../mock/deliveryCustomersData';
 
 const BusinessDeliveryCustomersPage = () => {
   const { user } = useUnifiedAuth();
-  // Partner's customers - empty for now (would come from a store in real app)
-  const [customerList, setCustomerList] = useState([]);
+  // Partner's customers - using mock data
+  const [customerList, setCustomerList] = useState(customers);
   const [searchTerm, setSearchTerm] = useState('');
   const [tagFilter, setTagFilter] = useState('전체');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -417,7 +418,7 @@ const BusinessDeliveryCustomersPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {[]?.map((order, index) => (
+                    {(customerOrders[selectedCustomer.id] || []).slice(0, 5).map((order, index) => (
                       <tr key={index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {order.id}
@@ -432,7 +433,8 @@ const BusinessDeliveryCustomersPage = () => {
                           {formatCurrency(order.amount)}
                         </td>
                       </tr>
-                    )) || (
+                    ))}
+                    {(!customerOrders[selectedCustomer.id] || customerOrders[selectedCustomer.id].length === 0) && (
                       <tr>
                         <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
                           주문 내역이 없습니다

@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { getReviewsByPartner } from '../../../store/reviewsStore';
+import { getReviewsByPartner, addReplyToReview, loadReviews } from '../../../store/reviewsStore';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateReviewsPage = () => {
   const { user } = useUnifiedAuth();
   const [reviews, setReviews] = useState([]);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
 
   useEffect(() => {
+    // Initialize mock data if empty
+    const allReviews = loadReviews();
+    
     if (user?.email) {
       const partnerReviews = getReviewsByPartner(user.email);
       // Sort by createdAt (newest first)
@@ -16,6 +21,30 @@ const RealEstateReviewsPage = () => {
       setReviews(sorted);
     }
   }, [user?.email]);
+
+  const handleReplySubmit = (reviewId) => {
+    if (!replyText.trim()) {
+      alert('답글 내용을 입력해주세요.');
+      return;
+    }
+
+    addReplyToReview(
+      reviewId,
+      replyText,
+      user?.email || '',
+      user?.name || user?.email || '파트너'
+    );
+    
+    // Refresh reviews
+    const partnerReviews = getReviewsByPartner(user?.email);
+    const sorted = partnerReviews.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    setReviews(sorted);
+    
+    setReplyText('');
+    setReplyingTo(null);
+  };
 
   const getRatingStars = (rating) => {
     return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
@@ -92,6 +121,64 @@ const RealEstateReviewsPage = () => {
                       <p className="mt-2 text-xs text-gray-500">
                         매물 ID: {review.entityId}
                       </p>
+                    )}
+
+                    {/* Replies Section */}
+                    {review.replies && review.replies.length > 0 && (
+                      <div className="mt-4 ml-4 pl-4 border-l-2 border-gray-200">
+                        {review.replies.map((reply) => (
+                          <div key={reply.id} className="mt-3">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-sm font-medium text-dabang-primary">
+                                {reply.repliedByName || reply.repliedBy || '파트너'}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {reply.createdAt
+                                  ? new Date(reply.createdAt).toLocaleDateString('ko-KR')
+                                  : ''}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-sm text-gray-600">{reply.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Reply Input */}
+                    {replyingTo === review.id ? (
+                      <div className="mt-4 ml-4 pl-4 border-l-2 border-dabang-primary">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="답글을 입력하세요..."
+                          rows={3}
+                          className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary text-sm"
+                        />
+                        <div className="mt-2 flex space-x-2">
+                          <button
+                            onClick={() => handleReplySubmit(review.id)}
+                            className="px-4 py-2 bg-dabang-primary text-white rounded-md hover:bg-dabang-primary/90 text-sm font-medium"
+                          >
+                            답글 등록
+                          </button>
+                          <button
+                            onClick={() => {
+                              setReplyingTo(null);
+                              setReplyText('');
+                            }}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium"
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setReplyingTo(review.id)}
+                        className="mt-3 text-sm text-dabang-primary hover:text-dabang-primary/80 font-medium"
+                      >
+                        답글 작성
+                      </button>
                     )}
                   </div>
                 </div>

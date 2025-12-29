@@ -81,7 +81,6 @@ export const customers = [
     address: '서울특별시 은평구 갈현동 78-90',
     detailAddress: '새롬 아파트 105동 304호',
     tag: '블랙리스트',
-    tag: '블랙리스트',
     memo: '무단 반품 요청과 과도한 할인 요구',
     totalOrders: 5,
     totalPayment: 95000,

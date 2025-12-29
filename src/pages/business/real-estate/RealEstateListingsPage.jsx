@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listingTypes, transactionTypes, listingStatuses, listingRegions } from '../../../mock/realEstateData';
-import { getListingsByPartner, updateListing } from '../../../store/realEstateListingsStore';
+import { getListingsByPartner, updateListing, seedMockListings } from '../../../store/realEstateListingsStore';
 import { getApprovalById } from '../../../store/approvalsStore';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
@@ -17,6 +17,7 @@ const RealEstateListingsPage = () => {
 
   // Load partner's listings from store
   useEffect(() => {
+    seedMockListings(); // Seed mock data if empty
     if (user?.email) {
       const partnerListings = getListingsByPartner(user.email);
       setStoredListings(partnerListings);
