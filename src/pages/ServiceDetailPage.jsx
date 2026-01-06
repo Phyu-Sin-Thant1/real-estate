@@ -58,6 +58,12 @@ const ServiceDetailPage = () => {
     // Set limitations collapsed by default (especially on mobile)
     const isMobile = window.innerWidth < 768;
     setIsLimitationsExpanded(false); // Always start collapsed, user can expand
+    
+    // Check if user came from "Request Service" button
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'request') {
+      setIsExtraOptionsModalOpen(true);
+    }
   }, [serviceId]);
 
   const handleQuoteFormChange = (e) => {
@@ -522,15 +528,21 @@ const ServiceDetailPage = () => {
               )}
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => setIsQuoteModalOpen(true)}
-                  className="flex-1 px-6 py-3 bg-dabang-primary hover:bg-dabang-primary/90 text-white rounded-lg font-semibold transition-colors text-base shadow-lg hover:shadow-xl"
+                  onClick={() => navigate(`/checkout/${service.id}`)}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-300 text-base shadow-lg shadow-orange-500/20 hover:shadow-xl hover:scale-105"
                 >
-                  Get Quote {hasExtraOptions() && `(${formatPrice(calculateTotalPrice())})`}
+                  Buy Now {hasExtraOptions() && `(${formatPrice(calculateTotalPrice())})`}
+                </button>
+                <button
+                  onClick={() => setIsExtraOptionsModalOpen(true)}
+                  className="flex-1 px-6 py-3 border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl font-semibold transition-all duration-300 text-base hover:scale-105"
+                >
+                  Request Service
                 </button>
                 {agency && (
                   <button
                     onClick={() => navigate(`/agency/moving/${agency.id}`)}
-                    className="flex-1 px-6 py-3 border-2 border-dabang-primary text-dabang-primary hover:bg-dabang-primary/10 rounded-lg font-semibold transition-colors text-base"
+                    className="px-6 py-3 border-2 border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50 rounded-xl font-semibold transition-all duration-300 text-base"
                   >
                     View Agency
                   </button>

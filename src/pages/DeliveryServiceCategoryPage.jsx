@@ -373,42 +373,42 @@ const DeliveryServiceCategoryPage = () => {
                           </div>
                         </div>
                         
-                        <div className="flex gap-3 mb-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRequestService(service);
-                            }}
-                            className="flex-1 px-5 py-3 bg-gradient-to-r from-dabang-primary to-indigo-600 hover:from-dabang-primary/90 hover:to-indigo-600/90 text-white rounded-xl font-semibold transition-all duration-300 text-sm shadow-lg shadow-dabang-primary/30 hover:shadow-xl hover:scale-105"
-                          >
-                            Get Quote
-                          </button>
-                          {agency && (
+                        <div className="flex flex-col gap-3 mb-3">
+                          <div className="flex gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/agency/moving/${agency.id}`);
+                                navigate(`/checkout/${service.id}`);
                               }}
-                              className="px-5 py-3 border-2 border-gray-200 text-gray-700 rounded-xl hover:border-dabang-primary hover:text-dabang-primary font-semibold transition-all duration-300 text-sm hover:bg-dabang-primary/5"
+                              className="flex-1 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-300 text-sm shadow-lg shadow-orange-500/20 hover:shadow-xl hover:scale-105 relative z-10"
                             >
-                              Agency
+                              Buy Now
                             </button>
-                          )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/service/${service.id}?action=request`);
+                              }}
+                              className="flex-1 px-4 py-2.5 border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl font-semibold transition-all duration-300 text-sm hover:scale-105 relative z-10"
+                            >
+                              Request Service
+                            </button>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/service/${service.id}`);
+                            }}
+                            className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:border-gray-300 hover:bg-gray-50 font-medium transition-all duration-300 text-sm group"
+                          >
+                            <span className="flex items-center justify-center gap-2">
+                              View Details
+                              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </span>
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/service/${service.id}`);
-                          }}
-                          className="w-full px-5 py-3 border-2 border-dabang-primary/30 text-dabang-primary rounded-xl hover:bg-gradient-to-r hover:from-dabang-primary hover:to-indigo-600 hover:text-white font-semibold transition-all duration-300 text-sm group"
-                        >
-                          <span className="flex items-center justify-center gap-2">
-                            View Full Details
-                            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </span>
-                        </button>
                         
                         {/* Decorative Corner */}
                         <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${serviceTypeInfo?.color || 'from-blue-400 to-blue-600'} opacity-0 group-hover:opacity-5 rounded-bl-full transition-opacity duration-500`}></div>

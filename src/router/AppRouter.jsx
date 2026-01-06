@@ -67,6 +67,7 @@ import CategoryPage from '../pages/CategoryPage'
 import DeliveryServicesPage from '../pages/DeliveryServicesPage'
 import DeliveryServiceCategoryPage from '../pages/DeliveryServiceCategoryPage'
 import ServiceDetailPage from '../pages/ServiceDetailPage'
+import CheckoutPage from '../pages/CheckoutPage'
 
 // Map page
 import MapPage from '../pages/MapPage'
@@ -129,6 +130,7 @@ const AppRouter = () => {
         <Route path="/delivery-services" element={<DeliveryServicesPage />} />
         <Route path="/delivery-services/:serviceTypeId" element={<DeliveryServiceCategoryPage />} />
         <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+        <Route path="/checkout/:serviceId" element={<CheckoutPage />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/news" element={<NewsListPage />} />
         <Route path="/news/:id" element={<NewsDetailPage />} />

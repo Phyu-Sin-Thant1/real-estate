@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import QuoteRequestModal from '../components/delivery/QuoteRequestModal';
+import ServiceRequestModal from '../components/delivery/ServiceRequestModal';
+import AgencySelectionModal from '../components/delivery/AgencySelectionModal';
 const MovingServicePage = () => {
   const navigate = useNavigate();
+  const packageRef = useRef(null);
   
   const [formData, setFormData] = useState({
     region: '',
@@ -123,12 +126,6 @@ const MovingServicePage = () => {
     }
   ];
 
-  const [estimate, setEstimate] = useState({
-    distance: 5,
-    items: 3,
-    floors: 2
-  });
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -137,36 +134,61 @@ const MovingServicePage = () => {
     }));
   };
 
-  const handleEstimateChange = (name, value) => {
-    setEstimate(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const calculateEstimate = () => {
-    // Simple calculation formula
-    const basePrice = 100000;
-    const distanceCost = estimate.distance * 5000;
-    const itemsCost = estimate.items * 20000;
-    const floorsCost = estimate.floors * 10000;
-    const totalPrice = basePrice + distanceCost + itemsCost + floorsCost;
-    
-    return {
-      min: Math.round(totalPrice * 0.8 / 10000),
-      max: Math.round(totalPrice * 1.2 / 10000)
-    };
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     alert('견적 비교를 시작합니다!');
   };
 
-  const { min, max } = calculateEstimate();
+  const formatPrice = (price) => {
+    if (!price) return '₩0';
+    if (price >= 10000) {
+      return `₩${(price / 10000).toFixed(0)}만`;
+    }
+    return `₩${price.toLocaleString()}`;
+  };
+
+  // Fixed-price service packages
+  const servicePackages = [
+    {
+      id: 'home-delivery',
+      name: 'Home Delivery',
+      description: 'For moving household items',
+      price: 120000,
+      limits: 'Up to 2 floors, 300kg',
+      features: ['Careful handling', 'Insurance included', 'Tracking available']
+    },
+    {
+      id: 'express-delivery',
+      name: 'Express Delivery',
+      description: 'Priority service for fast delivery',
+      price: 150000,
+      limits: 'Priority service',
+      features: ['Fast delivery', 'Priority support', 'Same-day available']
+    },
+    {
+      id: 'standard-delivery',
+      name: 'Standard Delivery',
+      description: 'For standard household relocation',
+      price: 130000,
+      limits: 'Up to 3 floors, 500kg',
+      features: ['Standard service', 'Reliable delivery', 'Basic insurance']
+    },
+    {
+      id: 'office-relocation',
+      name: 'Office Relocation',
+      description: 'For office and business relocation',
+      price: 180000,
+      limits: 'Up to 4 floors, 600kg',
+      features: ['Office furniture handling', 'Business hours service', 'Full insurance']
+    }
+  ];
 
   // Add state for quote modal
-  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);  return (
+  const [isQuoteModalOpen, setIsQuoteModalOpen] = useState(false);
+  const [isAgencySelectionModalOpen, setIsAgencySelectionModalOpen] = useState(false);
+  const [isServiceRequestModalOpen, setIsServiceRequestModalOpen] = useState(false);
+  const [selectedServicePackage, setSelectedServicePackage] = useState(null);
+  const [selectedAgency, setSelectedAgency] = useState(null);  return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50/20 flex flex-col relative">
       {/* Premium Background Pattern */}
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(249,115,22,0.03),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(251,146,60,0.02),transparent_50%)] pointer-events-none z-0"></div>
@@ -454,102 +476,85 @@ const MovingServicePage = () => {
           </div>
         </section>
 
-        {/* Premium Quick Estimate Calculator Section */}
+        {/* Fixed-Price Service Packages Section */}
         <section className="py-16 relative overflow-hidden bg-gradient-to-b from-white via-slate-50/40 to-white">
           {/* Subtle Background Pattern */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(249,115,22,0.02),transparent_70%)]"></div>
-          <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 mb-3 shadow-lg">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
-                  빠른 <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">견적 계산기</span>
-                </h2>
-                <p className="text-sm text-gray-600">간단한 정보로 예상 비용을 확인하세요</p>
-              </div>
-              
-              <div className="space-y-8">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="font-medium text-gray-700">거리 (km)</label>
-                    <span className="text-dabang-primary font-medium">{estimate.distance} km</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="50"
-                    value={estimate.distance}
-                    onChange={(e) => handleEstimateChange('distance', parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-dabang-primary"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>50 km</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="font-medium text-gray-700">짐의 양</label>
-                    <span className="text-dabang-primary font-medium">{estimate.items} 박스</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={estimate.items}
-                    onChange={(e) => handleEstimateChange('items', parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-dabang-primary"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500 mt-1">
-                    <span>1 박스</span>
-                    <span>20 박스</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <label className="font-medium text-gray-700">층수</label>
-                    <span className="text-dabang-primary font-medium">{estimate.floors} 층</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={estimate.floors}
-                    onChange={(e) => handleEstimateChange('floors', parseInt(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-dabang-primary"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500 mt-1">
-                    <span>1층</span>
-                    <span>20층</span>
-                  </div>
-                </div>
-                
-                <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 rounded-xl p-6 text-center text-white shadow-lg overflow-hidden">
-                  {/* Animated Background */}
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]"></div>
-                  
-                  <div className="relative z-10">
-                    <p className="text-sm mb-2 font-semibold opacity-90">예상 비용</p>
-                    <p className="text-3xl md:text-4xl font-extrabold mb-4">
-                      {min}만 ~ {max}만 원
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setIsQuoteModalOpen(true)}
-                      className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-orange-600 shadow-md hover:bg-gray-50 transition-all duration-300 hover:scale-105"
-                    >
-                      정확한 견적 신청하기
-                    </button>
-                  </div>
-                </div>
-              </div>
+          
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
+                서비스 <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">패키지</span>
+              </h2>
+              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                고정 가격으로 제공되는 서비스 패키지를 선택하세요
+              </p>
             </div>
+
+            {/* Service Package Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {servicePackages.map((pkg) => {
+                return (
+                  <div
+                    key={pkg.id}
+                    className="relative bg-white rounded-2xl shadow-lg border-2 border-gray-200 hover:border-orange-300 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+                  >
+                    <div className="p-6 flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
+                      <p className="text-sm text-gray-600 mb-4">{pkg.description}</p>
+                      
+                      <div className="mb-4">
+                        <div className="flex items-baseline gap-2 mb-2">
+                          <span className="text-3xl font-extrabold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                            {formatPrice(pkg.price)}
+                          </span>
+                          <span className="text-sm text-gray-500">부터</span>
+                        </div>
+                        <p className="text-xs text-gray-600 font-medium mb-3">{pkg.limits}</p>
+                      </div>
+                      
+                      <div className="space-y-2 mb-6">
+                        {pkg.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs text-gray-600">
+                            <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span>{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="p-6 pt-0 border-t border-gray-100">
+                      <div className="flex flex-col gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate('/delivery-services');
+                          }}
+                          className="w-full px-6 py-3.5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg shadow-orange-500/20 hover:shadow-xl hover:scale-105"
+                        >
+                          Buy Now
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedServicePackage(pkg);
+                            packageRef.current = pkg; // Store in ref as backup
+                            setIsAgencySelectionModalOpen(true);
+                          }}
+                          className="w-full px-6 py-3.5 border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl font-semibold transition-all duration-300 hover:scale-105"
+                        >
+                          Request Service
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           </div>
         </section>
 
@@ -681,6 +686,56 @@ const MovingServicePage = () => {
       <QuoteRequestModal
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
+      />
+      <AgencySelectionModal
+        isOpen={isAgencySelectionModalOpen}
+        onClose={() => {
+          setIsAgencySelectionModalOpen(false);
+          // Only reset package if no agency was selected
+          // Use a ref or check after a delay to ensure state is updated
+          const currentAgency = selectedAgency;
+          setTimeout(() => {
+            // Double-check that agency wasn't set during the delay
+            if (!selectedAgency && !currentAgency) {
+              setSelectedServicePackage(null);
+            }
+          }, 100);
+        }}
+        selectedPackage={selectedServicePackage}
+        onAgencySelect={(agency) => {
+          // Store package in local variable to avoid closure issues
+          const currentPackage = selectedServicePackage || packageRef.current;
+          
+          // Set selected agency
+          setSelectedAgency(agency);
+          
+          // Ensure package is set in state
+          if (currentPackage && !selectedServicePackage) {
+            setSelectedServicePackage(currentPackage);
+          }
+          
+          // Close agency selection modal
+          setIsAgencySelectionModalOpen(false);
+          
+          // Open customization form after ensuring the first modal closes
+          // Use a delay to ensure React state updates complete
+          setTimeout(() => {
+            // Use the stored package from closure to ensure it's available
+            if (currentPackage) {
+              setIsServiceRequestModalOpen(true);
+            }
+          }, 300);
+        }}
+      />
+      <ServiceRequestModal
+        isOpen={isServiceRequestModalOpen}
+        onClose={() => {
+          setIsServiceRequestModalOpen(false);
+          setSelectedServicePackage(null);
+          setSelectedAgency(null);
+        }}
+        selectedPackage={selectedServicePackage}
+        selectedAgency={selectedAgency}
       />
       <Footer />
       </div>
