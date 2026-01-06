@@ -36,7 +36,7 @@ const AdminDashboardLayout = () => {
 
   const getPageTitle = () => {
     const currentItem = menuItems.find(item => item.path === location.pathname);
-    return currentItem ? t(currentItem.translationKey) : t('nav.adminDashboard');
+    return currentItem ? t(currentItem.translationKey) : t('adminDashboard');
   };
 
   const handleLogout = () => {
@@ -45,17 +45,17 @@ const AdminDashboardLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-2xl border-r border-gray-200/50 flex flex-col backdrop-blur-sm">
+    <div className="h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex overflow-hidden">
+      {/* Sidebar - Fixed */}
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-white shadow-2xl border-r border-gray-200/50 flex flex-col backdrop-blur-sm z-50 overflow-hidden">
         <div className="p-6 border-b border-gray-200/60 bg-gradient-to-br from-white to-gray-50/50">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-dabang-primary to-indigo-600 flex items-center justify-center shadow-lg shadow-dabang-primary/30">
               <span className="text-white font-bold text-xl">A</span>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{t('nav.adminDashboard')}</h2>
-              <p className="text-xs text-gray-500 font-medium">{t('nav.adminPanel')}</p>
+              <h2 className="text-lg font-bold text-gray-900">{t('adminDashboard')}</h2>
+              <p className="text-xs text-gray-500 font-medium">{t('adminPanel')}</p>
             </div>
           </div>
         </div>
@@ -96,22 +96,24 @@ const AdminDashboardLayout = () => {
             {t('common.logout')}
           </button>
         </div>
-      </div>
+      </aside>
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
-        <DashboardTopBar 
-          title={getPageTitle()}
-          showSearch={true}
-          showViewWebsite={true}
-          showNotifications={true}
-          user={user}
-          onLogout={handleLogout}
-        />
+      <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+        {/* Top Bar - Fixed */}
+        <div className="flex-shrink-0 z-40">
+          <DashboardTopBar 
+            title={getPageTitle()}
+            showSearch={true}
+            showViewWebsite={true}
+            showNotifications={true}
+            user={user}
+            onLogout={handleLogout}
+          />
+        </div>
         
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-transparent">
+        {/* Page Content - Scrollable */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-transparent">
           <Outlet />
         </main>
       </div>

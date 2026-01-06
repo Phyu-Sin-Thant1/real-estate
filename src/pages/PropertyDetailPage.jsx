@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPropertyById, getSimilarProperties } from '../mock/properties';
+import { getAgencyById } from '../mock/agencies';
 import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useReservations } from '../context/ReservationsContext';
 import Header from '../components/layout/Header';
@@ -50,7 +51,15 @@ const PropertyDetailPage = () => {
   const [property, setProperty] = useState(null);
   const [similarProperties, setSimilarProperties] = useState([]);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [mapLoaded, setMapLoaded] = useState(false);  
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [agency, setAgency] = useState(null);
+  const [isContactAgencyModalOpen, setIsContactAgencyModalOpen] = useState(false);
+  const [contactAgencyForm, setContactAgencyForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    message: ''
+  });  
   // Reservation form state
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [reservationForm, setReservationForm] = useState({
@@ -100,6 +109,12 @@ const PropertyDetailPage = () => {
     };
     
     setProperty(propertyWithDefaults);
+    
+    // Get agency information if agencyId exists
+    if (propertyData.agencyId) {
+      const agencyData = getAgencyById(propertyData.agencyId, 'realEstate');
+      setAgency(agencyData);
+    }
     
     // Get similar properties
     const similar = getSimilarProperties(propertyData.id, 4);
@@ -254,6 +269,28 @@ const PropertyDetailPage = () => {
     setIsSuccessModalOpen(false);
   };
 
+  const handleContactAgencySubmit = (e) => {
+    e.preventDefault();
+    // In a real app, this would send the contact form data
+    alert('문의가 접수되었습니다. 담당자가 곧 연락드리겠습니다.');
+    setIsContactAgencyModalOpen(false);
+    setContactAgencyForm({ name: '', phone: '', email: '', message: '' });
+  };
+
+  const handleContactAgencyFormChange = (e) => {
+    const { name, value } = e.target;
+    setContactAgencyForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleAgencyNameClick = () => {
+    if (agency) {
+      navigate(`/agency/real-estate/${agency.id}`);
+    }
+  };
+
   if (!property) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -388,6 +425,55 @@ const PropertyDetailPage = () => {
                     <div className="text-sm text-gray-500">{property.dealType}</div>
                   </div>
                 </div>
+                
+                {/* Listed by Agency Section */}
+                {agency && (
+                  <div className="py-4 border-t border-b border-gray-200 my-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1">
+                        {/* Agency Logo */}
+                        <div className="flex-shrink-0">
+                          <img 
+                            src={agency.logo} 
+                            alt={agency.name}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                          />
+                        </div>
+                        
+                        {/* Agency Info */}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <button
+                              onClick={handleAgencyNameClick}
+                              className="text-lg font-bold text-gray-900 hover:text-dabang-primary transition-colors cursor-pointer"
+                            >
+                              {agency.name}
+                            </button>
+                            {agency.verified && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                인증됨
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">등록 중개사</p>
+                        </div>
+                      </div>
+                      
+                      {/* Contact Agency Button */}
+                      <div className="flex-shrink-0">
+                        <button
+                          onClick={() => setIsContactAgencyModalOpen(true)}
+                          className="px-4 py-2 bg-dabang-primary hover:bg-dabang-primary/90 text-white rounded-lg font-medium transition-colors text-sm"
+                        >
+                          중개사 문의
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-t border-b border-gray-200 my-4">
                   <div className="text-center">
@@ -786,6 +872,92 @@ const PropertyDetailPage = () => {
             확인
           </button>
         </div>
+      </Modal>
+      
+      {/* Contact Agency Modal */}
+      <Modal 
+        isOpen={isContactAgencyModalOpen} 
+        onClose={() => setIsContactAgencyModalOpen(false)}
+        title="중개사 문의하기"
+      >
+        <form onSubmit={handleContactAgencySubmit}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                이름 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={contactAgencyForm.name}
+                onChange={handleContactAgencyFormChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="이름을 입력하세요"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                연락처 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="phone"
+                value={contactAgencyForm.phone}
+                onChange={handleContactAgencyFormChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="연락처를 입력하세요"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                이메일
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={contactAgencyForm.email}
+                onChange={handleContactAgencyFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="이메일을 입력하세요 (선택)"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                문의 내용 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="message"
+                value={contactAgencyForm.message}
+                onChange={handleContactAgencyFormChange}
+                required
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                placeholder="문의 내용을 입력하세요"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setIsContactAgencyModalOpen(false)}
+              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
+            >
+              제출
+            </button>
+          </div>
+        </form>
       </Modal>
       
       <Footer />

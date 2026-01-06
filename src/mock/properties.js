@@ -34,6 +34,7 @@ export const mockProperties = [
       phone: '010-1234-5678',
       email: 'pro.kim@realestate.com'
     },
+    agencyId: 'agency-1', // Link to agency
     // For compatibility with MapPage property cards
     image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 강남구 역삼동',
@@ -73,6 +74,7 @@ export const mockProperties = [
       phone: '010-2345-6789',
       email: 'consult.park@realestate.com'
     },
+    agencyId: 'agency-2', // Link to agency
     // For compatibility with MapPage property cards
     image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 마포구 홍익로',
@@ -113,6 +115,7 @@ export const mockProperties = [
       phone: '010-3456-7890',
       email: 'luxury.lee@realestate.com'
     },
+    agencyId: 'agency-3', // Link to agency
     // For compatibility with MapPage property cards
     image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 송파구 잠실동',
@@ -151,6 +154,7 @@ export const mockProperties = [
       phone: '010-4567-8901',
       email: 'global.choi@realestate.com'
     },
+    agencyId: 'agency-4', // Link to agency
     // For compatibility with MapPage property cards
     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 용산구 이태원로',
@@ -189,6 +193,7 @@ export const mockProperties = [
       phone: '010-5678-9012',
       email: 'pro.jung@realestate.com'
     },
+    agencyId: 'agency-5', // Link to agency
     // For compatibility with MapPage property cards
     image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop&auto=format',
     location: '서울특별시 영등포구 여의도동',

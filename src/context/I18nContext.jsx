@@ -53,7 +53,21 @@ export const I18nProvider = ({ children }) => {
   const t = useCallback((key) => {
     const currentDict = translations[lang] || translations.en;
     const enDict = translations.en;
-    return resolveKey(currentDict, key, enDict);
+    
+    // First try the key as-is
+    let result = resolveKey(currentDict, key, enDict);
+    
+    // If not found and key doesn't contain a dot, try with "nav." prefix for navigation items
+    if (result === key && !key.includes('.')) {
+      const navKey = `nav.${key}`;
+      result = resolveKey(currentDict, navKey, enDict);
+      // If still not found, return original key
+      if (result === navKey) {
+        return key;
+      }
+    }
+    
+    return result;
   }, [lang]);
 
   const setLang = useCallback((nextLang) => {

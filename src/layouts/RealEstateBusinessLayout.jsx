@@ -28,7 +28,7 @@ const RealEstateBusinessLayout = () => {
     const currentItem = realEstateMenu.find(
       (item) => item.path === location.pathname
     );
-    return currentItem ? t(currentItem.translationKey) : t('nav.businessDashboard');
+    return currentItem ? t(currentItem.translationKey) : t('businessDashboard');
   };
 
   const handleLogout = () => {
@@ -37,9 +37,9 @@ const RealEstateBusinessLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex">
-      {/* Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200/50 shadow-2xl z-10 backdrop-blur-sm">
+    <div className="h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex overflow-hidden">
+      {/* Sidebar - Fixed */}
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r border-gray-200/50 shadow-2xl z-50 backdrop-blur-sm overflow-hidden">
         <div className="h-full flex flex-col">
           {/* Logo/Brand */}
           <div className="h-20 flex items-center justify-center border-b border-gray-200/60 px-4 bg-gradient-to-br from-white to-gray-50/50">
@@ -88,7 +88,7 @@ const RealEstateBusinessLayout = () => {
             <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-sm font-semibold text-gray-900">{user?.name || 'Business User'}</p>
-                <p className="text-xs text-gray-500 font-medium">{t('nav.realEstatePartner')}</p>
+                <p className="text-xs text-gray-500 font-medium">{t('realEstatePartner')}</p>
               </div>
             </div>
             <button
@@ -102,9 +102,9 @@ const RealEstateBusinessLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64">
-        {/* Header */}
-        <div className="fixed top-0 right-0 left-64 z-10">
+      <div className="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+        {/* Header - Fixed */}
+        <div className="flex-shrink-0 z-40">
           <DashboardTopBar 
             title={getPageTitle()}
             showSearch={false}
@@ -115,8 +115,8 @@ const RealEstateBusinessLayout = () => {
           />
         </div>
 
-        {/* Content Area */}
-        <main className="pt-20 p-6 bg-transparent">
+        {/* Content Area - Scrollable */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 bg-transparent">
           <Outlet />
         </main>
       </div>

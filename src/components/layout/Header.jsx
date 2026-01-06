@@ -60,11 +60,11 @@ const Header = () => {
           {/* Navigation */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <Link to="/" className="text-gray-700 hover:text-dabang-primary">
-              {t('nav.home')}
+              {t('home')}
             </Link>
             
             <Link to="/map" className="text-gray-700 hover:text-dabang-primary">
-              {t('nav.mapSearch')}
+              {t('mapSearch')}
             </Link>
             
             {/* Category Dropdown */}
@@ -73,7 +73,7 @@ const Header = () => {
                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                 className="text-gray-700 hover:text-dabang-primary flex items-center"
               >
-                {t('nav.listings')}
+                {t('listings')}
                 <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -96,11 +96,11 @@ const Header = () => {
             </div>
             
             <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary">
-              {t('nav.moving')}
+              {t('moving')}
             </Link>
             
             <Link to="/community" className="text-gray-700 hover:text-dabang-primary">
-              {t('nav.community')}
+              {t('community')}
             </Link>
           <Link to="/partner/apply" className="text-gray-700 hover:text-dabang-primary">
             파트너 신청
@@ -208,17 +208,17 @@ const Header = () => {
       <div className="md:hidden border-t border-gray-200 py-3">
         <div className="flex space-x-4 overflow-x-auto px-4">
           <Link to="/" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            {t('nav.home')}
+            {t('home')}
           </Link>
           <Link to="/map" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            {t('nav.mapSearch')}
+            {t('mapSearch')}
           </Link>
           <div className="relative">
             <button
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
               className="text-gray-700 hover:text-dabang-primary font-medium flex items-center whitespace-nowrap"
             >
-              {t('nav.listings')}
+              {t('listings')}
               <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
@@ -240,10 +240,10 @@ const Header = () => {
             )}
           </div>
           <Link to="/moving-service" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            {t('nav.moving')}
+            {t('moving')}
           </Link>
           <Link to="/community" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
-            {t('nav.community')}
+            {t('community')}
           </Link>
           <Link to="/partner/apply" className="text-gray-700 hover:text-dabang-primary font-medium whitespace-nowrap">
             파트너 신청

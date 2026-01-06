@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { mockProperties } from '../mock/properties'
+import { getAgencyById } from '../mock/agencies'
 
 /**
  * Reusable hook for property search with mock data
@@ -15,6 +16,8 @@ import { mockProperties } from '../mock/properties'
  * @param {number} params.minArea - Minimum area in square meters
  * @param {number} params.maxArea - Maximum area in square meters
  * @param {Array<string>} params.options - Selected options
+ * @param {string} params.agencyId - Filter by agency ID
+ * @param {boolean} params.verifiedAgenciesOnly - Show only verified agencies
  * @returns {Object} - Search results and loading state
  */
 export const usePropertySearch = (params = {}) => {
@@ -121,6 +124,20 @@ export const usePropertySearch = (params = {}) => {
         return params.options.every(option => 
           property.options.includes(option) || property.facilities.includes(option)
         )
+      })
+    }
+    
+    // Apply agency filter
+    if (params.agencyId) {
+      results = results.filter(property => property.agencyId === params.agencyId)
+    }
+    
+    // Apply verified agencies only filter
+    if (params.verifiedAgenciesOnly) {
+      results = results.filter(property => {
+        if (!property.agencyId) return false
+        const agency = getAgencyById(property.agencyId, 'realEstate')
+        return agency && agency.verified
       })
     }
     

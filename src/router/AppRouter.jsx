@@ -23,6 +23,7 @@ import BusinessAdsPage from '../pages/business/ads/BusinessAdsPage'
 import BusinessStatsPage from '../pages/business/stats/BusinessStatsPage'
 import BusinessMovingRequestsPage from '../pages/business/delivery/BusinessMovingRequestsPage'
 import BusinessDeliveryOrdersPage from '../pages/business/delivery/BusinessDeliveryOrdersPage'
+import BusinessQuoteRequestsPage from '../pages/business/delivery/BusinessQuoteRequestsPage'
 import BusinessSchedulePage from '../pages/business/schedule/BusinessSchedulePage'
 import BusinessCustomersPage from '../pages/business/delivery/BusinessDeliveryCustomersPage'
 import BusinessSettingsPage from '../pages/business/delivery/DeliverySettingsPage'
@@ -57,9 +58,15 @@ import ChangePasswordPage from '../pages/auth/ChangePasswordPage'
 // Property pages
 import PropertyDetailPage from '../pages/PropertyDetailPage'
 import ListPropertyPage from '../pages/ListPropertyPage'
+import AgencyProfilePage from '../pages/AgencyProfilePage'
 
 // Category pages
 import CategoryPage from '../pages/CategoryPage'
+
+// Delivery service pages
+import DeliveryServicesPage from '../pages/DeliveryServicesPage'
+import DeliveryServiceCategoryPage from '../pages/DeliveryServiceCategoryPage'
+import ServiceDetailPage from '../pages/ServiceDetailPage'
 
 // Map page
 import MapPage from '../pages/MapPage'
@@ -116,8 +123,12 @@ const AppRouter = () => {
         <Route path="/community" element={<CommunityLandingPage />} />
         <Route path="/price-trends" element={<PriceTrendsPage />} />
         <Route path="/property/:id" element={<PropertyDetailPage />} />
+        <Route path="/agency/:type/:id" element={<AgencyProfilePage />} />
         <Route path="/list-property" element={<ListPropertyPage />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
+        <Route path="/delivery-services" element={<DeliveryServicesPage />} />
+        <Route path="/delivery-services/:serviceTypeId" element={<DeliveryServiceCategoryPage />} />
+        <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/news" element={<NewsListPage />} />
         <Route path="/news/:id" element={<NewsDetailPage />} />
@@ -231,6 +242,7 @@ const AppRouter = () => {
           <Route path="stats" element={<BusinessSettlementStatsPage />} />
           <Route path="moving-requests" element={<BusinessMovingRequestsPage />} />
           <Route path="delivery-orders" element={<BusinessDeliveryOrdersPage />} />
+          <Route path="quote-requests" element={<BusinessQuoteRequestsPage />} />
           <Route path="schedule" element={<BusinessSchedulePage />} />
           <Route path="customers" element={<BusinessCustomersPage />} />
           <Route path="reviews" element={<BusinessReviewsPage />} />
