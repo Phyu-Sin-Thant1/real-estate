@@ -559,36 +559,51 @@ const MovingServicePage = () => {
         </section>
 
         {/* Premium Moving Checklist Section */}
-        <section className="py-16 relative overflow-hidden bg-gradient-to-b from-white via-orange-50/15 to-white">
-          {/* Premium Background Accent */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(249,115,22,0.02),transparent_60%)]"></div>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 mb-4 shadow-lg shadow-orange-500/20">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                </svg>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
-                이사 준비 <span className="bg-gradient-to-r from-orange-600 via-orange-500 to-amber-600 bg-clip-text text-transparent">체크리스트</span>
+        <section className="py-20 relative bg-gradient-to-b from-white via-gray-50/40 to-white overflow-hidden">
+          {/* Subtle Background Pattern */}
+          <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+          
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            {/* Header */}
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-light mb-3 text-gray-800 tracking-tight">
+                이사 준비 <span className="font-normal bg-gradient-to-r from-orange-500 via-orange-400 to-amber-500 bg-clip-text text-transparent">체크리스트</span>
               </h2>
-              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base md:text-lg text-gray-500 font-light tracking-wide">
                 놓치지 말고 꼼꼼하게 준비하세요
               </p>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            {/* Checklist Cards - Premium Design */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-5">
               {checklistItems.map((item, index) => (
-                <div key={index} className="group relative bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl hover:shadow-2xl p-6 text-center border border-gray-100 hover:-translate-y-2 transition-all duration-500 overflow-hidden">
-                  {/* Background Effect */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-dabang-primary/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div 
+                  key={index} 
+                  className="group relative bg-white/80 backdrop-blur-sm rounded-2xl p-5 md:p-6 text-center border border-gray-100/80 hover:border-orange-200/60 hover:shadow-xl hover:shadow-orange-100/50 transition-all duration-500 overflow-hidden"
+                >
+                  {/* Premium Background Gradient on Hover */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-50/0 via-amber-50/0 to-orange-50/0 group-hover:from-orange-50/40 group-hover:via-amber-50/20 group-hover:to-orange-50/30 transition-all duration-500 rounded-2xl"></div>
                   
+                  {/* Subtle Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 rounded-2xl"></div>
+                  
+                  {/* Content */}
                   <div className="relative z-10">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      <span className="text-white text-2xl font-bold">{index + 1}</span>
+                    {/* Number Badge - Premium Design */}
+                    <div className="w-16 h-16 md:w-18 md:h-18 rounded-xl bg-gradient-to-br from-orange-400 via-orange-500 to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-200/40 group-hover:shadow-xl group-hover:shadow-orange-300/50 group-hover:scale-105 transition-all duration-500">
+                      <span className="text-white text-xl md:text-2xl font-medium">{index + 1}</span>
                     </div>
-                    <p className="font-bold text-gray-900 text-sm group-hover:text-orange-600 transition-colors duration-300">{item}</p>
+                    
+                    {/* Item Text */}
+                    <p className="font-light text-gray-700 text-xs md:text-sm group-hover:text-gray-900 transition-colors duration-300 leading-relaxed">
+                      {item}
+                    </p>
                   </div>
+                  
+                  {/* Decorative Corner Accent */}
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-orange-400/0 to-amber-400/0 group-hover:from-orange-400/10 group-hover:to-amber-400/5 rounded-bl-2xl transition-all duration-500"></div>
                 </div>
               ))}
             </div>
