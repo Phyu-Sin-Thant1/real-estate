@@ -1,5 +1,7 @@
 import { getPartnerDiscounts } from '../../store/partnerDiscountsStore';
 import { getPlatformCampaigns } from '../../store/platformCampaignsStore';
+import { getDiscountToggleState } from '../../store/discountToggleStore';
+import { isCouponEnabled } from '../../store/couponToggleStore';
 
 /**
  * Get applicable discount for a given context
@@ -18,6 +20,14 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
   const currentDate = now instanceof Date ? now : new Date(now);
 
   // Priority 1: Check Platform Campaigns (admin-controlled)
+  // For DELIVERY scope, check if discount usage is enabled globally
+  if (scope === 'DELIVERY') {
+    const isDiscountEnabled = getDiscountToggleState();
+    if (!isDiscountEnabled) {
+      return null; // Discounts are disabled for delivery
+    }
+  }
+
   try {
     const platformCampaigns = getPlatformCampaigns();
     const applicableCampaign = platformCampaigns.find((campaign) => {
@@ -48,6 +58,12 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
     });
 
     if (applicableCampaign) {
+      // Check if this specific coupon is enabled by the delivery agency
+      if (!isCouponEnabled(applicableCampaign.id)) {
+        // Skip this coupon if it's disabled
+        return null;
+      }
+
       return {
         id: applicableCampaign.id,
         title: applicableCampaign.title,
@@ -66,6 +82,14 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
   }
 
   // Priority 2: Check Partner Discounts
+  // For DELIVERY scope, check if discount usage is enabled
+  if (scope === 'DELIVERY') {
+    const isDiscountEnabled = getDiscountToggleState();
+    if (!isDiscountEnabled) {
+      return null; // Discounts are disabled for delivery
+    }
+  }
+
   try {
     const partnerDiscounts = getPartnerDiscounts();
     const applicableDiscount = partnerDiscounts.find((discount) => {

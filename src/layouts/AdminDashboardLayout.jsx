@@ -11,6 +11,7 @@ const menuItems = [
   { key: 'users', translationKey: 'nav.users', path: '/admin/users', icon: '👥' },
   { key: 'realEstate', translationKey: 'nav.realEstateOversight', path: '/admin/real-estate', icon: '🏠' },
   { key: 'delivery', translationKey: 'nav.deliveryOversight', path: '/admin/delivery', icon: '🚚' },
+  { key: 'categories', translationKey: 'nav.categoryManagement', path: '/admin/delivery/categories', icon: '📦' },
   { key: 'approvals', translationKey: 'nav.approvalsReviews', path: '/admin/approvals', icon: '✅' },
   { key: 'finance', translationKey: 'nav.paymentsSettlement', path: '/admin/finance/settlements', icon: '💰' },
   { key: 'pricing', translationKey: 'nav.commissionsPricing', path: '/admin/finance/rules', icon: '📋' },

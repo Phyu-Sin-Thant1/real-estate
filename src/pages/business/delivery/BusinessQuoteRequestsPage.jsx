@@ -260,7 +260,7 @@ const BusinessQuoteRequestsPage = () => {
           setSelectedRequest(null);
         }}
         title={selectedRequest ? `견적 요청 상세: ${selectedRequest.serviceName}` : '견적 요청 상세'}
-        size="lg"
+        size="large"
       >
         {selectedRequest && (
           <div className="space-y-6">

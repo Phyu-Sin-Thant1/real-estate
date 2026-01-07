@@ -179,7 +179,7 @@ const BusinessMovingRequestsPage = () => {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)}
         title="새 이사/견적 요청"
-        size="lg"
+        size="large"
       >
         <div className="space-y-4">
           <div>
@@ -307,7 +307,7 @@ const BusinessMovingRequestsPage = () => {
         isOpen={isDetailModalOpen} 
         onClose={() => setIsDetailModalOpen(false)}
         title="이사 요청 상세"
-        size="lg"
+        size="large"
       >
         {selectedRequest && (
           <div className="space-y-6">

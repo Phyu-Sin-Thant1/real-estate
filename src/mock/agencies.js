@@ -170,3 +170,6 @@ export const getVerifiedAgencies = (type = 'realEstate') => {
   return agencies.filter(agency => agency.verified);
 };
 
+
+
+

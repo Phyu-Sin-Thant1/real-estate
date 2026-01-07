@@ -7,6 +7,9 @@ export const BUSINESS_MENU_KEYS = {
   MOVING_REQUESTS: 'movingRequests',
   DELIVERY_ORDERS: 'deliveryOrders',
   QUOTE_REQUESTS: 'quoteRequests',
+  SERVICE_PACKAGES: 'servicePackages',
+  ORDER_HISTORY: 'orderHistory',
+  CUSTOMER_ORDERS: 'customerOrders',
   SCHEDULE: 'schedule',
   CUSTOMERS: 'customers',
   SETTINGS: 'settings',
@@ -27,12 +30,12 @@ export const realEstateMenu = [
 
 export const deliveryMenu = [
   { key: BUSINESS_MENU_KEYS.DASHBOARD, translationKey: 'nav.dashboard', path: '/business/dashboard', group: null },
-  { key: BUSINESS_MENU_KEYS.MOVING_REQUESTS, translationKey: 'nav.movingRequests', path: '/business/moving-requests', group: null },
+  { key: BUSINESS_MENU_KEYS.SERVICE_PACKAGES, translationKey: 'nav.servicePackages', path: '/business/service-packages', group: null },
+  { key: BUSINESS_MENU_KEYS.CUSTOMER_ORDERS, translationKey: 'nav.customerOrders', path: '/business/customer-orders', group: null },
+  { key: BUSINESS_MENU_KEYS.ORDER_HISTORY, translationKey: 'nav.orderHistory', path: '/business/order-history', group: null },
   { key: BUSINESS_MENU_KEYS.DELIVERY_ORDERS, translationKey: 'nav.deliveryOrders', path: '/business/delivery-orders', group: null },
-  { key: BUSINESS_MENU_KEYS.QUOTE_REQUESTS, translationKey: 'nav.quoteRequests', path: '/business/quote-requests', group: null },
   { key: BUSINESS_MENU_KEYS.SCHEDULE, translationKey: 'nav.schedule', path: '/business/schedule', group: null },
   { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/stats', group: null },
-  { key: BUSINESS_MENU_KEYS.CUSTOMERS, translationKey: 'nav.customers', path: '/business/customers', group: null },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/reviews', group: null },
   { key: 'discounts', translationKey: 'nav.discounts', path: '/business/discounts', group: null },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/settings', group: null }

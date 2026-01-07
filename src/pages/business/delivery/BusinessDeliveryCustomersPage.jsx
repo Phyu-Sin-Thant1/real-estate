@@ -359,7 +359,7 @@ const BusinessDeliveryCustomersPage = () => {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         title="고객 상세"
-        size="lg"
+        size="large"
       >
         {selectedCustomer && (
           <div className="space-y-6">

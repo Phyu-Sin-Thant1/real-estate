@@ -153,7 +153,7 @@ const ServiceDetailPage = () => {
       serviceLimitations: service.limitations || null
     });
     
-    alert('견적 요청이 접수되었습니다. 담당자가 곧 연락드리겠습니다.');
+    alert('서비스 요청이 접수되었습니다. 담당자가 곧 연락드리겠습니다.');
     setIsQuoteModalOpen(false);
     setQuoteForm({
       name: '',
@@ -177,15 +177,27 @@ const ServiceDetailPage = () => {
     if (!service || !service.extraOptions) return service?.minPrice || 0;
     
     let total = service.minPrice;
+    
+    // Extra Floors
     if (service.extraOptions.extraFloors) {
       total += extraOptions.extraFloors * service.extraOptions.extraFloors.price;
     }
+    
+    // Large Items
     if (service.extraOptions.largeItems) {
-      total += extraOptions.largeItems * service.extraOptions.largeItems.price;
+      total += extraOptions.largeItems * (service.extraOptions.largeItems.price || 20000);
     }
+    
+    // Weight/Volume of Items (₩25,000 per kg/m³)
+    if (extraOptions.itemWeight && parseFloat(extraOptions.itemWeight) > 0) {
+      total += parseFloat(extraOptions.itemWeight) * 25000;
+    }
+    
+    // Fragile Handling
     if (service.extraOptions.fragileHandling) {
-      total += extraOptions.fragileHandling * service.extraOptions.fragileHandling.price;
+      total += extraOptions.fragileHandling * (service.extraOptions.fragileHandling.price || 21000);
     }
+    
     return total;
   };
 
@@ -466,27 +478,132 @@ const ServiceDetailPage = () => {
               </div>
             )}
 
-            {/* Add Extra Options Button */}
+
+            {/* Extra Options Section - Always Visible */}
             {service.extraOptions && (
-              <div className="mb-6">
-                <button
-                  onClick={() => setIsExtraOptionsModalOpen(true)}
-                  className="w-full px-6 py-3.5 border-2 border-dashed border-dabang-primary text-dabang-primary rounded-lg font-medium hover:bg-dabang-primary/10 transition-all hover:border-solid hover:shadow-md flex items-center justify-center gap-2 touch-manipulation text-sm md:text-base"
-                >
-                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span className="text-center">Add extra options or requirements (e.g., more floors, larger items)</span>
+              <div className="mb-6 p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 shadow-md">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Extra Options {hasExtraOptions() && '(Applied)'}
+                  </h3>
                   {hasExtraOptions() && (
-                    <span className="ml-2 px-2.5 py-1 bg-dabang-primary text-white rounded-full text-xs font-semibold whitespace-nowrap">
-                      {Object.entries(extraOptions).filter(([k, v]) => 
-                        k === 'additionalRequests' || k === 'itemWeight' 
-                          ? v && v.toString().trim().length > 0 
-                          : v > 0
-                      ).length} added
-                    </span>
+                    <button
+                      onClick={() => setIsExtraOptionsModalOpen(true)}
+                      className="text-sm text-dabang-primary hover:text-dabang-primary/80 font-semibold underline"
+                    >
+                      수정
+                    </button>
                   )}
-                </button>
+                </div>
+                
+                {/* Show empty state if no options selected */}
+                {!hasExtraOptions() ? (
+                  <div className="text-center py-6">
+                    <p className="text-gray-600 mb-4 text-sm">No extra options selected yet.</p>
+                    <button
+                      onClick={() => setIsExtraOptionsModalOpen(true)}
+                      className="px-6 py-3 border-2 border-dashed border-dabang-primary text-dabang-primary rounded-lg font-medium hover:bg-dabang-primary/10 transition-all hover:border-solid hover:shadow-md flex items-center justify-center gap-2 mx-auto touch-manipulation text-sm md:text-base"
+                    >
+                      <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>Add extra options or requirements</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3 mb-4">
+                  {/* Extra Floors */}
+                  {extraOptions.extraFloors > 0 && service.extraOptions?.extraFloors && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-700">Extra Floors:</span>
+                        <span className="text-sm text-gray-600">+{extraOptions.extraFloors} {service.extraOptions.extraFloors.unit}</span>
+                      </div>
+                      <span className="text-sm font-bold text-orange-600">
+                        +{formatPrice(extraOptions.extraFloors * service.extraOptions.extraFloors.price)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Large Items */}
+                  {extraOptions.largeItems > 0 && service.extraOptions?.largeItems && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-700">Large Items:</span>
+                        <span className="text-sm text-gray-600">+{extraOptions.largeItems} items</span>
+                      </div>
+                      <span className="text-sm font-bold text-blue-600">
+                        +{formatPrice(extraOptions.largeItems * (service.extraOptions.largeItems.price || 20000))}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Weight/Volume */}
+                  {extraOptions.itemWeight && parseFloat(extraOptions.itemWeight) > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-700">Weight/Volume:</span>
+                        <span className="text-sm text-gray-600">{extraOptions.itemWeight} kg/m³</span>
+                      </div>
+                      <span className="text-sm font-bold text-green-600">
+                        +{formatPrice(parseFloat(extraOptions.itemWeight) * 25000)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Fragile Handling */}
+                  {extraOptions.fragileHandling > 0 && service.extraOptions?.fragileHandling && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-700">Fragile Handling:</span>
+                        <span className="text-sm text-gray-600">+{extraOptions.fragileHandling} items</span>
+                      </div>
+                      <span className="text-sm font-bold text-purple-600">
+                        +{formatPrice(extraOptions.fragileHandling * (service.extraOptions.fragileHandling.price || 21000))}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Additional Requests */}
+                  {extraOptions.additionalRequests && extraOptions.additionalRequests.trim().length > 0 && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-900 font-medium">
+                        <strong>Special Instructions:</strong> {extraOptions.additionalRequests}
+                      </p>
+                    </div>
+                  )}
+                  </div>
+                )}
+                
+                {/* Price Breakdown - Only show when options are selected */}
+                {hasExtraOptions() && (
+                  <div className="border-t-2 border-green-300 pt-4 mt-4">
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Base Price:</span>
+                        <span className="font-semibold text-gray-900">{service.price}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-600">Extra Options:</span>
+                        <span className="font-semibold text-green-700">
+                          +{formatPrice(calculateTotalPrice() - service.minPrice)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border-2 border-green-300">
+                      <span className="text-lg font-bold text-gray-900">Total Price (with extra options):</span>
+                      <span className="text-2xl font-extrabold text-green-700">
+                        {formatPrice(calculateTotalPrice())}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2 text-center">
+                      {service.price} + {formatPrice(calculateTotalPrice() - service.minPrice)} (extra options) = {formatPrice(calculateTotalPrice())}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -518,26 +635,12 @@ const ServiceDetailPage = () => {
 
             {/* Action Buttons */}
             <div className="pt-6 border-t border-gray-200">
-              {hasExtraOptions() && (
-                <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-green-900">Total Price (with extra options):</span>
-                    <span className="text-2xl font-bold text-green-700">{formatPrice(calculateTotalPrice())}</span>
-                  </div>
-                </div>
-              )}
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => navigate(`/checkout/${service.id}`)}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-300 text-base shadow-lg shadow-orange-500/20 hover:shadow-xl hover:scale-105"
                 >
-                  Buy Now {hasExtraOptions() && `(${formatPrice(calculateTotalPrice())})`}
-                </button>
-                <button
-                  onClick={() => setIsExtraOptionsModalOpen(true)}
-                  className="flex-1 px-6 py-3 border-2 border-orange-500 text-orange-600 hover:bg-orange-50 rounded-xl font-semibold transition-all duration-300 text-base hover:scale-105"
-                >
-                  Request Service
+                  Buy Now {hasExtraOptions() ? `(${formatPrice(calculateTotalPrice())})` : `(${service.price})`}
                 </button>
                 {agency && (
                   <button
@@ -606,11 +709,17 @@ const ServiceDetailPage = () => {
         isOpen={isExtraOptionsModalOpen} 
         onClose={() => setIsExtraOptionsModalOpen(false)}
         title="Add Extra Options"
+        size="large"
       >
         <div className="space-y-6">
-          <p className="text-sm text-gray-600">
-            Add additional requirements that exceed the standard service package limits.
-          </p>
+          <div className="pb-3 border-b border-gray-200">
+            <p className="text-base font-medium text-gray-700 mb-1">
+              Add additional requirements that exceed the standard service package limits.
+            </p>
+            <p className="text-sm text-gray-500">
+              Customize your service by selecting extra features. Prices update in real-time as you make selections.
+            </p>
+          </div>
 
           {/* Extra Options Form */}
           {service.extraOptions && (
@@ -649,191 +758,283 @@ const ServiceDetailPage = () => {
 
               {/* Large Items */}
               {service.extraOptions.largeItems && (
-                <div className="p-4 border border-gray-200 rounded-lg bg-blue-50/30">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {service.extraOptions.largeItems.label}
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                    <div className="flex-1 w-full">
+                <div className="p-5 border-2 border-gray-200 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 hover:border-blue-300 transition-all shadow-sm">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <label className="block text-base font-bold text-gray-900">
+                          Large Items
+                        </label>
+                        <Tooltip content="Items that exceed the weight limit (e.g., 2000kg). Each large item requires special handling.">
+                          <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Enter the number of items exceeding {service.limitations?.maxWeight || 2000}kg
+                      </p>
+                    </div>
+                    <div className="ml-4 px-3 py-1.5 bg-blue-100 rounded-lg border border-blue-200">
+                      <span className="text-sm font-bold text-blue-700">
+                        ₩{formatPrice(service.extraOptions.largeItems.price || 20000)} per item
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
                       <input
                         type="number"
                         min="0"
                         value={extraOptions.largeItems}
                         onChange={(e) => handleExtraOptionChange('largeItems', e.target.value)}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary text-base touch-manipulation"
-                        placeholder="0"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base touch-manipulation shadow-sm"
+                        placeholder="Enter number of items"
                       />
                     </div>
-                    <div className="text-sm text-gray-600 whitespace-nowrap">
-                      {service.extraOptions.largeItems.unit}
-                    </div>
                     {extraOptions.largeItems > 0 && (
-                      <div className="text-sm font-semibold text-dabang-primary whitespace-nowrap">
-                        +{formatPrice(extraOptions.largeItems * service.extraOptions.largeItems.price)}
+                      <div className="px-4 py-3 bg-white rounded-lg border-2 border-blue-300 shadow-sm">
+                        <span className="text-base font-bold text-blue-600">
+                          +₩{formatPrice(extraOptions.largeItems * (service.extraOptions.largeItems.price || 20000))}
+                        </span>
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Items exceeding {service.limitations?.maxWeight || 500}kg
-                  </p>
                 </div>
               )}
 
               {/* Weight/Volume of Items */}
               {service.limitations?.maxWeight && (
-                <div className="p-4 border border-gray-200 rounded-lg bg-green-50/30">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Weight/Volume of Items
-                  </label>
-                  <div className="space-y-2">
+                <div className="p-5 border-2 border-gray-200 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 hover:border-green-300 transition-all shadow-sm">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <label className="block text-base font-bold text-gray-900">
+                          Weight/Volume of Items
+                        </label>
+                        <Tooltip content="Enter the total weight (kg) or volume (m³) of items that exceed the standard limit. Additional charges apply for excess weight/volume.">
+                          <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Enter total weight or volume of items exceeding the standard limit of {service.limitations.maxWeight}kg
+                      </p>
+                    </div>
+                    <div className="ml-4 px-3 py-1.5 bg-green-100 rounded-lg border border-green-200">
+                      <span className="text-sm font-bold text-green-700">
+                        ₩{formatPrice(25000)} per kg/m³
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
                         <input
-                          type="text"
+                          type="number"
+                          min="0"
+                          step="0.1"
                           value={extraOptions.itemWeight}
                           onChange={(e) => handleExtraOptionChange('itemWeight', e.target.value)}
-                          className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary text-base touch-manipulation"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base touch-manipulation shadow-sm"
                           placeholder="Enter weight (kg) or volume (m³)"
                         />
                       </div>
-                      <div className="text-xs text-gray-500 whitespace-nowrap">
+                      <div className="px-3 py-3 bg-gray-100 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 whitespace-nowrap">
                         kg or m³
                       </div>
                     </div>
-                    {extraOptions.itemWeight && extraOptions.itemWeight.trim().length > 0 && (
-                      <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                        <p className="text-xs text-blue-900">
-                          <strong>Note:</strong> Items exceeding {service.limitations.maxWeight}kg will be charged as large items ({formatPrice(service.extraOptions?.largeItems?.price || 30000)} per item).
+                    {extraOptions.itemWeight && parseFloat(extraOptions.itemWeight) > 0 && (
+                      <div className="p-3 bg-green-100 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-900 font-medium">
+                          <strong>Additional charge:</strong> ₩{formatPrice(parseFloat(extraOptions.itemWeight) * 25000)} for {extraOptions.itemWeight} kg/m³
                         </p>
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Enter the total weight or volume of items that exceed the standard limit of {service.limitations.maxWeight}kg
-                  </p>
                 </div>
               )}
 
               {/* Fragile Handling */}
               {service.extraOptions.fragileHandling && (
-                <div className="p-4 border border-gray-200 rounded-lg bg-purple-50/30">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {service.extraOptions.fragileHandling.label}
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                    <div className="flex-1 w-full">
+                <div className="p-5 border-2 border-gray-200 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 hover:border-purple-300 transition-all shadow-sm">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <label className="block text-base font-bold text-gray-900">
+                          Fragile Handling
+                        </label>
+                        <Tooltip content="Special handling for fragile items like glass, artwork, electronics. Each fragile item receives extra care and protective packaging.">
+                          <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Enter the number of fragile items to be handled (glass, artwork, electronics)
+                      </p>
+                    </div>
+                    <div className="ml-4 px-3 py-1.5 bg-purple-100 rounded-lg border border-purple-200">
+                      <span className="text-sm font-bold text-purple-700">
+                        ₩{formatPrice(service.extraOptions.fragileHandling.price || 21000)} per item
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
                       <input
                         type="number"
                         min="0"
                         value={extraOptions.fragileHandling}
                         onChange={(e) => handleExtraOptionChange('fragileHandling', e.target.value)}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary text-base touch-manipulation"
-                        placeholder="0"
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base touch-manipulation shadow-sm"
+                        placeholder="Enter number of fragile items"
                       />
                     </div>
-                    <div className="text-sm text-gray-600 whitespace-nowrap">
-                      {service.extraOptions.fragileHandling.unit}
-                    </div>
                     {extraOptions.fragileHandling > 0 && (
-                      <div className="text-sm font-semibold text-dabang-primary whitespace-nowrap">
-                        +{formatPrice(extraOptions.fragileHandling * service.extraOptions.fragileHandling.price)}
+                      <div className="px-4 py-3 bg-white rounded-lg border-2 border-purple-300 shadow-sm">
+                        <span className="text-base font-bold text-purple-600">
+                          +₩{formatPrice(extraOptions.fragileHandling * (service.extraOptions.fragileHandling.price || 21000))}
+                        </span>
                       </div>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Special handling for fragile items (glass, artwork, electronics). Price: {formatPrice(service.extraOptions.fragileHandling.price)} per item.
-                  </p>
                 </div>
               )}
 
               {/* Additional Requests / Custom Requirements */}
-              <div className="p-4 border border-gray-200 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Additional Requests or Special Requirements
-                </label>
+              <div className="p-5 border-2 border-gray-200 rounded-xl bg-gradient-to-br from-gray-50 to-slate-50 hover:border-gray-300 transition-all shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <label className="block text-base font-bold text-gray-900">
+                    Additional Requests or Special Requirements
+                  </label>
+                  <Tooltip content="Describe any special requests such as packing requirements, handling instructions, preferred delivery times, or other custom needs.">
+                    <button type="button" className="text-gray-400 hover:text-gray-600 transition-colors">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </Tooltip>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Enter any special requests (e.g., specific delivery times, packing instructions, handling requirements)
+                </p>
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={extraOptions.additionalRequests}
                   onChange={(e) => setExtraOptions(prev => ({
                     ...prev,
                     additionalRequests: e.target.value
                   }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-dabang-primary resize-none"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 resize-none text-base shadow-sm"
                   placeholder="Enter any special requests, fragile items, packing requirements, or other custom needs..."
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Describe any special handling requirements or custom requests
-                </p>
               </div>
             </div>
           )}
 
           {/* Real-Time Price Summary */}
-          <div className="p-4 md:p-5 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-gray-200 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4 text-dabang-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          <div className="p-5 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-xl border-2 border-orange-200 shadow-lg">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-5m-5 5h.01M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
               </svg>
               Price Calculator
             </h3>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Base Price:</span>
-                <span className="text-sm font-medium text-gray-900">{service.price}</span>
+            <div className="space-y-3 mb-4">
+              <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200">
+                <span className="text-base font-semibold text-gray-700">Base Price:</span>
+                <span className="text-base font-bold text-gray-900">{service.price}</span>
               </div>
               {hasExtraOptions() && (
                 <>
-                  {Object.entries(extraOptions).map(([key, value]) => {
-                    if (key === 'additionalRequests' || key === 'itemWeight') {
-                      if (key === 'itemWeight' && value && value.toString().trim().length > 0) {
-                        return (
-                          <div key={key} className="flex justify-between items-center text-xs text-gray-500 italic">
-                            <span>Weight/Volume info:</span>
-                            <span>{value}</span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }
-                    if (value === 0 || !service.extraOptions?.[key]) return null;
-                    const option = service.extraOptions[key];
-                    return (
-                      <div key={key} className="flex justify-between items-center transition-all duration-200">
-                        <span className="text-sm text-gray-600">
-                          {option.label} (×{value}):
-                        </span>
-                        <span className="text-sm font-semibold text-dabang-primary">
-                          +{formatPrice(value * option.price)}
-                        </span>
-                      </div>
-                    );
-                  })}
+                  {/* Extra Floors */}
+                  {extraOptions.extraFloors > 0 && service.extraOptions?.extraFloors && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200">
+                      <span className="text-sm font-semibold text-gray-700">
+                        Extra Floors (×{extraOptions.extraFloors}):
+                      </span>
+                      <span className="text-sm font-bold text-orange-600">
+                        +₩{formatPrice(extraOptions.extraFloors * service.extraOptions.extraFloors.price)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Large Items */}
+                  {extraOptions.largeItems > 0 && service.extraOptions?.largeItems && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200">
+                      <span className="text-sm font-semibold text-gray-700">
+                        Large Items (×{extraOptions.largeItems}):
+                      </span>
+                      <span className="text-sm font-bold text-blue-600">
+                        +₩{formatPrice(extraOptions.largeItems * (service.extraOptions.largeItems.price || 20000))}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Weight/Volume */}
+                  {extraOptions.itemWeight && parseFloat(extraOptions.itemWeight) > 0 && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200">
+                      <span className="text-sm font-semibold text-gray-700">
+                        Weight/Volume ({extraOptions.itemWeight} kg/m³):
+                      </span>
+                      <span className="text-sm font-bold text-green-600">
+                        +₩{formatPrice(parseFloat(extraOptions.itemWeight) * 25000)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Fragile Handling */}
+                  {extraOptions.fragileHandling > 0 && service.extraOptions?.fragileHandling && (
+                    <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-gray-200 transition-all duration-200">
+                      <span className="text-sm font-semibold text-gray-700">
+                        Fragile Handling (×{extraOptions.fragileHandling}):
+                      </span>
+                      <span className="text-sm font-bold text-purple-600">
+                        +₩{formatPrice(extraOptions.fragileHandling * (service.extraOptions.fragileHandling.price || 21000))}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Additional Requests */}
                   {extraOptions.additionalRequests && extraOptions.additionalRequests.trim().length > 0 && (
-                    <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                      <p className="text-xs text-blue-900 font-medium">✓ Custom requests included</p>
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-900 font-medium flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Custom requests included
+                      </p>
                     </div>
                   )}
                 </>
               )}
             </div>
-            <div className="border-t-2 border-gray-300 pt-3 mt-3">
-              <div className="flex justify-between items-center">
-                <span className="text-base md:text-lg font-semibold text-gray-900">Total Price:</span>
-                <span className={`text-xl md:text-2xl font-bold transition-all duration-300 ${
-                  hasExtraOptions() ? 'text-dabang-primary scale-105' : 'text-gray-900'
+            <div className="border-t-2 border-orange-300 pt-4 mt-4">
+              <div className="flex justify-between items-center p-4 bg-gradient-to-r from-orange-100 to-amber-100 rounded-lg border-2 border-orange-300">
+                <span className="text-lg font-bold text-gray-900">Total Price:</span>
+                <span className={`text-2xl font-extrabold transition-all duration-300 ${
+                  hasExtraOptions() ? 'text-orange-600 scale-105' : 'text-gray-900'
                 }`}>
-                  {formatPrice(calculateTotalPrice())}
+                  ₩{formatPrice(calculateTotalPrice())}
                 </span>
               </div>
               {hasExtraOptions() && (
-                <p className="text-xs text-gray-500 mt-1 text-right">
-                  {formatPrice(service.minPrice)} + 추가 옵션
+                <p className="text-sm text-gray-600 mt-2 text-center">
+                  {service.price} + 추가 옵션 = ₩{formatPrice(calculateTotalPrice())}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-between items-center pt-5 border-t-2 border-gray-200">
             <button
               type="button"
               onClick={() => {
@@ -845,26 +1046,38 @@ const ServiceDetailPage = () => {
                   additionalRequests: ''
                 });
               }}
-              className="px-4 py-2.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 touch-manipulation"
+              className="px-6 py-3 border-2 border-gray-300 text-base font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm hover:shadow-md touch-manipulation"
             >
-              Clear All
+              <span className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear All
+              </span>
             </button>
             <button
               type="button"
               onClick={() => setIsExtraOptionsModalOpen(false)}
-              className="px-6 py-2.5 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90 shadow-md hover:shadow-lg transition-all touch-manipulation"
+              className="px-8 py-3 border-2 border-transparent text-base font-bold rounded-xl text-white bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 touch-manipulation"
             >
-              Apply Options {hasExtraOptions() && `(${formatPrice(calculateTotalPrice())})`}
+              <span className="flex items-center gap-2">
+                Apply Options
+                {hasExtraOptions() && (
+                  <span className="px-2 py-1 bg-white/20 rounded-lg text-sm">
+                    ₩{formatPrice(calculateTotalPrice())}
+                  </span>
+                )}
+              </span>
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* Quote Request Modal */}
+      {/* Service Request Modal */}
       <Modal 
         isOpen={isQuoteModalOpen} 
         onClose={() => setIsQuoteModalOpen(false)}
-        title={`Request Quote: ${service.name}`}
+        title={`Request Service: ${service.name}`}
       >
         <form onSubmit={handleQuoteSubmit}>
           <div className="space-y-4">
@@ -982,7 +1195,7 @@ const ServiceDetailPage = () => {
               type="submit"
               className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
             >
-              Request Quote
+              Request Service
             </button>
           </div>
         </form>

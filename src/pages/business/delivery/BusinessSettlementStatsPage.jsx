@@ -331,7 +331,7 @@ const BusinessSettlementStatsPage = () => {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         title="정산 상세"
-        size="lg"
+        size="large"
       >
         {selectedSettlement && (
           <div className="space-y-6">

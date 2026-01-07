@@ -24,6 +24,9 @@ import BusinessStatsPage from '../pages/business/stats/BusinessStatsPage'
 import BusinessMovingRequestsPage from '../pages/business/delivery/BusinessMovingRequestsPage'
 import BusinessDeliveryOrdersPage from '../pages/business/delivery/BusinessDeliveryOrdersPage'
 import BusinessQuoteRequestsPage from '../pages/business/delivery/BusinessQuoteRequestsPage'
+import BusinessServicePackagesPage from '../pages/business/delivery/BusinessServicePackagesPage'
+import BusinessOrderHistoryPage from '../pages/business/delivery/BusinessOrderHistoryPage'
+import BusinessCustomerOrdersPage from '../pages/business/delivery/BusinessCustomerOrdersPage'
 import BusinessSchedulePage from '../pages/business/schedule/BusinessSchedulePage'
 import BusinessCustomersPage from '../pages/business/delivery/BusinessDeliveryCustomersPage'
 import BusinessSettingsPage from '../pages/business/delivery/DeliverySettingsPage'
@@ -82,6 +85,7 @@ import AdminDashboardHomePage from '../pages/admin/AdminDashboardHomePage'
 import AdminPartnersPage from '../pages/admin/AdminPartnersPage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import AdminDeliveryOversightPage from '../pages/admin/AdminDeliveryOversightPage'
+import AdminCategoryManagementPage from '../pages/admin/AdminCategoryManagementPage'
 import AdminRealEstateOversightPage from '../pages/admin/AdminRealEstateOversightPage'
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage'
 // New admin pages
@@ -189,6 +193,7 @@ const AppRouter = () => {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="real-estate" element={<AdminRealEstateOversightPage />} />
           <Route path="delivery" element={<AdminDeliveryOversightPage />} />
+          <Route path="delivery/categories" element={<AdminCategoryManagementPage />} />
           <Route path="approvals" element={<AdminApprovalsPage />} />
           <Route path="finance/settlements" element={<AdminSettlementsPage />} />
           <Route path="finance/rules" element={<AdminFinanceRulesPage />} />
@@ -245,6 +250,9 @@ const AppRouter = () => {
           <Route path="moving-requests" element={<BusinessMovingRequestsPage />} />
           <Route path="delivery-orders" element={<BusinessDeliveryOrdersPage />} />
           <Route path="quote-requests" element={<BusinessQuoteRequestsPage />} />
+          <Route path="service-packages" element={<BusinessServicePackagesPage />} />
+          <Route path="customer-orders" element={<BusinessCustomerOrdersPage />} />
+          <Route path="order-history" element={<BusinessOrderHistoryPage />} />
           <Route path="schedule" element={<BusinessSchedulePage />} />
           <Route path="customers" element={<BusinessCustomersPage />} />
           <Route path="reviews" element={<BusinessReviewsPage />} />
