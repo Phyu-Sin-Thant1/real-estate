@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../../context/I18nContext';
 import { getActiveBanners } from '../../store/bannersStore';
+import { useBannerContext } from '../../context/BannerContext';
+import { trackBannerImpression, trackBannerClick } from '../../lib/api/banners';
 
 /**
  * BannerSlot - Renders promotional banners based on placement and service scope

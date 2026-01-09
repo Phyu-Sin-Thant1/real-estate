@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listingTypes, transactionTypes, listingStatuses, listingRegions } from '../../../mock/realEstateData';
-import { getListingsByPartner, updateListing, seedMockListings } from '../../../store/realEstateListingsStore';
+import { getListingsByPartner, updateListing, seedMockListings, getListingById } from '../../../store/realEstateListingsStore';
 import { getApprovalById } from '../../../store/approvalsStore';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 import StatusBadge from '../../../components/real-estate/StatusBadge';
 import ActionMenu from '../../../components/real-estate/ActionMenu';
+import PropertyDetailsModal from '../../../components/real-estate/PropertyDetailsModal';
 
 const RealEstateListingsPage = () => {
   const navigate = useNavigate();
@@ -21,6 +22,8 @@ const RealEstateListingsPage = () => {
   const [listingToArchive, setListingToArchive] = useState(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [listingToDuplicate, setListingToDuplicate] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedListing, setSelectedListing] = useState(null);
 
   // Load partner's listings from store
   useEffect(() => {
@@ -54,7 +57,7 @@ const RealEstateListingsPage = () => {
   // Filter listings based on filters and status tab
   const filteredListings = useMemo(() => {
     return allListings.filter(listing => {
-      const transactionMatch = transactionTypeFilter === '전체' || listing.transactionType === transactionTypeFilter;
+    const transactionMatch = transactionTypeFilter === '전체' || listing.transactionType === transactionTypeFilter;
       const normalizedStatus = normalizeStatus(listing.status);
       
       // Status tab filter (primary filter)
@@ -69,14 +72,14 @@ const RealEstateListingsPage = () => {
       // Legacy status filter (for backward compatibility)
       if (statusFilter !== '전체' && statusFilter !== statusTab) {
         statusMatch = statusMatch && (
-          listing.status === statusFilter || 
+      listing.status === statusFilter ||
           normalizedStatus === statusFilter
         );
       }
       
-      const regionMatch = regionFilter === '서울 전체' || (listing.address || listing.region || listing.city || '').includes(regionFilter);
-      return transactionMatch && statusMatch && regionMatch;
-    });
+    const regionMatch = regionFilter === '서울 전체' || (listing.address || listing.region || listing.city || '').includes(regionFilter);
+    return transactionMatch && statusMatch && regionMatch;
+  });
   }, [allListings, transactionTypeFilter, statusFilter, statusTab, regionFilter]);
 
   // Check if listing has missing images
@@ -104,17 +107,211 @@ const RealEstateListingsPage = () => {
     return requirements;
   };
 
+  // Map property type values to display labels
+  const getPropertyTypeLabel = (propertyType) => {
+    if (!propertyType) return 'Not set';
+    
+    const typeMap = {
+      'apartment': '아파트',
+      'house': '주택',
+      'office': '오피스텔',
+      'studio': '원룸',
+      'two-room': '투룸',
+      'villa': '빌라',
+      '아파트': '아파트',
+      '주택': '주택',
+      '오피스텔': '오피스텔',
+      '원룸': '원룸',
+      '투룸': '투룸',
+      '빌라': '빌라',
+    };
+    
+    return typeMap[propertyType] || propertyType;
+  };
+
   // Format price display
   const formatPrice = (listing) => {
-    if (listing.price) {
-      return `₩${Number(listing.price).toLocaleString()}`;
+    // If price is already a formatted string (from create form)
+    if (typeof listing.price === 'string' && listing.price.includes('원')) {
+      return listing.price;
     }
-    if (listing.monthly) {
-      const deposit = listing.deposit ? `보증금 ₩${(Number(listing.deposit) / 1000000).toFixed(0)}M` : '';
-      const monthly = `월 ₩${(Number(listing.monthly) / 1000).toFixed(0)}K`;
-      return deposit ? `${deposit} · ${monthly}` : monthly;
+    
+    // If price is a number
+    if (listing.price && typeof listing.price === 'number') {
+      return `₩${listing.price.toLocaleString()}`;
     }
+    
+    // Check for sale price
+    if (listing.salePrice) {
+      const salePrice = typeof listing.salePrice === 'number' 
+        ? listing.salePrice.toLocaleString() 
+        : listing.salePrice;
+      return `₩${salePrice}`;
+    }
+    
+    // Check for deposit and monthly (월세/전세)
+    if (listing.deposit || listing.monthly) {
+      const deposit = listing.deposit 
+        ? `보증금 ₩${(Number(listing.deposit) / 1000000).toFixed(0)}M` 
+        : '';
+      const monthly = listing.monthly 
+        ? `월 ₩${(Number(listing.monthly) / 1000).toFixed(0)}K` 
+        : '';
+      return deposit && monthly ? `${deposit} · ${monthly}` : deposit || monthly;
+    }
+    
     return 'Not set';
+  };
+
+  // Format relative date (e.g., "2 days ago")
+  const formatRelativeDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return '방금 전';
+      if (diffMins < 60) return `${diffMins}분 전`;
+      if (diffHours < 24) return `${diffHours}시간 전`;
+      if (diffDays === 1) return '1일 전';
+      if (diffDays < 7) return `${diffDays}일 전`;
+      if (diffDays < 30) {
+        const weeks = Math.floor(diffDays / 7);
+        return weeks === 1 ? '1주 전' : `${weeks}주 전`;
+      }
+      if (diffDays < 365) {
+        const months = Math.floor(diffDays / 30);
+        return months === 1 ? '1개월 전' : `${months}개월 전`;
+      }
+      return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    } catch (e) {
+      return '—';
+    }
+  };
+
+  // Format short date (e.g., "2024.01.15")
+  const formatShortDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\. /g, '.').replace(/\.$/, '');
+    } catch (e) {
+      return '—';
+    }
+  };
+
+  // Get region summary (district/area)
+  const getRegionSummary = (listing) => {
+    // Priority 1: region1 and region2 (from create form)
+    if (listing.region1 && listing.region2) {
+      return `${listing.region1} ${listing.region2}`;
+    }
+    
+    // Priority 2: city field (from create form)
+    if (listing.city) {
+      const cityParts = listing.city.split(' ');
+      if (cityParts.length >= 2) {
+        return `${cityParts[0]} ${cityParts[1]}`;
+      }
+      return cityParts[0] || listing.city;
+    }
+    
+    // Priority 3: address parsing
+    if (listing.address) {
+      const parts = listing.address.split(' ');
+      if (parts.length >= 2) {
+        return `${parts[0]} ${parts[1]}`;
+      }
+      return parts[0] || '—';
+    }
+    
+    // Priority 4: region field (legacy)
+    if (listing.region) {
+      return listing.region;
+    }
+    
+    return '—';
+  };
+
+  // Calculate completeness percentage and missing fields
+  const getCompleteness = (listing) => {
+    const requiredFields = [
+      'title',
+      'address',
+      'propertyType',
+      'transactionType',
+      'price',
+      'area',
+      'rooms',
+      'bathrooms',
+      'floor',
+      'description',
+      'contactName',
+      'contactPhone',
+    ];
+    
+    const optionalFields = [
+      'images',
+      'amenities',
+      'maintenance',
+      'contactEmail',
+    ];
+
+    let completed = 0;
+    let total = requiredFields.length;
+    const missing = [];
+
+    // Check required fields
+    requiredFields.forEach(field => {
+      if (field === 'price') {
+        // Price can be in different formats
+        if (listing.price || listing.deposit || listing.salePrice) {
+          completed++;
+        } else {
+          missing.push('가격');
+        }
+      } else if (field === 'address' && !listing.address && !listing.region3 && !listing.region1 && !listing.city) {
+        missing.push('주소');
+      } else if (listing[field]) {
+        completed++;
+      } else {
+        const fieldLabels = {
+          title: '제목',
+          address: '주소',
+          propertyType: '매물 종류',
+          transactionType: '거래 유형',
+          area: '면적',
+          rooms: '방 수',
+          bathrooms: '욕실',
+          floor: '층수',
+          description: '설명',
+          contactName: '담당자명',
+          contactPhone: '연락처',
+        };
+        missing.push(fieldLabels[field] || field);
+      }
+    });
+
+    // Check optional but important fields
+    if (hasMissingImages(listing)) {
+      missing.push('이미지');
+    }
+    if (hasMissingContract(listing)) {
+      missing.push('계약서');
+    }
+
+    const percentage = Math.round((completed / total) * 100);
+    
+    return {
+      percentage,
+      completed,
+      total,
+      missing,
+    };
   };
 
   // Duplicate listing
@@ -202,14 +399,14 @@ const RealEstateListingsPage = () => {
       <div className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/50 rounded-2xl border border-gray-200/60 p-8 shadow-lg shadow-blue-100/20">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-dabang-primary/10 to-indigo-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
         <div className="relative flex items-center justify-between">
-          <div>
+      <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent mb-3">
               Property Management
             </h1>
             <p className="text-gray-600 text-lg font-medium">Only approved properties are visible to customers.</p>
           </div>
           <button
-            onClick={() => navigate('/business/real-estate/listings/create')}
+            onClick={() => navigate('/business/real-estate/listings/new')}
             className="relative px-8 py-4 bg-gradient-to-r from-dabang-primary to-indigo-600 text-white rounded-xl hover:from-dabang-primary/90 hover:to-indigo-600/90 transition-all duration-300 font-semibold flex items-center gap-2 shadow-lg shadow-dabang-primary/30 hover:shadow-xl hover:shadow-dabang-primary/40 hover:-translate-y-0.5 group"
           >
             <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -257,61 +454,61 @@ const RealEstateListingsPage = () => {
         {/* Filters - Premium */}
         <div className="p-6 bg-gradient-to-b from-white to-gray-50/30">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Transaction Type Filter */}
+          {/* Transaction Type Filter */}
             <div className="group">
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Transaction Type</label>
               <div className="relative">
-                <select
-                  value={transactionTypeFilter}
-                  onChange={(e) => setTransactionTypeFilter(e.target.value)}
+            <select
+              value={transactionTypeFilter}
+              onChange={(e) => setTransactionTypeFilter(e.target.value)}
                   className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-dabang-primary/20 focus:border-dabang-primary transition-all duration-200 appearance-none cursor-pointer hover:border-gray-300"
-                >
-                  {transactionTypes.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
+            >
+              {transactionTypes.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </div>
-            </div>
+          </div>
 
             {/* Property Status Filter */}
             <div className="group">
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Property Status</label>
               <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
                   className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-dabang-primary/20 focus:border-dabang-primary transition-all duration-200 appearance-none cursor-pointer hover:border-gray-300"
-                >
-                  {statusFilterOptions.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
+            >
+              {statusFilterOptions.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </div>
-            </div>
+          </div>
 
-            {/* Region Filter */}
+          {/* Region Filter */}
             <div className="group">
               <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Region</label>
               <div className="relative">
-                <select
-                  value={regionFilter}
-                  onChange={(e) => setRegionFilter(e.target.value)}
+            <select
+              value={regionFilter}
+              onChange={(e) => setRegionFilter(e.target.value)}
                   className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-dabang-primary/20 focus:border-dabang-primary transition-all duration-200 appearance-none cursor-pointer hover:border-gray-300"
-                >
-                  {listingRegions.map((region) => (
-                    <option key={region} value={region}>{region}</option>
-                  ))}
-                </select>
+            >
+              {listingRegions.map((region) => (
+                <option key={region} value={region}>{region}</option>
+              ))}
+            </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -340,7 +537,7 @@ const RealEstateListingsPage = () => {
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">No properties yet</h3>
                 <p className="text-base text-gray-600 mb-8 max-w-md mx-auto">Upload your first property to get started and showcase your listings to potential customers.</p>
                 <button
-                  onClick={() => navigate('/business/real-estate/listings/create')}
+                  onClick={() => navigate('/business/real-estate/listings/new')}
                   className="px-8 py-4 bg-gradient-to-r from-dabang-primary to-indigo-600 text-white rounded-xl hover:from-dabang-primary/90 hover:to-indigo-600/90 transition-all duration-300 font-semibold shadow-lg shadow-dabang-primary/30 hover:shadow-xl hover:shadow-dabang-primary/40 hover:-translate-y-0.5"
                 >
                   Upload your first property
@@ -359,156 +556,190 @@ const RealEstateListingsPage = () => {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100">
-              <thead className="bg-gradient-to-r from-gray-50 to-white">
+          <div className="-mx-6 px-6">
+            <table className="w-full divide-y divide-gray-100" style={{ tableLayout: 'fixed' }}>
+              <thead className="bg-gray-50/80 backdrop-blur-sm border-b border-gray-200">
                 <tr>
-                  <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '30%' }}>
                     Property
-                  </th>
-                  <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '10%' }}>
                     Category
-                  </th>
-                  <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '12%' }}>
                     Price
-                  </th>
-                  <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '9%' }}>
                     Status
-                  </th>
-                  <th scope="col" className="px-8 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '9%' }}>
+                    Updated
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '9%' }}>
+                    Registered
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '10%' }}>
+                    Region
+                </th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '10%' }}>
+                    Completeness
+                </th>
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider" style={{ width: '60px' }}>
+                    <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {filteredListings.map((listing) => (
-                  <tr 
-                    key={listing.id} 
-                    onClick={() => navigate(`/business/real-estate/listings/${listing.id}`)}
-                    className="group hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 transition-all duration-300 cursor-pointer border-l-4 border-transparent hover:border-dabang-primary"
-                  >
-                    {/* Property Preview + Core Info */}
-                    <td className="px-8 py-5">
-                      <div className="flex items-start gap-5">
-                        {/* Thumbnail - Premium */}
-                        <div className="relative flex-shrink-0">
-                          {listing.image || listing.images?.[0] ? (
-                            <div className="relative overflow-hidden rounded-xl shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                              <img 
-                                src={listing.image || listing.images[0]} 
-                                alt={listing.title || 'Property'}
-                                className="w-16 h-16 object-cover group-hover:scale-105 transition-transform duration-300"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                            </div>
-                          ) : (
-                            <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center shadow-inner group-hover:border-gray-400 transition-colors">
-                              <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          )}
-                          {hasMissingImages(listing) && (
-                            <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg" title="Images required to publish">
-                              <span className="text-white text-xs font-bold">!</span>
-                            </span>
-                          )}
-                        </div>
+                {filteredListings.map((listing) => {
+                  const handleRowClick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedListing(listing);
+                    setShowDetailsModal(true);
+                  };
 
-                        {/* Core Info - Premium */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <h3 className="text-base font-bold text-gray-900 mb-1.5 group-hover:text-dabang-primary transition-colors">
-                                {listing.title || listing.name || 'Untitled Property'}
-                              </h3>
-                              <p className="text-sm text-gray-600 mb-3 flex items-center gap-1.5">
-                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                {listing.address || listing.region || listing.city || 'Address not set'}
-                              </p>
-                              
-                              {/* Validation Indicators - Premium */}
-                              <div className="flex flex-wrap items-center gap-2 mt-3">
-                                {hasMissingImages(listing) && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/business/real-estate/listings/${listing.id}/edit?tab=images`);
-                                    }}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-red-50 to-red-100 text-red-700 hover:from-red-100 hover:to-red-200 transition-all duration-200 shadow-sm hover:shadow-md border border-red-200/50"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                    Images required to publish
-                                    <span className="text-red-600 font-bold">→</span>
-                                  </button>
-                                )}
-                                {hasMissingContract(listing) && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/business/real-estate/listings/${listing.id}/edit?tab=contract`);
-                                    }}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 hover:from-amber-100 hover:to-amber-200 transition-all duration-200 shadow-sm hover:shadow-md border border-amber-200/50"
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                    Contract missing
-                                    <span className="text-amber-600 font-bold">→</span>
-                                  </button>
-                                )}
-                                {isReadyToPublish(listing) && (
-                                  <span 
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-green-50 to-emerald-100 text-green-700 border border-green-200/50 shadow-sm"
-                                    title={`Ready to publish. All requirements met: Images ✓, Contract ✓`}
-                                  >
-                                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    Ready to publish
-                                  </span>
-                                )}
+                  return (
+                    <tr 
+                      key={listing.id} 
+                      onClick={handleRowClick}
+                      onMouseDown={(e) => {
+                        // Prevent any default browser behavior
+                        if (e.target.closest('button') || e.target.closest('a')) {
+                          return;
+                        }
+                        e.preventDefault();
+                      }}
+                      className="group hover:bg-blue-50/30 transition-colors duration-200 cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleRowClick(e);
+                        }
+                      }}
+                    >
+                      {/* Property Preview + Core Info - Clickable */}
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Thumbnail - Compact */}
+                          <div className="relative flex-shrink-0">
+                            {listing.image || listing.images?.[0] ? (
+                              <div className="relative overflow-hidden rounded-lg shadow-sm group-hover:shadow-md transition-shadow duration-200">
+                                <img 
+                                  src={listing.image || listing.images[0]} 
+                                  alt={listing.title || 'Property'}
+                                  className="w-12 h-12 object-cover"
+                                />
                               </div>
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-100 border border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            )}
+                            {hasMissingImages(listing) && (
+                              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center border border-white shadow-sm" title="Images required">
+                                <span className="text-white text-[10px] font-bold">!</span>
+                        </span>
+                      )}
+                    </div>
+
+                          {/* Core Info - Compact */}
+                          <div className="min-w-0 flex-1" style={{ maxWidth: '340px' }}>
+                            <h3 className="text-sm font-semibold text-gray-900 truncate group-hover:text-dabang-primary group-hover:underline transition-all mb-0.5">
+                              {listing.title || listing.name || 'Untitled Property'}
+                            </h3>
+                            <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                              <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {listing.address || listing.region3 || listing.region || listing.city || 'Address not set'}
+                            </p>
+                            
+                            {/* Validation Indicators - Compact, Inline */}
+                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                              {hasMissingImages(listing) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/business/real-estate/listings/${listing.id}/edit?tab=images`);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors border border-red-200/50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                                  aria-label="Upload images"
+                                >
+                                  <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                  Images
+                                </button>
+                              )}
+                              {hasMissingContract(listing) && (
+                            <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/business/real-estate/listings/${listing.id}/edit?tab=contract`);
+                                  }}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200/50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
+                                  aria-label="Attach contract"
+                                >
+                                  <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  </svg>
+                                  Contract
+                            </button>
+                          )}
+                              {isReadyToPublish(listing) && (
+                                <span 
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-700 border border-green-200/50"
+                                  title="Ready to publish"
+                                >
+                                  <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                  </svg>
+                                  Ready
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Property Meta - Premium */}
-                    <td className="px-8 py-5 whitespace-nowrap">
+                    {/* Property Meta - Compact, Fixed Width */}
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">
                       <div className="text-sm">
-                        <div className="font-bold text-gray-900 mb-1">{listing.propertyType || listing.type || 'Not set'}</div>
-                        <div className="text-xs text-gray-500 font-medium">{listing.transactionType || 'Not set'}</div>
+                        <div className="font-medium text-gray-900 truncate" title={listing.propertyType || listing.type || 'Not set'}>
+                          {getPropertyTypeLabel(listing.propertyType || listing.type)}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate" title={listing.transactionType || listing.dealType || 'Not set'}>
+                          {listing.transactionType || listing.dealType || 'Not set'}
+                        </div>
                       </div>
                     </td>
 
-                    {/* Price Summary - Premium */}
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <div className="text-base font-bold text-gray-900">
+                    {/* Price Summary - Compact, Fixed Width */}
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">
                         {formatPrice(listing)}
                       </div>
                     </td>
 
-                    {/* Status - Premium */}
-                    <td className="px-8 py-5 whitespace-nowrap">
-                      <div className="flex flex-col gap-2">
-                        <StatusBadge status={listing.status} type="property" />
+                    {/* Status - Compact Badge, Fixed Width */}
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge status={listing.status} type="property" size="compact" />
                         {listing.status === 'PENDING' && (
-                          <span className="text-xs text-gray-500 font-medium">Awaiting admin review</span>
+                          <span className="text-[10px] text-gray-500 leading-tight">Admin review</span>
                         )}
                         {listing.status === 'REJECTED' && getRejectionReason(listing.id) && (
-                          <button
+                          <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               alert(`Rejection reason: ${getRejectionReason(listing.id)}`);
                             }}
-                            className="text-xs text-red-600 hover:text-red-800 hover:underline font-medium text-left"
+                            className="text-[10px] text-red-600 hover:text-red-800 hover:underline text-left leading-tight"
                           >
                             View reason
                           </button>
@@ -516,8 +747,88 @@ const RealEstateListingsPage = () => {
                       </div>
                     </td>
 
-                    {/* Actions - Premium */}
-                    <td className="px-8 py-5 whitespace-nowrap text-right">
+                    {/* Updated - Last Modified Date */}
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">
+                      <div className="text-xs text-gray-600">
+                        {formatRelativeDate(listing.updatedAt || listing.createdAt)}
+                      </div>
+                    </td>
+
+                    {/* Registered - Created Date */}
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">
+                      <div className="text-xs text-gray-600">
+                        {formatShortDate(listing.createdAt)}
+                      </div>
+                    </td>
+
+                    {/* Region - District/Area Summary */}
+                    <td className="px-4 py-3 align-middle whitespace-nowrap">
+                      <div className="text-xs text-gray-700 truncate" title={getRegionSummary(listing)}>
+                        {getRegionSummary(listing)}
+                      </div>
+                    </td>
+
+                    {/* Completeness - Progress Indicator */}
+                    <td className="px-4 py-3 align-middle">
+                      {(() => {
+                        const completeness = getCompleteness(listing);
+                        const hasMissing = completeness.missing.length > 0;
+                        
+                        return (
+                          <div className="flex flex-col gap-1.5">
+                            {/* Progress Bar */}
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all duration-300 ${
+                                    completeness.percentage >= 90
+                                      ? 'bg-green-500'
+                                      : completeness.percentage >= 70
+                                      ? 'bg-amber-500'
+                                      : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${completeness.percentage}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-medium text-gray-600 min-w-[32px] text-right">
+                                {completeness.percentage}%
+                              </span>
+                            </div>
+
+                            {/* Missing Items Chips */}
+                            {hasMissing && (
+                              <div className="flex flex-wrap gap-1">
+                                {completeness.missing.slice(0, 2).map((item, idx) => (
+                          <button 
+                                    key={idx}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const editTab = item === '이미지' ? '?tab=images' : item === '계약서' ? '?tab=contract' : item === '가격' ? '' : '';
+                                      navigate(`/business/real-estate/listings/${listing.id}/edit${editTab}`);
+                                    }}
+                                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors border border-red-200/50"
+                                    title={`${item} 추가 필요`}
+                                  >
+                                    <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                    {item}
+                          </button>
+                                ))}
+                                {completeness.missing.length > 2 && (
+                                  <span className="text-[9px] text-gray-500 px-1">
+                                    +{completeness.missing.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </td>
+
+                    {/* Actions - Icon Only, Fixed Width, Always Visible */}
+                    <td className="px-4 py-3 align-middle text-right whitespace-nowrap" style={{ width: '60px' }}>
                       <div onClick={(e) => e.stopPropagation()}>
                         <ActionMenu
                           listing={listing}
@@ -535,13 +846,14 @@ const RealEstateListingsPage = () => {
                           onComplete={() => openCompleteModal(listing.id)}
                           onToggleVisibility={() => toggleListingStatus(listing.id, listing.status)}
                         />
-                      </div>
-                    </td>
+                    </div>
+                  </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
         )}
       </div>
 
@@ -640,6 +952,25 @@ const RealEstateListingsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Property Details Modal */}
+      <PropertyDetailsModal
+        listing={selectedListing}
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedListing(null);
+        }}
+        onEdit={(id) => navigate(`/business/real-estate/listings/${id}/edit`)}
+        onDuplicate={(id) => {
+          setListingToDuplicate(id);
+          setShowDuplicateModal(true);
+        }}
+        onArchive={(id) => {
+          setListingToArchive(id);
+          setShowArchiveModal(true);
+        }}
+      />
     </div>
   );
 };

@@ -171,3 +171,110 @@ export const getBannerById = (id) => {
   const banners = getAllBanners();
   return banners.find((banner) => banner.id === id) || null;
 };
+
+/**
+ * Get active banners for a specific page scope and slot (new model)
+ * @param {Object} options - Filter options
+ * @param {string} options.pageScope - Page scope ('ALL_PAGES', 'HOME', 'MAP_SEARCH', etc.)
+ * @param {string} options.slot - Slot ('GLOBAL_TOP', 'PAGE_TOP', 'INLINE_1', 'SIDEBAR', 'PAGE_BOTTOM')
+ * @param {string} options.surface - Surface ('USER_WEB')
+ * @param {string} [options.domain] - Domain filter ('REAL_ESTATE', 'DELIVERY', 'ALL')
+ * @param {string} [options.device] - Device filter ('DESKTOP', 'MOBILE', 'ALL')
+ * @param {string} [options.language] - Language filter ('KO', 'EN', 'ALL')
+ * @param {Date} [options.now] - Current date (defaults to now)
+ * @returns {Object|null} Active banner for the slot or null
+ */
+export const getActiveBannerForSlot = ({
+  pageScope,
+  slot,
+  surface = 'USER_WEB',
+  domain,
+  device,
+  language,
+  now = new Date()
+}) => {
+  const banners = getAllBanners();
+  const nowDate = now instanceof Date ? now : new Date(now);
+
+  // Detect device if not provided
+  const detectedDevice = device || (typeof window !== 'undefined' && window.innerWidth < 768 ? 'MOBILE' : 'DESKTOP');
+  const detectedLanguage = language || 'KO';
+
+  const filtered = banners.filter((banner) => {
+    // Must match surface
+    if (banner.surface && banner.surface !== surface) return false;
+
+    // Must match slot
+    if (banner.slot !== slot) return false;
+
+    // Must match pageScope (or be ALL_PAGES)
+    if (banner.pageScope !== 'ALL_PAGES' && banner.pageScope !== pageScope) return false;
+
+    // Must be ACTIVE
+    if (banner.status !== 'ACTIVE') return false;
+
+    // Check date range
+    const startAt = banner.startAt ? new Date(banner.startAt) : null;
+    const endAt = banner.endAt ? new Date(banner.endAt) : null;
+
+    if (startAt && nowDate < startAt) return false;
+    if (endAt && nowDate > endAt) return false;
+
+    // Check targeting
+    if (banner.targeting) {
+      // Domain targeting
+      if (banner.targeting.domain && banner.targeting.domain !== 'ALL' && domain && banner.targeting.domain !== domain) {
+        return false;
+      }
+
+      // Device targeting
+      if (banner.targeting.device && banner.targeting.device !== 'ALL' && banner.targeting.device !== detectedDevice) {
+        return false;
+      }
+
+      // Language targeting
+      if (banner.targeting.language && banner.targeting.language !== 'ALL' && banner.targeting.language !== detectedLanguage) {
+        return false;
+      }
+
+      // Region targeting (if provided)
+      // Note: Region targeting would require user location data
+    }
+
+    return true;
+  });
+
+  // Sort by priority (higher first), then createdAt (newer first)
+  const sorted = filtered.sort((a, b) => {
+    const priorityA = a.priority || 0;
+    const priorityB = b.priority || 0;
+    if (priorityB !== priorityA) {
+      return priorityB - priorityA;
+    }
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  });
+
+  // Return the highest priority banner (first in sorted array)
+  return sorted.length > 0 ? sorted[0] : null;
+};
+
+/**
+ * Get all active banners for a page (returns object with slots)
+ * @param {Object} options - Filter options
+ * @param {string} options.pageScope - Page scope
+ * @param {string} options.surface - Surface
+ * @param {string} [options.domain] - Domain
+ * @param {string} [options.device] - Device
+ * @param {string} [options.language] - Language
+ * @returns {Object} Object with slot keys and banner values
+ */
+export const getActiveBannersForPage = (options) => {
+  const slots = ['GLOBAL_TOP', 'PAGE_TOP', 'INLINE_1', 'SIDEBAR', 'PAGE_BOTTOM'];
+  const result = {};
+
+  slots.forEach(slot => {
+    result[slot] = getActiveBannerForSlot({ ...options, slot });
+  });
+
+  return result;
+};

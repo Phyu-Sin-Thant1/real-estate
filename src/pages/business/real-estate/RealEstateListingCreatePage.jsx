@@ -1,30 +1,79 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 import { addListing } from '../../../store/realEstateListingsStore';
 import { addApproval } from '../../../store/approvalsStore';
+import { getCustomersByPartner, seedMockCustomers } from '../../../store/realEstateCustomersStore';
 
 const initialForm = {
+  // Basic Information
   title: '',
   address: '',
   city: '',
   propertyType: '',
+  transactionType: '',
+  
+  // Pricing
   price: '',
   deposit: '',
   monthly: '',
+  maintenance: '',
+  
+  // Property Details
   area: '',
   rooms: '',
   bathrooms: '',
   floor: '',
-  description: '',
+  
+  // Facilities (편의시설)
+  amenities: [],
+  
+  // Contact Information
   contactName: '',
+  contactEmail: '',
   contactPhone: '',
+  
+  // Additional Details
+  description: '',
+  internalMemo: '',
+  
+  // Owner
+  ownerId: '',
+  
+  // Images
+  images: [],
 };
 
 const propertyTypes = [
   { label: '아파트', value: 'apartment' },
   { label: '주택', value: 'house' },
-  { label: '오피스', value: 'office' },
+  { label: '오피스텔', value: 'office' },
+  { label: '원룸', value: 'studio' },
+  { label: '투룸', value: 'two-room' },
+  { label: '빌라', value: 'villa' },
+];
+
+const transactionTypes = [
+  { label: '매매', value: '매매' },
+  { label: '전세', value: '전세' },
+  { label: '월세', value: '월세' },
+];
+
+const facilitiesOptions = [
+  { id: 'parking', label: '주차', icon: '🅿️' },
+  { id: 'elevator', label: '엘리베이터', icon: '🛗' },
+  { id: 'security', label: '보안시설', icon: '🔒' },
+  { id: 'internet', label: '인터넷', icon: '📶' },
+  { id: 'airConditioning', label: '에어컨', icon: '❄️' },
+  { id: 'heating', label: '난방', icon: '🔥' },
+  { id: 'washingMachine', label: '세탁기', icon: '🔧' },
+  { id: 'refrigerator', label: '냉장고', icon: '❄️' },
+  { id: 'microwave', label: '전자레인지', icon: '🔔' },
+  { id: 'gym', label: '헬스장', icon: '💪' },
+  { id: 'pool', label: '수영장', icon: '🏊' },
+  { id: 'concierge', label: '컨시어지', icon: '👔' },
+  { id: 'pet', label: '반려동물 가능', icon: '🐾' },
+  { id: 'balcony', label: '발코니/베란다', icon: '🌳' },
 ];
 
 const RealEstateListingCreatePage = () => {
@@ -33,9 +82,28 @@ const RealEstateListingCreatePage = () => {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [ownerCustomers, setOwnerCustomers] = useState([]);
+  
+  // Progressive disclosure states
+  const [showFacilities, setShowFacilities] = useState(false);
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const [otherFacility, setOtherFacility] = useState('');
 
   const partnerEmail = user?.email || '';
   const createdBy = user?.name || partnerEmail || 'Partner';
+
+  // Load owner customers
+  useEffect(() => {
+    seedMockCustomers();
+    if (partnerEmail) {
+      const allCustomers = getCustomersByPartner(partnerEmail);
+      // Filter customers with Owner role
+      const owners = allCustomers.filter(customer => 
+        customer.role === 'Owner' || customer.role === '소유자'
+      );
+      setOwnerCustomers(owners);
+    }
+  }, [partnerEmail]);
 
   const validators = useMemo(
     () => ({
@@ -43,6 +111,7 @@ const RealEstateListingCreatePage = () => {
       address: (value) => value.trim() !== '',
       city: (value) => value.trim() !== '',
       propertyType: (value) => value.trim() !== '',
+      transactionType: (value) => value.trim() !== '',
       area: (value) => value.trim() !== '',
       rooms: (value) => value.trim() !== '',
       bathrooms: (value) => value.trim() !== '',
@@ -50,105 +119,234 @@ const RealEstateListingCreatePage = () => {
       description: (value) => value.trim() !== '',
       contactName: (value) => value.trim() !== '',
       contactPhone: (value) => value.trim() !== '',
+      // Conditional pricing validation
+      price: (value, transactionType) => {
+        if (transactionType === '매매') {
+          return value.trim() !== '';
+        }
+        return true;
+      },
+      deposit: (value, transactionType) => {
+        if (transactionType === '전세' || transactionType === '월세') {
+          return value.trim() !== '';
+        }
+        return true;
+      },
+      monthly: (value, transactionType) => {
+        // Optional even for 월세
+        return true;
+      },
+      contactEmail: (value) => {
+        if (!value) return true; // Optional
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value);
+      },
+      // Owner is required only when publishing (not for draft)
+      ownerId: (value, isDraft) => {
+        // Owner is optional during creation, but required before publishing
+        // This will be checked in the validate function based on saveAsDraft
+        return true;
+      },
     }),
     []
   );
 
   const onChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+      // Handle facilities checkboxes
+      if (name === 'facilities') {
+        setForm((prev) => ({
+          ...prev,
+          amenities: checked
+            ? [...prev.amenities, value]
+            : prev.amenities.filter((a) => a !== value),
+        }));
+      }
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: '' }));
+      }
     }
   };
 
-  const validate = () => {
+  const handleFacilityToggle = (facilityId) => {
+    setForm((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(facilityId)
+        ? prev.amenities.filter((a) => a !== facilityId)
+        : [...prev.amenities, facilityId],
+    }));
+  };
+
+  const handleAddOtherFacility = () => {
+    if (otherFacility.trim() && !form.amenities.includes(otherFacility.trim())) {
+      setForm((prev) => ({
+        ...prev,
+        amenities: [...prev.amenities, otherFacility.trim()],
+      }));
+      setOtherFacility('');
+    }
+  };
+
+  const validate = (saveAsDraft = false) => {
     const nextErrors = {};
+    
+    // Basic required fields
     Object.entries(validators).forEach(([field, fn]) => {
-      if (!fn(form[field] || '')) {
-        nextErrors[field] = '필수 입력 항목입니다.';
+      if (field === 'price' || field === 'deposit' || field === 'monthly') {
+        // Conditional pricing validation
+        if (!fn(form[field] || '', form.transactionType)) {
+          nextErrors[field] = '필수 입력 항목입니다.';
+        }
+      } else if (field === 'contactEmail') {
+        // Email format validation
+        if (!fn(form[field] || '')) {
+          nextErrors[field] = '올바른 이메일 형식을 입력해주세요.';
+        }
+      } else if (field === 'ownerId') {
+        // Owner is required only when publishing (not for draft)
+        if (!saveAsDraft && !form.ownerId) {
+          nextErrors.ownerId = '매물을 게시하려면 소유자 정보가 필요합니다.';
+        }
+      } else {
+        if (!fn(form[field] || '')) {
+          nextErrors[field] = '필수 입력 항목입니다.';
+        }
       }
     });
+    
+    // Phone format validation (basic)
+    if (form.contactPhone && !/^[0-9-]+$/.test(form.contactPhone)) {
+      nextErrors.contactPhone = '올바른 전화번호 형식을 입력해주세요.';
+    }
+    
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e, saveAsDraft = false) => {
     e.preventDefault();
     if (submitting) return;
-    if (!validate()) return;
+    
+    if (!saveAsDraft && !validate(saveAsDraft)) return;
 
     setSubmitting(true);
     const listingId = Date.now();
     const now = new Date().toISOString();
 
+    // Format price display based on transaction type
+    let priceDisplay = '';
+    if (form.transactionType === '매매') {
+      priceDisplay = form.price ? `${form.price}원` : '가격 협의';
+    } else if (form.transactionType === '전세') {
+      priceDisplay = form.deposit ? `보증금 ${form.deposit}원` : '보증금 협의';
+    } else if (form.transactionType === '월세') {
+      const depositStr = form.deposit ? `보증금 ${form.deposit}원` : '';
+      const monthlyStr = form.monthly ? `월세 ${form.monthly}원` : '';
+      priceDisplay = [depositStr, monthlyStr].filter(Boolean).join(' · ') || '가격 협의';
+    }
+
     // Create summary for approval meta
-    const summary = `${form.title} - ${form.area}㎡ - ${form.price ? form.price + '원' : '가격 협의'}`;
+    const summary = `${form.title} - ${form.area}㎡ - ${priceDisplay}`;
+
+    // Map amenities IDs to display labels
+    const amenitiesDisplay = form.amenities.map((amenityId) => {
+      const facility = facilitiesOptions.find((f) => f.id === amenityId);
+      return facility ? facility.label : amenityId;
+    });
 
     const listing = {
       id: listingId,
       createdAt: now,
+      updatedAt: now, // Set updatedAt on creation
       createdBy,
       partnerEmail,
       partnerId: partnerEmail,
       partnerName: user?.name || 'Real Estate Partner',
-      status: 'PENDING',
+      status: saveAsDraft ? 'DRAFT' : 'PENDING',
       title: form.title,
       address: form.address,
       city: form.city,
+      region1: form.city.split(' ')[0] || form.city,
+      region2: form.city.split(' ')[1] || '',
+      region3: form.address,
       propertyType: form.propertyType,
-      price: form.price,
-      deposit: form.deposit,
-      monthly: form.monthly,
+      transactionType: form.transactionType,
+      dealType: form.transactionType,
+      price: priceDisplay,
+      salePrice: form.transactionType === '매매' ? form.price : '',
+      deposit: form.deposit || '',
+      monthly: form.monthly || '',
+      maintenance: form.maintenance || '',
       area: form.area,
-      rooms: form.rooms,
-      bathrooms: form.bathrooms,
+      rooms: parseInt(form.rooms) || 0,
+      bathrooms: parseInt(form.bathrooms) || 0,
       floor: form.floor,
       description: form.description,
+      amenities: amenitiesDisplay,
+      agent: {
+        name: form.contactName,
+        phone: form.contactPhone,
+        email: form.contactEmail || '',
+      },
       contactName: form.contactName,
+      contactEmail: form.contactEmail || '',
       contactPhone: form.contactPhone,
-      images: [],
+      internalMemo: form.internalMemo || '',
+      images: form.images || [],
     };
 
     // Save listing
     addListing(listing);
 
-    // Create approval request
-    const approval = {
-      id: `approval-${listingId}`,
-      type: 'REAL_ESTATE_LISTING_CREATE',
-      entityId: String(listingId),
-      entityType: 'LISTING',
-      status: 'PENDING',
-      submittedBy: partnerEmail || 'unknown',
-      submittedAt: now,
-      meta: {
-        partnerId: partnerEmail,
-        partnerName: user?.name || 'Real Estate Partner',
-        summary: summary,
-      },
-    };
+    // Create approval request (only if not draft)
+    if (!saveAsDraft) {
+      const approval = {
+        id: `approval-${listingId}`,
+        type: 'REAL_ESTATE_LISTING_CREATE',
+        entityId: String(listingId),
+        entityType: 'LISTING',
+        status: 'PENDING',
+        submittedBy: partnerEmail || 'unknown',
+        submittedAt: now,
+        meta: {
+          partnerId: partnerEmail,
+          partnerName: user?.name || 'Real Estate Partner',
+          summary: summary,
+        },
+      };
 
-    // Save approval
-    addApproval(approval);
+      // Save approval
+      addApproval(approval);
+    }
 
     navigate('/business/real-estate/listings');
   };
 
   return (
     <div className="pb-16 space-y-6">
+      {/* Header Zone */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">매물 등록</h1>
-          <p className="text-gray-600 mt-1">등록 후 관리자가 승인하면 노출됩니다.</p>
+          <p className="text-gray-600 mt-1">
+            모든 필수 항목을 입력한 후 등록하면 관리자 검토 후 노출됩니다.
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 space-y-4">
+      <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
+        {/* A. Basic Information Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">제목 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                매물명 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="title"
                 value={form.title}
@@ -160,7 +358,9 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">주소 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                주소 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="address"
                 value={form.address}
@@ -172,7 +372,9 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">도시 / 구 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                도시 / 구 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="city"
                 value={form.city}
@@ -184,7 +386,9 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">매물 종류 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                매물 종류 <span className="text-red-500">*</span>
+              </label>
               <select
                 name="propertyType"
                 value={form.propertyType}
@@ -202,40 +406,102 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">가격</label>
-              <input
-                name="price"
-                value={form.price}
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                거래 유형 <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="transactionType"
+                value={form.transactionType}
                 onChange={onChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="매매가 또는 총액"
-              />
+                className={`w-full border ${errors.transactionType ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+              >
+                <option value="">선택하세요</option>
+                {transactionTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              {errors.transactionType && <p className="text-sm text-red-600 mt-1">{errors.transactionType}</p>}
             </div>
+          </div>
+        </div>
+
+        {/* B. Pricing & Contract Info Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">가격 정보</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {form.transactionType === '매매' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  매매가 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="price"
+                  value={form.price}
+                  onChange={onChange}
+                  className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                  placeholder="예: 500000000"
+                />
+                {errors.price && <p className="text-sm text-red-600 mt-1">{errors.price}</p>}
+              </div>
+            )}
+
+            {(form.transactionType === '전세' || form.transactionType === '월세') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  보증금 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="deposit"
+                  value={form.deposit}
+                  onChange={onChange}
+                  className={`w-full border ${errors.deposit ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                  placeholder="예: 50000000"
+                />
+                {errors.deposit && <p className="text-sm text-red-600 mt-1">{errors.deposit}</p>}
+              </div>
+            )}
+
+            {form.transactionType === '월세' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  월세 <span className="text-gray-500 text-xs">(선택)</span>
+                </label>
+                <input
+                  name="monthly"
+                  value={form.monthly}
+                  onChange={onChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                  placeholder="예: 800000"
+                />
+              </div>
+            )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">보증금</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                관리비 <span className="text-gray-500 text-xs">(선택)</span>
+              </label>
               <input
-                name="deposit"
-                value={form.deposit}
+                name="maintenance"
+                value={form.maintenance}
                 onChange={onChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="월세/전세 보증금"
+                placeholder="예: 150000"
               />
+              <p className="text-xs text-gray-500 mt-1">월 관리비를 입력하세요</p>
             </div>
+          </div>
+        </div>
 
+        {/* Property Details */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">매물 상세 정보</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">월세 (선택)</label>
-              <input
-                name="monthly"
-                value={form.monthly}
-                onChange={onChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="월세 금액"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">면적 (㎡) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                면적 (㎡) <span className="text-red-500">*</span>
+              </label>
               <input
                 name="area"
                 value={form.area}
@@ -247,7 +513,9 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">방 수 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                방 수 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="rooms"
                 value={form.rooms}
@@ -259,7 +527,9 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">욕실 수 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                욕실 수 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="bathrooms"
                 value={form.bathrooms}
@@ -271,7 +541,9 @@ const RealEstateListingCreatePage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">층수 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                층수 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="floor"
                 value={form.floor}
@@ -282,23 +554,179 @@ const RealEstateListingCreatePage = () => {
               {errors.floor && <p className="text-sm text-red-600 mt-1">{errors.floor}</p>}
             </div>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">상세 설명 *</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={onChange}
-              rows={4}
-              className={`w-full border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-              placeholder="매물 특징, 주변 환경, 관리비, 주차/엘리베이터 여부 등을 적어주세요."
-            />
-            {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+        {/* C. Facilities Section - Collapsible */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <button
+            type="button"
+            onClick={() => setShowFacilities(!showFacilities)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <h2 className="text-lg font-semibold text-gray-900">편의시설</h2>
+            <svg
+              className={`w-5 h-5 text-gray-500 transform transition-transform ${showFacilities ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showFacilities && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 mb-4">
+                매물에 포함된 편의시설을 선택하세요. (선택 사항)
+              </p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {facilitiesOptions.map((facility) => (
+                  <label
+                    key={facility.id}
+                    className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.amenities.includes(facility.id)}
+                      onChange={() => handleFacilityToggle(facility.id)}
+                      className="h-4 w-4 text-dabang-primary focus:ring-dabang-primary border-gray-300 rounded"
+                    />
+                    <span className="text-sm">{facility.icon}</span>
+                    <span className="text-sm text-gray-700">{facility.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              {/* Other facility input */}
+              <div className="flex gap-2 pt-2 border-t border-gray-200">
+                <input
+                  type="text"
+                  value={otherFacility}
+                  onChange={(e) => setOtherFacility(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOtherFacility())}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                  placeholder="기타 편의시설 (예: 옥상정원, 스파)"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddOtherFacility}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  추가
+                </button>
+              </div>
+
+              {/* Selected facilities display */}
+              {form.amenities.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs text-gray-500 mb-2">선택된 편의시설:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {form.amenities.map((amenityId) => {
+                      const facility = facilitiesOptions.find((f) => f.id === amenityId);
+                      const label = facility ? facility.label : amenityId;
+                      return (
+                        <span
+                          key={amenityId}
+                          className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* D. Owner Section - Optional */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold text-gray-900">소유자</h2>
+            <span className="px-2 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded border border-gray-200">
+              선택
+            </span>
           </div>
+          <p className="text-xs text-gray-500 mb-4">
+            소유자 정보는 선택 사항입니다. 나중에 추가하거나 수정할 수 있습니다.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                소유자 선택
+              </label>
+              <select
+                name="ownerId"
+                value={form.ownerId}
+                onChange={onChange}
+                className={`w-full border ${errors.ownerId ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+              >
+                <option value="">소유자 선택 (선택 사항)</option>
+                {ownerCustomers.map((customer) => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.name} {customer.phone ? `(${customer.phone})` : ''}
+                  </option>
+                ))}
+              </select>
+              {errors.ownerId && (
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {errors.ownerId}
+                </p>
+              )}
+              {form.ownerId && (
+                <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  {(() => {
+                    const selected = ownerCustomers.find(c => c.id === form.ownerId || String(c.id) === String(form.ownerId));
+                    return selected ? (
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">{selected.name}</div>
+                        {selected.phone && <div className="text-xs text-gray-600 mt-0.5">{selected.phone}</div>}
+                        {selected.email && <div className="text-xs text-gray-600">{selected.email}</div>}
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/business/real-estate/customers?action=create&role=Owner')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-dabang-primary hover:text-dabang-primary/80 hover:bg-dabang-primary/5 rounded-lg transition-colors border border-dabang-primary/30"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  새 소유자 등록
+                </button>
+                <span className="text-xs text-gray-500">또는</span>
+                <button
+                  type="button"
+                  onClick={() => navigate('/business/real-estate/customers')}
+                  className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+                >
+                  고객 목록에서 찾기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        {/* E. Contact Information Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처 정보</h2>
+          <p className="text-xs text-gray-500 mb-4">
+            이 정보는 매물 상세 페이지에 표시됩니다.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">담당자 이름 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                담당자 이름 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="contactName"
                 value={form.contactName}
@@ -308,8 +736,26 @@ const RealEstateListingCreatePage = () => {
               />
               {errors.contactName && <p className="text-sm text-red-600 mt-1">{errors.contactName}</p>}
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">담당자 연락처 *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                담당자 이메일 <span className="text-gray-500 text-xs">(선택)</span>
+              </label>
+              <input
+                name="contactEmail"
+                type="email"
+                value={form.contactEmail}
+                onChange={onChange}
+                className={`w-full border ${errors.contactEmail ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="email@example.com"
+              />
+              {errors.contactEmail && <p className="text-sm text-red-600 mt-1">{errors.contactEmail}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                담당자 연락처 <span className="text-red-500">*</span>
+              </label>
               <input
                 name="contactPhone"
                 value={form.contactPhone}
@@ -320,29 +766,91 @@ const RealEstateListingCreatePage = () => {
               {errors.contactPhone && <p className="text-sm text-red-600 mt-1">{errors.contactPhone}</p>}
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이미지</label>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-sm text-gray-500 bg-gray-50">
-              이미지 업로드 UI는 추후 연동됩니다. (현재는 플레이스홀더)
-            </div>
-          </div>
         </div>
 
-        <div className="flex justify-end space-x-3">
+        {/* F. Additional Details Section - Collapsible */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <button
+            type="button"
+            onClick={() => setShowAdditionalDetails(!showAdditionalDetails)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <h2 className="text-lg font-semibold text-gray-900">추가 정보</h2>
+            <svg
+              className={`w-5 h-5 text-gray-500 transform transition-transform ${showAdditionalDetails ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showAdditionalDetails && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  상세 설명 <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={onChange}
+                  rows={4}
+                  className={`w-full border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                  placeholder="매물 특징, 주변 환경, 주차/엘리베이터 여부 등을 상세히 적어주세요."
+                />
+                {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  내부 메모 <span className="text-gray-500 text-xs">(파트너 전용)</span>
+                </label>
+                <textarea
+                  name="internalMemo"
+                  value={form.internalMemo}
+                  onChange={onChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                  placeholder="파트너만 볼 수 있는 메모입니다. 고객에게는 노출되지 않습니다."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">이미지</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-sm text-gray-500 bg-gray-50 text-center">
+                  이미지 업로드 UI는 추후 연동됩니다.
+                  <p className="text-xs text-gray-400 mt-2">(현재는 플레이스홀더)</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
             type="button"
             onClick={() => navigate('/business/real-estate/listings')}
-            className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="px-6 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
           >
             취소
           </button>
           <button
+            type="button"
+            onClick={(e) => handleSubmit(e, true)}
+            disabled={submitting}
+            className="px-6 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-70"
+          >
+            임시저장
+          </button>
+          <button
             type="submit"
             disabled={submitting}
-            className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90 disabled:opacity-70"
+            className="px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-dabang-primary hover:bg-dabang-primary/90 transition-colors disabled:opacity-70 shadow-sm"
           >
-            {submitting ? '등록 중...' : '매물 등록'}
+            {submitting ? '등록 중...' : '등록 후 검토 요청'}
           </button>
         </div>
       </form>
@@ -351,4 +859,3 @@ const RealEstateListingCreatePage = () => {
 };
 
 export default RealEstateListingCreatePage;
-

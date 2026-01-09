@@ -30,8 +30,10 @@ const initializeMockData = () => {
         ],
         features: ['Careful handling', 'Insurance included', 'Tracking available'],
         isActive: true,
+        status: 'APPROVED', // For existing mock data, mark as approved
         createdAt: new Date('2024-01-15').toISOString(),
-        updatedAt: new Date('2024-01-15').toISOString()
+        updatedAt: new Date('2024-01-15').toISOString(),
+        submittedAt: new Date('2024-01-15').toISOString()
       },
       {
         id: 'pkg-2',
@@ -55,8 +57,10 @@ const initializeMockData = () => {
         ],
         features: ['Same-day delivery', 'Priority handling', 'Real-time tracking'],
         isActive: true,
+        status: 'APPROVED',
         createdAt: new Date('2024-01-16').toISOString(),
-        updatedAt: new Date('2024-01-16').toISOString()
+        updatedAt: new Date('2024-01-16').toISOString(),
+        submittedAt: new Date('2024-01-16').toISOString()
       },
       {
         id: 'pkg-3',
@@ -80,8 +84,10 @@ const initializeMockData = () => {
         ],
         features: ['Weekend service available', 'IT equipment handling', 'Setup assistance'],
         isActive: true,
+        status: 'APPROVED',
         createdAt: new Date('2024-01-17').toISOString(),
-        updatedAt: new Date('2024-01-17').toISOString()
+        updatedAt: new Date('2024-01-17').toISOString(),
+        submittedAt: new Date('2024-01-17').toISOString()
       },
       {
         id: 'pkg-4',
@@ -105,8 +111,10 @@ const initializeMockData = () => {
         ],
         features: ['Careful handling', 'Insurance included', 'Tracking available'],
         isActive: true,
+        status: 'PENDING_APPROVAL', // Add one pending for testing
         createdAt: new Date('2024-01-18').toISOString(),
-        updatedAt: new Date('2024-01-18').toISOString()
+        updatedAt: new Date('2024-01-18').toISOString(),
+        submittedAt: new Date('2024-01-18').toISOString()
       }
     ];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mockPackages));
@@ -139,11 +147,14 @@ export const getPackageById = (id) => {
 // Create a new package
 export const createPackage = (packageData) => {
   const packages = getAllPackages();
+  const now = new Date().toISOString();
   const newPackage = {
     id: `pkg-${Date.now()}`,
     ...packageData,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    status: packageData.status || 'PENDING_APPROVAL', // Default to pending approval
+    createdAt: now,
+    updatedAt: now,
+    submittedAt: packageData.submittedAt || now
   };
   packages.push(newPackage);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(packages));
@@ -197,6 +208,9 @@ export const togglePackageStatus = (id) => {
 if (typeof window !== 'undefined') {
   initializeMockData();
 }
+
+
+
 
 
 

@@ -1,508 +1,258 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { loadDiscounts, addDiscount, updateDiscount, deleteDiscount, getDiscountsByPartner, seedMockDiscounts } from '../../../store/discountsStore';
-import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
-import { addApproval } from '../../../store/approvalsStore';
-
-const TYPE_OPTIONS = [
-  { value: 'PERCENT', label: '퍼센트 할인' },
-  { value: 'FIXED', label: '고정 금액 할인' },
-  { value: 'FREE_DELIVERY', label: '무료 배송' },
-];
-
-const APPLIES_TO_OPTIONS = [
-  { value: 'ALL', label: '전체' },
-  { value: 'CATEGORY', label: '카테고리' },
-  { value: 'LISTING', label: '매물' },
-];
+import React, { useState, useEffect, useMemo } from 'react';
+import { getPlatformCampaigns, seedPlatformCampaigns } from '../../../store/platformCampaignsStore';
+import { getRealEstateDiscountToggleState, setRealEstateDiscountToggleState } from '../../../store/realEstateDiscountToggleStore';
+import { getRealEstateCouponToggleState, setRealEstateCouponToggleState } from '../../../store/realEstateCouponToggleStore';
 
 const RealEstateDiscountsPage = () => {
-  const { user } = useUnifiedAuth();
-  const [discounts, setDiscounts] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState(null);
-  const [form, setForm] = useState({
-    code: '',
-    name: '',
-    type: 'PERCENT',
-    value: 0,
-    minSpend: '',
-    maxDiscount: '',
-    appliesTo: 'ALL',
-    appliesToIds: '',
-    startAt: '',
-    endAt: '',
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
+  const [couponToggleStates, setCouponToggleStates] = useState({});
+  const [filters, setFilters] = useState({
+    type: 'ALL',
+    search: '',
   });
 
   useEffect(() => {
-    seedMockDiscounts();
-    if (user?.email) {
-      const partnerDiscounts = getDiscountsByPartner(user.email);
-      // Also show global discounts (no partnerId)
-      const globalDiscounts = loadDiscounts().filter((d) => !d.partnerId && d.service === 'REAL_ESTATE' || d.service === 'ALL');
-      const allDiscounts = [...partnerDiscounts, ...globalDiscounts];
-      // Remove duplicates
-      const uniqueDiscounts = Array.from(new Map(allDiscounts.map(d => [d.id, d])).values());
-      setDiscounts(uniqueDiscounts);
-    }
-  }, [user?.email]);
+    // Seed platform campaigns if empty (for demo purposes)
+    seedPlatformCampaigns();
+    loadData();
+    // Load discount toggle state
+    setIsDiscountEnabled(getRealEstateDiscountToggleState());
+  }, []);
 
-  const handleOpenModal = (discount = null) => {
-    if (discount && (discount.partnerId === user?.email || discount.createdBy === user?.email)) {
-      setEditingDiscount(discount);
-      setForm({
-        code: discount.code || '',
-        name: discount.name || '',
-        type: discount.type || 'PERCENT',
-        value: discount.value || 0,
-        minSpend: discount.minSpend || '',
-        maxDiscount: discount.maxDiscount || '',
-        appliesTo: discount.appliesTo || 'ALL',
-        appliesToIds: discount.appliesToIds ? discount.appliesToIds.join(', ') : '',
-        startAt: discount.startAt ? discount.startAt.split('T')[0] : '',
-        endAt: discount.endAt ? discount.endAt.split('T')[0] : '',
-      });
-    } else {
-      setEditingDiscount(null);
-      setForm({
-        code: '',
-        name: '',
-        type: 'PERCENT',
-        value: 0,
-        minSpend: '',
-        maxDiscount: '',
-        appliesTo: 'ALL',
-        appliesToIds: '',
-        startAt: '',
-        endAt: '',
-      });
-    }
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingDiscount(null);
-    setForm({
-      code: '',
-      name: '',
-      type: 'PERCENT',
-      value: 0,
-      minSpend: '',
-      maxDiscount: '',
-      appliesTo: 'ALL',
-      appliesToIds: '',
-      startAt: '',
-      endAt: '',
+  useEffect(() => {
+    // Load individual coupon toggle states when coupons change
+    const states = {};
+    availableCoupons.forEach((coupon) => {
+      states[coupon.id] = getRealEstateCouponToggleState(coupon.id);
     });
+    setCouponToggleStates(states);
+  }, [availableCoupons]);
+
+  const loadData = () => {
+    // Load platform campaigns (admin-created discounts) for REAL_ESTATE scope
+    const allCampaigns = getPlatformCampaigns();
+    const realEstateCampaigns = allCampaigns.filter((campaign) => {
+      // Show campaigns that are LIVE and for REAL_ESTATE or ALL scope
+      return (campaign.scope === 'REAL_ESTATE' || campaign.scope === 'ALL') && 
+             campaign.status === 'LIVE';
+    });
+    setAvailableCoupons(realEstateCampaigns);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const filteredCoupons = useMemo(() => {
+    const now = new Date();
+    return availableCoupons.filter((coupon) => {
+      // Check if coupon is currently valid (within date range)
+      const startAt = coupon.startAt ? new Date(coupon.startAt) : null;
+      const endAt = coupon.endAt ? new Date(coupon.endAt) : null;
+      if (startAt && now < startAt) return false;
+      if (endAt && now > endAt) return false;
 
-    const discountData = {
-      code: form.code.toUpperCase().trim(),
-      name: form.name.trim(),
-      service: 'REAL_ESTATE',
-      type: form.type,
-      value: Number(form.value),
-      minSpend: form.minSpend ? Number(form.minSpend) : undefined,
-      maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : undefined,
-      appliesTo: form.appliesTo,
-      appliesToIds: form.appliesToIds
-        ? form.appliesToIds.split(',').map((id) => id.trim()).filter(Boolean)
-        : undefined,
-      startAt: form.startAt ? `${form.startAt}T00:00:00` : null,
-      endAt: form.endAt ? `${form.endAt}T23:59:59` : null,
-      status: 'PENDING', // Business partners need admin approval
-      partnerId: user?.email,
-      createdBy: user?.email || '',
-    };
+      // Filter by type
+      if (filters.type !== 'ALL' && coupon.discountType !== filters.type) return false;
 
-    if (editingDiscount) {
-      updateDiscount(editingDiscount.id, discountData);
-      // If updating, create approval request
-      addApproval({
-        id: `approval-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        type: 'DISCOUNT_UPDATE',
-        entityId: editingDiscount.id,
-        entityType: 'DISCOUNT',
-        status: 'PENDING',
-        submittedBy: user?.email,
-        submittedAt: new Date().toISOString(),
-        metadata: {
-          code: discountData.code,
-          name: discountData.name,
-        },
-      });
+      // Filter by search
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        if (!coupon.title.toLowerCase().includes(searchLower) &&
+            !coupon.description?.toLowerCase().includes(searchLower)) return false;
+      }
+
+      return true;
+    });
+  }, [availableCoupons, filters]);
+
+  const handleDiscountToggle = (enabled) => {
+    setIsDiscountEnabled(enabled);
+    setRealEstateDiscountToggleState(enabled);
+    // Show feedback message
+    if (enabled) {
+      console.log('할인 쿠폰이 활성화되었습니다.');
     } else {
-      const newDiscount = addDiscount(discountData);
-      // Create approval request for new discount
-      if (newDiscount && newDiscount[0]) {
-        addApproval({
-          id: `approval-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          type: 'DISCOUNT_CREATE',
-          entityId: newDiscount[0].id,
-          entityType: 'DISCOUNT',
-          status: 'PENDING',
-          submittedBy: user?.email,
-          submittedAt: new Date().toISOString(),
-          metadata: {
-            code: discountData.code,
-            name: discountData.name,
-          },
-        });
-      }
-    }
-
-    // Refresh discounts
-    if (user?.email) {
-      const partnerDiscounts = getDiscountsByPartner(user.email);
-      const globalDiscounts = loadDiscounts().filter((d) => !d.partnerId && (d.service === 'REAL_ESTATE' || d.service === 'ALL'));
-      const allDiscounts = [...partnerDiscounts, ...globalDiscounts];
-      const uniqueDiscounts = Array.from(new Map(allDiscounts.map(d => [d.id, d])).values());
-      setDiscounts(uniqueDiscounts);
-    }
-    handleCloseModal();
-  };
-
-  const handleDelete = (id) => {
-    const discount = discounts.find((d) => d.id === id);
-    if (!discount) return;
-    
-    // Only allow deletion of own discounts
-    if (discount.partnerId !== user?.email && discount.createdBy !== user?.email) {
-      alert('자신이 생성한 쿠폰만 삭제할 수 있습니다.');
-      return;
-    }
-
-    if (window.confirm('정말 이 쿠폰을 삭제하시겠습니까?')) {
-      deleteDiscount(id);
-      if (user?.email) {
-        const partnerDiscounts = getDiscountsByPartner(user.email);
-        const globalDiscounts = loadDiscounts().filter((d) => !d.partnerId && (d.service === 'REAL_ESTATE' || d.service === 'ALL'));
-        const allDiscounts = [...partnerDiscounts, ...globalDiscounts];
-        const uniqueDiscounts = Array.from(new Map(allDiscounts.map(d => [d.id, d])).values());
-        setDiscounts(uniqueDiscounts);
-      }
+      console.log('할인 쿠폰이 비활성화되었습니다.');
     }
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
-      ACTIVE: 'bg-green-100 text-green-800',
-      SCHEDULED: 'bg-blue-100 text-blue-800',
-      EXPIRED: 'bg-gray-100 text-gray-800',
-      DISABLED: 'bg-red-100 text-red-800',
-      PENDING: 'bg-yellow-100 text-yellow-800',
-    };
-    const labels = {
-      ACTIVE: '활성',
-      SCHEDULED: '예정',
-      EXPIRED: '만료',
-      DISABLED: '비활성',
-      PENDING: '승인 대기중',
-    };
-    return (
-      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${badges[status] || badges.DISABLED}`}>
-        {labels[status] || status}
-      </span>
-    );
-  };
-
-  const getTypeLabel = (type) => {
-    const found = TYPE_OPTIONS.find((t) => t.value === type);
-    return found ? found.label : type;
+  const handleCouponToggle = (couponId, enabled) => {
+    setRealEstateCouponToggleState(couponId, enabled);
+    setCouponToggleStates((prev) => ({
+      ...prev,
+      [couponId]: enabled,
+    }));
+    // Show feedback message
+    if (enabled) {
+      console.log(`Coupon ${couponId} is now ENABLED.`);
+    } else {
+      console.log(`Coupon ${couponId} is now DISABLED.`);
+    }
   };
 
   const formatValue = (type, value) => {
     if (type === 'PERCENT') return `${value}%`;
     if (type === 'FIXED') return `₩${value.toLocaleString()}`;
-    if (type === 'FREE_DELIVERY') return '무료 배송';
+    if (type === 'COMMISSION_DISCOUNT') return '중개 수수료 할인';
     return value;
   };
 
-  const formatDateRange = (startAt, endAt) => {
-    if (!startAt && !endAt) return '무제한';
-    const start = startAt ? new Date(startAt).toLocaleDateString('ko-KR') : '시작일 없음';
-    const end = endAt ? new Date(endAt).toLocaleDateString('ko-KR') : '종료일 없음';
-    return `${start} ~ ${end}`;
-  };
-
-  const canEdit = (discount) => {
-    return discount.partnerId === user?.email || discount.createdBy === user?.email;
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).replace(/\./g, '').replace(/\s/g, '. ');
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">할인/프로모션</h1>
-          <p className="text-gray-600 mt-1">할인 쿠폰을 생성하고 관리합니다.</p>
-        </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="px-4 py-2 bg-dabang-primary text-white rounded-lg hover:bg-dabang-primary/90 transition-colors"
-        >
-          쿠폰 추가
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">할인 쿠폰 관리</h1>
+        <p className="text-gray-600 mt-1">사용 가능한 할인 쿠폰을 확인하고 활성화할 수 있습니다.</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">전체 쿠폰</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{discounts.length}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">활성 쿠폰</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">
-            {discounts.filter((d) => d.status === 'ACTIVE').length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <p className="text-sm text-gray-600">승인 대기중</p>
-          <p className="text-2xl font-bold text-yellow-600 mt-1">
-            {discounts.filter((d) => d.status === 'PENDING').length}
-          </p>
-        </div>
-      </div>
-
-      {/* Discounts Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  코드
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  이름
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  타입
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  할인액
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  기간
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  작업
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {discounts.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                    쿠폰이 없습니다
-                  </td>
-                </tr>
-              ) : (
-                discounts.map((discount) => (
-                  <tr key={discount.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{discount.code}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{discount.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {getTypeLabel(discount.type)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatValue(discount.type, discount.value)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDateRange(discount.startAt, discount.endAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(discount.status)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                      {canEdit(discount) ? (
-                        <>
-                          <button
-                            onClick={() => handleOpenModal(discount)}
-                            className="text-dabang-primary hover:text-dabang-primary/80"
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => handleDelete(discount.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            삭제
-                          </button>
-                        </>
-                      ) : (
-                        <span className="text-gray-400 text-xs">읽기 전용</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {editingDiscount ? '쿠폰 수정' : '쿠폰 추가'}
-            </h3>
-            <p className="text-sm text-yellow-600 mb-4 bg-yellow-50 p-2 rounded">
-              쿠폰 생성 후 관리자 승인이 필요합니다.
+      {/* Discount Usage Toggle */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <label htmlFor="discount-toggle" className="block text-lg font-semibold text-gray-900 mb-2">
+              할인 쿠폰 사용 활성화
+            </label>
+            <p className="text-sm text-gray-600">
+              계약 체결 시 사용 가능한 할인 쿠폰을 적용할 수 있도록 설정합니다.
             </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">코드 *</label>
-                  <input
-                    type="text"
-                    value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    placeholder="WELCOME10"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    placeholder="신규 가입 10% 할인"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">타입 *</label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    required
-                  >
-                    {TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">할인 값 *</label>
-                  <input
-                    type="number"
-                    value={form.value}
-                    onChange={(e) => setForm({ ...form, value: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">최소 구매액</label>
-                  <input
-                    type="number"
-                    value={form.minSpend}
-                    onChange={(e) => setForm({ ...form, minSpend: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    min="0"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">최대 할인액</label>
-                <input
-                  type="number"
-                  value={form.maxDiscount}
-                  onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">적용 대상</label>
-                <select
-                  value={form.appliesTo}
-                  onChange={(e) => setForm({ ...form, appliesTo: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                >
-                  {APPLIES_TO_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {form.appliesTo !== 'ALL' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    적용 대상 ID (쉼표로 구분)
-                  </label>
-                  <input
-                    type="text"
-                    value={form.appliesToIds}
-                    onChange={(e) => setForm({ ...form, appliesToIds: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    placeholder="id1, id2, id3"
-                  />
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
-                  <input
-                    type="date"
-                    value={form.startAt}
-                    onChange={(e) => setForm({ ...form, startAt: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
-                  <input
-                    type="date"
-                    value={form.endAt}
-                    onChange={(e) => setForm({ ...form, endAt: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
-                >
-                  {editingDiscount ? '수정' : '추가'}
-                </button>
-              </div>
-            </form>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className={`text-sm font-medium ${isDiscountEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+              {isDiscountEnabled ? '활성화됨' : '비활성화됨'}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                id="discount-toggle"
+                checked={isDiscountEnabled}
+                onChange={(e) => handleDiscountToggle(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-dabang-primary"></div>
+            </label>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">할인 유형</label>
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="ALL">전체</option>
+              <option value="PERCENT">퍼센트 할인</option>
+              <option value="FIXED">고정 금액 할인</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">검색</label>
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              placeholder="쿠폰 이름 또는 설명 검색"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Available Coupons List */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">사용 가능한 쿠폰</h2>
+        {filteredCoupons.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">사용 가능한 쿠폰이 없습니다</h3>
+              <p className="text-sm text-gray-600">관리자가 활성화한 할인 쿠폰이 없습니다.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCoupons.map((coupon) => {
+              const isCouponActive = couponToggleStates[coupon.id] !== false;
+              return (
+                <div
+                  key={coupon.id}
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+                >
+                  {/* Coupon Info */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{coupon.title}</h3>
+                    {coupon.description && (
+                      <p className="text-sm text-gray-600 mb-2">{coupon.description}</p>
+                    )}
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-800 text-sm font-semibold">
+                      {formatValue(coupon.discountType, coupon.value)} OFF
+                    </div>
+                  </div>
+
+                  {/* Coupon Details */}
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">유효 기간:</span>
+                      <span>{formatDate(coupon.startAt)} ~ {formatDate(coupon.endAt)}</span>
+                    </div>
+                    {coupon.minAmount && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">최소 계약 금액:</span>
+                        <span>₩{coupon.minAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {coupon.usageLimit && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">사용량:</span>
+                        <span>{coupon.usedCount || 0} / {coupon.usageLimit}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Single Toggle Switch */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <label htmlFor={`coupon-toggle-${coupon.id}`} className="text-sm font-medium text-gray-700 cursor-pointer">
+                      쿠폰 상태
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-sm font-medium ${isCouponActive ? 'text-green-600' : 'text-gray-500'}`}>
+                        {isCouponActive ? '활성화됨' : '비활성화됨'}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          id={`coupon-toggle-${coupon.id}`}
+                          checked={isCouponActive}
+                          onChange={(e) => handleCouponToggle(coupon.id, e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-dabang-primary"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
 export default RealEstateDiscountsPage;
-

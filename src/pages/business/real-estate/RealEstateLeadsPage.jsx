@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
-import { leads, leadStatuses } from '../../../mock/realEstateData';
+import React, { useState, useEffect } from 'react';
+import { leads as initialLeads, leadStatuses } from '../../../mock/realEstateData';
+import LeadDetailsModal from '../../../components/real-estate/LeadDetailsModal';
 
 const RealEstateLeadsPage = () => {
   const [statusFilter, setStatusFilter] = useState('전체');
   const [propertyFilter, setPropertyFilter] = useState('전체');
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [leads, setLeads] = useState([]);
+
+  // Initialize leads from mock data
+  useEffect(() => {
+    setLeads([...initialLeads]);
+  }, []);
 
   // Filter leads based on filters
   const filteredLeads = statusFilter === '전체' 
@@ -28,14 +37,37 @@ const RealEstateLeadsPage = () => {
 
   // Handle status change
   const handleStatusChange = (id, newStatus) => {
-    console.log(`Change lead ${id} status to ${newStatus}`);
-    // In a real app, this would update the lead status
+    setLeads(prevLeads => 
+      prevLeads.map(lead => 
+        lead.id === id ? { ...lead, status: newStatus } : lead
+      )
+    );
+    
+    // Update selectedLead if it's the one being changed
+    if (selectedLead && selectedLead.id === id) {
+      setSelectedLead({ ...selectedLead, status: newStatus });
+    }
   };
 
   // Handle memo edit
-  const handleMemoEdit = (id) => {
+  const handleMemoEdit = (id, e) => {
+    e.stopPropagation();
     console.log(`Edit memo for lead ${id}`);
     // In a real app, this would open a modal to edit the memo
+  };
+
+  // Handle row click
+  const handleRowClick = (lead, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedLead(lead);
+    setIsModalOpen(true);
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedLead(null);
   };
 
   return (
@@ -117,46 +149,81 @@ const RealEstateLeadsPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredLeads.map((lead) => (
-                <tr key={lead.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.createdAt}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.customerName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.phone}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {lead.propertyName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {lead.inquiryType}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="relative">
+              {filteredLeads.map((lead) => {
+                const handleRowClickEvent = (e) => {
+                  handleRowClick(lead, e);
+                };
+
+                return (
+                  <tr
+                    key={lead.id}
+                    onClick={handleRowClickEvent}
+                    onMouseDown={(e) => {
+                      // Prevent any default browser behavior
+                      if (e.target.closest('button') || e.target.closest('a')) {
+                        return;
+                      }
+                      e.preventDefault();
+                    }}
+                    className="group hover:bg-blue-50/30 transition-colors duration-200 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleRowClickEvent(e);
+                      }
+                    }}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.createdAt}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.customerName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.phone}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {lead.propertyName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.inquiryType}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="relative">
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(lead.status)}`}
+                        >
+                          {lead.status}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(lead.status)}`}
+                        onClick={(e) => handleMemoEdit(lead.id, e)}
+                        className="text-dabang-primary hover:text-dabang-primary/80"
                       >
-                        {lead.status}
+                        {lead.memo}
                       </button>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <button 
-                      onClick={() => handleMemoEdit(lead.id)}
-                      className="text-dabang-primary hover:text-dabang-primary/80"
-                    >
-                      {lead.memo}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Lead Details Modal */}
+      <LeadDetailsModal
+        lead={selectedLead}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onStatusChange={handleStatusChange}
+        availableStatuses={leadStatuses}
+      />
     </div>
   );
 };

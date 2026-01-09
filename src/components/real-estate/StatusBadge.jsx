@@ -80,20 +80,30 @@ const StatusBadge = ({ status, type = 'property', size = 'medium', className = '
 
   const config = getStatusConfig();
   const sizeClasses = {
-    small: 'px-2 py-0.5 text-xs',
-    medium: 'px-2.5 py-1 text-xs',
-    large: 'px-3 py-1.5 text-sm'
+    small: 'px-2 py-0.5 text-xs h-5',
+    medium: 'px-2.5 py-1 text-xs h-6',
+    large: 'px-3 py-1.5 text-sm h-7',
+    compact: 'px-2 py-0.5 text-xs h-[24px]'
+  };
+
+  const iconSizeClasses = {
+    small: 'text-[10px]',
+    medium: 'text-xs',
+    large: 'text-sm',
+    compact: 'text-[10px]'
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${config.color} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full font-medium ${config.color} ${sizeClasses[size]} ${className}`}
     >
-      {config.icon && <span className="text-xs">{config.icon}</span>}
-      <span>{config.label}</span>
+      {config.icon && <span className={`${iconSizeClasses[size]} leading-none`}>{config.icon}</span>}
+      <span className="leading-tight">{config.label}</span>
     </span>
   );
 };
 
 export default StatusBadge;
+
+
 

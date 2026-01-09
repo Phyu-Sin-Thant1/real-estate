@@ -21,10 +21,11 @@ export const realEstateMenu = [
   { key: BUSINESS_MENU_KEYS.CONTRACTS, translationKey: 'nav.contracts', path: '/business/real-estate/contracts', group: null },
   { key: BUSINESS_MENU_KEYS.PROPERTIES, translationKey: 'nav.properties', path: '/business/real-estate/listings', group: null },
   { key: BUSINESS_MENU_KEYS.RESERVATIONS, translationKey: 'nav.reservations', path: '/business/real-estate/reservations', group: null },
-  { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/real-estate/stats', group: null },
+  // { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/real-estate/stats', group: null }, // Hidden
   { key: BUSINESS_MENU_KEYS.CUSTOMERS, translationKey: 'nav.customers', path: '/business/real-estate/customers', group: null },
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/real-estate/reviews', group: null },
   { key: 'discounts', translationKey: 'nav.discounts', path: '/business/real-estate/discounts', group: null },
+  { key: 'notifications', translationKey: 'nav.notifications', path: '/business/real-estate/notifications', group: null },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/real-estate/settings', group: null }
 ];
 
@@ -35,9 +36,10 @@ export const deliveryMenu = [
   { key: BUSINESS_MENU_KEYS.ORDER_HISTORY, translationKey: 'nav.orderHistory', path: '/business/order-history', group: null },
   { key: BUSINESS_MENU_KEYS.DELIVERY_ORDERS, translationKey: 'nav.deliveryOrders', path: '/business/delivery-orders', group: null },
   { key: BUSINESS_MENU_KEYS.SCHEDULE, translationKey: 'nav.schedule', path: '/business/schedule', group: null },
-  { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/stats', group: null },
+  // { key: BUSINESS_MENU_KEYS.STATS, translationKey: 'nav.analytics', path: '/business/stats', group: null }, // Hidden
   { key: 'reviews', translationKey: 'nav.reviews', path: '/business/reviews', group: null },
   { key: 'discounts', translationKey: 'nav.discounts', path: '/business/discounts', group: null },
+  { key: 'notifications', translationKey: 'nav.notifications', path: '/business/notifications', group: null },
   { key: BUSINESS_MENU_KEYS.SETTINGS, translationKey: 'nav.settings', path: '/business/settings', group: null }
 ];
 

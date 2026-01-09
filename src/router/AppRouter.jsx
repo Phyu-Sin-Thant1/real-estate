@@ -44,6 +44,8 @@ import RealEstateContractCreatePage from '../pages/business/real-estate/RealEsta
 import RealEstateContractDetailPage from '../pages/business/real-estate/RealEstateContractDetailPage';
 import RealEstateNewListingPage from '../pages/business/real-estate/RealEstateNewListingPage';
 import RealEstateListingCreatePage from '../pages/business/real-estate/RealEstateListingCreatePage';
+import RealEstateNotificationsPage from '../pages/business/real-estate/RealEstateNotificationsPage';
+import DeliveryNotificationsPage from '../pages/business/delivery/DeliveryNotificationsPage';
 import PartnerApplyPage from '../pages/PartnerApplyPage';
 import UserSupportPage from '../pages/UserSupportPage';
 import MySupportTicketsPage from '../pages/MySupportTicketsPage';
@@ -85,6 +87,7 @@ import AdminDashboardHomePage from '../pages/admin/AdminDashboardHomePage'
 import AdminPartnersPage from '../pages/admin/AdminPartnersPage'
 import AdminUsersPage from '../pages/admin/AdminUsersPage'
 import AdminDeliveryOversightPage from '../pages/admin/AdminDeliveryOversightPage'
+import AdminDeliveryPackageOversightPage from '../pages/admin/AdminDeliveryPackageOversightPage'
 import AdminCategoryManagementPage from '../pages/admin/AdminCategoryManagementPage'
 import AdminRealEstateOversightPage from '../pages/admin/AdminRealEstateOversightPage'
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage'
@@ -192,12 +195,13 @@ const AppRouter = () => {
           <Route path="partners" element={<AdminPartnersPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="real-estate" element={<AdminRealEstateOversightPage />} />
-          <Route path="delivery" element={<AdminDeliveryOversightPage />} />
+          <Route path="delivery" element={<AdminDeliveryPackageOversightPage />} />
+          <Route path="delivery/orders" element={<AdminDeliveryOversightPage />} />
           <Route path="delivery/categories" element={<AdminCategoryManagementPage />} />
           <Route path="approvals" element={<AdminApprovalsPage />} />
           <Route path="finance/settlements" element={<AdminSettlementsPage />} />
           <Route path="finance/rules" element={<AdminFinanceRulesPage />} />
-          <Route path="support/tickets" element={<AdminSupportTicketsPage />} />
+          <Route path="support-tickets" element={<AdminSupportTicketsPage />} />
           <Route path="reports" element={<AdminReportsPage />} />
           <Route path="notifications" element={<AdminNotificationsPage />} />
           <Route path="security/roles" element={<AdminRolesPermissionsPage />} />
@@ -259,6 +263,7 @@ const AppRouter = () => {
           <Route path="marketing/discounts" element={<BusinessDeliveryDiscountsPage />} />
           {/* Legacy routes for backward compatibility */}
           <Route path="discounts" element={<BusinessDeliveryDiscountsPage />} />
+          <Route path="notifications" element={<DeliveryNotificationsPage />} />
           <Route path="settings" element={<BusinessSettingsPage />} />
         </Route>
 
@@ -286,6 +291,7 @@ const AppRouter = () => {
           <Route path="marketing/discounts" element={<BusinessRealEstateDiscountsPage />} />
           {/* Legacy routes for backward compatibility */}
           <Route path="discounts" element={<BusinessRealEstateDiscountsPage />} />
+          <Route path="notifications" element={<RealEstateNotificationsPage />} />
           <Route path="settings" element={<RealEstateSettingsPage />} />
           {/* Reservation routes */}
           <Route path="reservations" element={<ReservationsListPage />} />

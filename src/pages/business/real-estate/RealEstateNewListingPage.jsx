@@ -1,834 +1,780 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useListings } from '../../../context/ListingsContext';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
+import { getListingById, updateListing } from '../../../store/realEstateListingsStore';
+
+const initialForm = {
+  // Basic Information
+  title: '',
+  address: '',
+  city: '',
+  propertyType: '',
+  transactionType: '',
+  
+  // Pricing
+  price: '',
+  deposit: '',
+  monthly: '',
+  maintenance: '',
+  
+  // Property Details
+  area: '',
+  rooms: '',
+  bathrooms: '',
+  floor: '',
+  
+  // Facilities (편의시설)
+  amenities: [],
+  
+  // Contact Information
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  
+  // Additional Details
+  description: '',
+  internalMemo: '',
+  
+  // Images
+  images: [],
+};
+
+const propertyTypes = [
+  { label: '아파트', value: 'apartment' },
+  { label: '주택', value: 'house' },
+  { label: '오피스텔', value: 'office' },
+  { label: '원룸', value: 'studio' },
+  { label: '투룸', value: 'two-room' },
+  { label: '빌라', value: 'villa' },
+];
+
+const transactionTypes = [
+  { label: '매매', value: '매매' },
+  { label: '전세', value: '전세' },
+  { label: '월세', value: '월세' },
+];
+
+const facilitiesOptions = [
+  { id: 'parking', label: '주차', icon: '🅿️' },
+  { id: 'elevator', label: '엘리베이터', icon: '🛗' },
+  { id: 'security', label: '보안시설', icon: '🔒' },
+  { id: 'internet', label: '인터넷', icon: '📶' },
+  { id: 'airConditioning', label: '에어컨', icon: '❄️' },
+  { id: 'heating', label: '난방', icon: '🔥' },
+  { id: 'washingMachine', label: '세탁기', icon: '🔧' },
+  { id: 'refrigerator', label: '냉장고', icon: '❄️' },
+  { id: 'microwave', label: '전자레인지', icon: '🔔' },
+  { id: 'gym', label: '헬스장', icon: '💪' },
+  { id: 'pool', label: '수영장', icon: '🏊' },
+  { id: 'concierge', label: '컨시어지', icon: '👔' },
+  { id: 'pet', label: '반려동물 가능', icon: '🐾' },
+  { id: 'balcony', label: '발코니/베란다', icon: '🌳' },
+];
 
 const RealEstateNewListingPage = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // For edit mode
-  const { addListing, updateListing, getListingById } = useListings();
-  
-  const isEditMode = !!id;
-  
-  // Property types
-  const propertyTypes = ['원룸', '투룸', '아파트', '오피스텔', '빌라'];
-  
-  // Transaction types
-  const transactionTypes = ['매매', '전세', '월세'];
-  
-  // Status options
-  const statusOptions = ['노출중', '비노출', '거래완료'];
-  
-  // Regions (시/도)
-  const provinces = ['서울특별시', '경기도', '인천광역시', '부산광역시', '대구광역시', '광주광역시', '대전광역시', '울산광역시'];
-  
-  // Districts (시/군/구) - simplified for Seoul
-  const districts = ['강남구', '강동구', '강북구', '강서구', '관악구', '광진구', '구로구', '금천구', '노원구', '도봉구', '동대문구', '동작구', '마포구', '서대문구', '서초구', '성동구', '성북구', '송파구', '양천구', '영등포구', '용산구', '은평구', '종로구', '중구', '중랑구'];
-  
-  // Directions
-  const directions = ['동향', '서향', '남향', '북향', '남동향', '남서향', '북동향', '북서향'];
-  
-  // Additional options
-  const additionalOptions = [
-    { id: 'elevator', label: '엘리베이터' },
-    { id: 'parking', label: '주차 가능' },
-    { id: 'pet', label: '반려동물 가능' },
-    { id: 'balcony', label: '발코니/베란다' },
-    { id: 'aircon', label: '에어컨' },
-    { id: 'washer', label: '세탁기' },
-    { id: 'refrigerator', label: '냉장고' },
-    { id: 'bed', label: '침대' },
-    { id: 'desk', label: '책상' },
-    { id: 'closet', label: '옷장' },
-    { id: 'microwave', label: '전자레인지' },
-    { id: 'gas', label: '가스레인지' },
-    { id: 'induction', label: '인덕션' },
-    { id: 'tv', label: 'TV' },
-    { id: 'internet', label: '인터넷' }
-  ];
-
-  const [formData, setFormData] = useState({
-    // Basic Information
-    title: '', // 매물명
-    propertyType: '', // Property type (아파트 / 오피스텔 / 원룸 / 빌라 …)
-    transactionType: '', // 거래 유형 (매매 / 전세 / 월세)
-    status: '', // Status (노출중 / 비노출 / 거래완료)
-    
-    // Address
-    province: '', // 시/도
-    district: '', // 시/군/구
-    detailedAddress: '', // 상세 주소
-    
-    // Price Information
-    salePrice: '', // 매매가
-    deposit: '', // 보증금
-    monthlyRent: '', // 월세
-    maintenanceFee: '', // 관리비
-    
-    // Area Information
-    exclusiveArea: '', // 전용면적
-    supplyArea: '', // 공급면적
-    
-    // Building Information
-    floor: '', // 층
-    totalFloors: '', // 총 층수
-    rooms: '', // 방 수
-    bathrooms: '', // 화장실 수
-    parkingAvailable: false, // 주차 가능 여부
-    
-    // Additional Details
-    completionYear: '', // 준공년도
-    direction: '', // 방향
-    description: '', // 설명
-    
-    // Additional Options (checkbox list)
-    options: [],
-    
-    // Images
-    thumbnail: null, // 썸네일 이미지
-    images: [] // 여러 사진
-  });
-  
+  const { id } = useParams();
+  const { user } = useUnifiedAuth();
+  const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
-  const [imagePreviews, setImagePreviews] = useState({
-    thumbnail: null,
-    images: []
-  });
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  // Progressive disclosure states
+  const [showFacilities, setShowFacilities] = useState(false);
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const [otherFacility, setOtherFacility] = useState('');
 
   // Load existing listing data for edit mode
   useEffect(() => {
-    if (isEditMode) {
+    if (id) {
+      setLoading(true);
       const existingListing = getListingById(id);
       if (existingListing) {
-        setFormData({
-          title: existingListing.title || '',
-          propertyType: existingListing.type || '',
-          transactionType: existingListing.transactionType || '',
-          status: existingListing.status || '',
-          province: existingListing.province || '',
-          district: existingListing.district || '',
-          detailedAddress: existingListing.address || '',
-          salePrice: existingListing.salePrice || '',
-          deposit: existingListing.deposit || '',
-          monthlyRent: existingListing.monthlyRent || '',
-          maintenanceFee: existingListing.maintenanceFee || '',
-          exclusiveArea: existingListing.exclusiveArea || '',
-          supplyArea: existingListing.supplyArea || '',
-          floor: existingListing.floor || '',
-          totalFloors: existingListing.totalFloors || '',
-          rooms: existingListing.rooms || '',
-          bathrooms: existingListing.bathrooms || '',
-          parkingAvailable: existingListing.parkingAvailable || false,
-          completionYear: existingListing.completionYear || '',
-          direction: existingListing.direction || '',
-          description: existingListing.description || '',
-          options: existingListing.options || [],
-          thumbnail: null,
-          images: []
-        });
-        
-        // Set up image previews if they exist
-        if (existingListing.thumbnail) {
-          setImagePreviews(prev => ({ ...prev, thumbnail: existingListing.thumbnail }));
-        }
-      }
-    }
-  }, [id, isEditMode, getListingById]);
+        // Map existing listing data to form structure
+        const existingAmenities = existingListing.amenities || [];
+        // Convert amenity labels to IDs if needed
+        const amenityIds = existingAmenities.map(amenity => {
+          const facility = facilitiesOptions.find(f => f.label === amenity || f.id === amenity);
+          return facility ? facility.id : amenity;
+        }).filter(Boolean);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const handleOptionChange = (optionId) => {
-    setFormData(prev => {
-      const options = [...prev.options];
-      const index = options.indexOf(optionId);
-      
-      if (index === -1) {
-        options.push(optionId);
-      } else {
-        options.splice(index, 1);
-      }
-      
-      return { ...prev, options };
-    });
-  };
-
-  const handleThumbnailUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, thumbnail: file }));
-        setImagePreviews(prev => ({ ...prev, thumbnail: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImagesUpload = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      const newPreviews = [];
-      const newFiles = [];
-      
-      files.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newPreviews[index] = reader.result;
-          newFiles[index] = file;
+        setForm({
+          title: existingListing.title || existingListing.name || '',
+          address: existingListing.address || '',
+          city: existingListing.city || existingListing.region1 || '',
+          propertyType: existingListing.propertyType || existingListing.type || '',
+          transactionType: existingListing.transactionType || existingListing.dealType || '',
           
-          // When all files are processed, update state
-          if (newPreviews.length === files.length && newFiles.length === files.length) {
-            setFormData(prev => ({ ...prev, images: newFiles }));
-            setImagePreviews(prev => ({ ...prev, images: newPreviews }));
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
+          // Extract price values from formatted priceDisplay or individual fields
+          price: existingListing.salePrice || (existingListing.transactionType === '매매' ? (existingListing.price || '').replace(/[^0-9]/g, '') : ''),
+          deposit: existingListing.deposit || '',
+          monthly: existingListing.monthly || existingListing.monthlyRent || '',
+          maintenance: existingListing.maintenance || existingListing.maintenanceFee || '',
+          
+          area: existingListing.area || existingListing.exclusiveArea || '',
+          rooms: existingListing.rooms?.toString() || '',
+          bathrooms: existingListing.bathrooms?.toString() || '',
+          floor: existingListing.floor?.toString() || '',
+          
+          amenities: amenityIds,
+          
+          contactName: existingListing.contactName || existingListing.agent?.name || '',
+          contactEmail: existingListing.contactEmail || existingListing.agent?.email || '',
+          contactPhone: existingListing.contactPhone || existingListing.agent?.phone || '',
+          
+          description: existingListing.description || '',
+          internalMemo: existingListing.internalMemo || '',
+          
+          images: existingListing.images || [],
+        });
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    // Required fields validation
-    if (!formData.title.trim()) {
-      newErrors.title = '매물명을 입력해주세요';
-    }
-    
-    if (!formData.propertyType) {
-      newErrors.propertyType = '매물 종류를 선택해주세요';
-    }
-    
-    if (!formData.transactionType) {
-      newErrors.transactionType = '거래 유형을 선택해주세요';
-    }
-    
-    if (!formData.status) {
-      newErrors.status = '상태를 선택해주세요';
-    }
-    
-    if (!formData.province) {
-      newErrors.province = '시/도를 선택해주세요';
-    }
-    
-    if (!formData.district) {
-      newErrors.district = '시/군/구를 선택해주세요';
-    }
-    
-    if (!formData.detailedAddress.trim()) {
-      newErrors.detailedAddress = '상세 주소를 입력해주세요';
-    }
-    
-    // Price validation based on transaction type
-    if (formData.transactionType === '매매') {
-      if (!formData.salePrice) {
-        newErrors.salePrice = '매매가를 입력해주세요';
+        // Auto-expand sections if they have data
+        if (amenityIds.length > 0) setShowFacilities(true);
+        if (existingListing.description || existingListing.internalMemo) setShowAdditionalDetails(true);
       }
-    } else if (formData.transactionType === '전세') {
-      if (!formData.deposit) {
-        newErrors.deposit = '보증금을 입력해주세요';
-      }
-    } else if (formData.transactionType === '월세') {
-      if (!formData.deposit && !formData.monthlyRent) {
-        newErrors.deposit = '보증금 또는 월세를 입력해주세요';
-        newErrors.monthlyRent = '보증금 또는 월세를 입력해주세요';
-      }
+      setLoading(false);
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  }, [id]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      try {
-        const listingData = {
-          ...formData,
-          // Format the address for display
-          region: `${formData.province} ${formData.district}`,
-          address: `${formData.province} ${formData.district} ${formData.detailedAddress}`,
-          // Format the price for display
-          price: formData.transactionType === '매매' 
-            ? `${formData.salePrice}원`
-            : formData.transactionType === '전세' 
-              ? `보증금 ${formData.deposit}원`
-              : `보증금 ${formData.deposit}원 / 월 ${formData.monthlyRent}원`,
-          // Add timestamp
-          createdAt: new Date().toISOString().split('T')[0]
-        };
-        
-        if (isEditMode) {
-          updateListing(parseInt(id), listingData);
-          alert('매물 정보가 수정되었습니다.');
-        } else {
-          addListing(listingData);
-          alert('새 매물이 등록되었습니다.');
+  const validators = useMemo(
+    () => ({
+      title: (value) => value.trim() !== '',
+      address: (value) => value.trim() !== '',
+      city: (value) => value.trim() !== '',
+      propertyType: (value) => value.trim() !== '',
+      transactionType: (value) => value.trim() !== '',
+      area: (value) => value.trim() !== '',
+      rooms: (value) => value.trim() !== '',
+      bathrooms: (value) => value.trim() !== '',
+      floor: (value) => value.trim() !== '',
+      description: (value) => value.trim() !== '',
+      contactName: (value) => value.trim() !== '',
+      contactPhone: (value) => value.trim() !== '',
+      // Conditional pricing validation
+      price: (value, transactionType) => {
+        if (transactionType === '매매') {
+          return value.trim() !== '';
         }
-        
-        // Navigate back to listings page
-        navigate('/business/real-estate/listings');
-      } catch (error) {
-        console.error('Error saving listing:', error);
-        alert('매물 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+        return true;
+      },
+      deposit: (value, transactionType) => {
+        if (transactionType === '전세' || transactionType === '월세') {
+          return value.trim() !== '';
+        }
+        return true;
+      },
+      monthly: (value, transactionType) => {
+        // Optional even for 월세
+        return true;
+      },
+      contactEmail: (value) => {
+        if (!value) return true; // Optional
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value);
+      },
+    }),
+    []
+  );
+
+  const onChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+      // Handle facilities checkboxes
+      if (name === 'facilities') {
+        setForm((prev) => ({
+          ...prev,
+          amenities: checked
+            ? [...prev.amenities, value]
+            : prev.amenities.filter((a) => a !== value),
+        }));
+      }
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: '' }));
       }
     }
   };
 
-  const handleCancel = () => {
+  const handleFacilityToggle = (facilityId) => {
+    setForm((prev) => ({
+      ...prev,
+      amenities: prev.amenities.includes(facilityId)
+        ? prev.amenities.filter((a) => a !== facilityId)
+        : [...prev.amenities, facilityId],
+    }));
+  };
+
+  const handleAddOtherFacility = () => {
+    if (otherFacility.trim() && !form.amenities.includes(otherFacility.trim())) {
+      setForm((prev) => ({
+        ...prev,
+        amenities: [...prev.amenities, otherFacility.trim()],
+      }));
+      setOtherFacility('');
+    }
+  };
+
+  const validate = () => {
+    const nextErrors = {};
+    
+    // Basic required fields
+    Object.entries(validators).forEach(([field, fn]) => {
+      if (field === 'price' || field === 'deposit' || field === 'monthly') {
+        // Conditional pricing validation
+        if (!fn(form[field] || '', form.transactionType)) {
+          nextErrors[field] = '필수 입력 항목입니다.';
+        }
+      } else if (field === 'contactEmail') {
+        // Email format validation
+        if (!fn(form[field] || '')) {
+          nextErrors[field] = '올바른 이메일 형식을 입력해주세요.';
+        }
+      } else {
+        if (!fn(form[field] || '')) {
+          nextErrors[field] = '필수 입력 항목입니다.';
+        }
+      }
+    });
+    
+    // Phone format validation (basic)
+    if (form.contactPhone && !/^[0-9-]+$/.test(form.contactPhone)) {
+      nextErrors.contactPhone = '올바른 전화번호 형식을 입력해주세요.';
+    }
+    
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const handleSubmit = (e, saveAsDraft = false) => {
+    e.preventDefault();
+    if (submitting) return;
+    
+    if (!saveAsDraft && !validate()) return;
+
+    setSubmitting(true);
+    const now = new Date().toISOString();
+
+    // Format price display based on transaction type
+    let priceDisplay = '';
+    if (form.transactionType === '매매') {
+      priceDisplay = form.price ? `${form.price}원` : '가격 협의';
+    } else if (form.transactionType === '전세') {
+      priceDisplay = form.deposit ? `보증금 ${form.deposit}원` : '보증금 협의';
+    } else if (form.transactionType === '월세') {
+      const depositStr = form.deposit ? `보증금 ${form.deposit}원` : '';
+      const monthlyStr = form.monthly ? `월세 ${form.monthly}원` : '';
+      priceDisplay = [depositStr, monthlyStr].filter(Boolean).join(' · ') || '가격 협의';
+    }
+
+    // Map amenities IDs to display labels
+    const amenitiesDisplay = form.amenities.map((amenityId) => {
+      const facility = facilitiesOptions.find((f) => f.id === amenityId);
+      return facility ? facility.label : amenityId;
+    });
+
+    const listingPatch = {
+      title: form.title,
+      address: form.address,
+      city: form.city,
+      region1: form.city.split(' ')[0] || form.city,
+      region2: form.city.split(' ')[1] || '',
+      region3: form.address,
+      propertyType: form.propertyType,
+      transactionType: form.transactionType,
+      dealType: form.transactionType,
+      price: priceDisplay,
+      salePrice: form.transactionType === '매매' ? form.price : '',
+      deposit: form.deposit || '',
+      monthly: form.monthly || '',
+      maintenance: form.maintenance || '',
+      area: form.area,
+      rooms: parseInt(form.rooms) || 0,
+      bathrooms: parseInt(form.bathrooms) || 0,
+      floor: form.floor,
+      description: form.description,
+      amenities: amenitiesDisplay,
+      agent: {
+        name: form.contactName,
+        phone: form.contactPhone,
+        email: form.contactEmail || '',
+      },
+      contactName: form.contactName,
+      contactEmail: form.contactEmail || '',
+      contactPhone: form.contactPhone,
+      internalMemo: form.internalMemo || '',
+      images: form.images || [],
+      updatedAt: now,
+    };
+
+    // Update listing
+    updateListing(id, listingPatch);
+
+    setSubmitting(false);
     navigate('/business/real-estate/listings');
   };
 
-  return (
-    <div className="pb-20">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isEditMode ? '매물 수정' : '새 매물 등록'}
-        </h1>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-500">로딩 중...</div>
       </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    );
+  }
+
+  return (
+    <div className="pb-16 space-y-6">
+      {/* Header Zone */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">매물 수정</h1>
+          <p className="text-gray-600 mt-1">
+            매물 정보를 수정한 후 저장하면 변경사항이 반영됩니다.
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-6">
+        {/* A. Basic Information Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">기본 정보</h2>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Listing Title */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 매물명 <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
                 name="title"
-                value={formData.title}
-                onChange={handleInputChange}
+                value={form.title}
+                onChange={onChange}
                 className={`w-full border ${errors.title ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-                placeholder="예: 강남 아파트 A동 101호"
+                placeholder="예: 강남역 도보 5분, 신축 오피스텔"
               />
-              {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-              )}
+              {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
             </div>
-            
-            {/* Property Type */}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                주소 <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="address"
+                value={form.address}
+                onChange={onChange}
+                className={`w-full border ${errors.address ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="도로명 주소를 입력하세요"
+              />
+              {errors.address && <p className="text-sm text-red-600 mt-1">{errors.address}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                도시 / 구 <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="city"
+                value={form.city}
+                onChange={onChange}
+                className={`w-full border ${errors.city ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="예: 서울시 강남구"
+              />
+              {errors.city && <p className="text-sm text-red-600 mt-1">{errors.city}</p>}
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 매물 종류 <span className="text-red-500">*</span>
               </label>
               <select
                 name="propertyType"
-                value={formData.propertyType}
-                onChange={handleInputChange}
+                value={form.propertyType}
+                onChange={onChange}
                 className={`w-full border ${errors.propertyType ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
               >
                 <option value="">선택하세요</option>
-                {propertyTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {propertyTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
                 ))}
               </select>
-              {errors.propertyType && (
-                <p className="mt-1 text-sm text-red-600">{errors.propertyType}</p>
-              )}
+              {errors.propertyType && <p className="text-sm text-red-600 mt-1">{errors.propertyType}</p>}
             </div>
-            
-            {/* Transaction Type */}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 거래 유형 <span className="text-red-500">*</span>
               </label>
               <select
                 name="transactionType"
-                value={formData.transactionType}
-                onChange={handleInputChange}
+                value={form.transactionType}
+                onChange={onChange}
                 className={`w-full border ${errors.transactionType ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
               >
                 <option value="">선택하세요</option>
-                {transactionTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {transactionTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
                 ))}
               </select>
-              {errors.transactionType && (
-                <p className="mt-1 text-sm text-red-600">{errors.transactionType}</p>
-              )}
-            </div>
-            
-            {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                상태 <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className={`w-full border ${errors.status ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-              >
-                <option value="">선택하세요</option>
-                {statusOptions.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-              {errors.status && (
-                <p className="mt-1 text-sm text-red-600">{errors.status}</p>
-              )}
+              {errors.transactionType && <p className="text-sm text-red-600 mt-1">{errors.transactionType}</p>}
             </div>
           </div>
         </div>
-        
-        {/* Address Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">주소 정보</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Province */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                시/도 <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="province"
-                value={formData.province}
-                onChange={handleInputChange}
-                className={`w-full border ${errors.province ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-              >
-                <option value="">선택하세요</option>
-                {provinces.map(province => (
-                  <option key={province} value={province}>{province}</option>
-                ))}
-              </select>
-              {errors.province && (
-                <p className="mt-1 text-sm text-red-600">{errors.province}</p>
-              )}
-            </div>
-            
-            {/* District */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                시/군/구 <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="district"
-                value={formData.district}
-                onChange={handleInputChange}
-                className={`w-full border ${errors.district ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-              >
-                <option value="">선택하세요</option>
-                {districts.map(district => (
-                  <option key={district} value={district}>{district}</option>
-                ))}
-              </select>
-              {errors.district && (
-                <p className="mt-1 text-sm text-red-600">{errors.district}</p>
-              )}
-            </div>
-            
-            {/* Detailed Address */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                상세 주소 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="detailedAddress"
-                value={formData.detailedAddress}
-                onChange={handleInputChange}
-                className={`w-full border ${errors.detailedAddress ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-                placeholder="예: 역삼동 123-45"
-              />
-              {errors.detailedAddress && (
-                <p className="mt-1 text-sm text-red-600">{errors.detailedAddress}</p>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Price Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
+        {/* B. Pricing & Contract Info Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">가격 정보</h2>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Sale Price (매매가) */}
-            {(formData.transactionType === '매매' || !formData.transactionType) && (
+            {form.transactionType === '매매' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  매매가 {formData.transactionType === '매매' && <span className="text-red-500">*</span>}
+                  매매가 <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  name="salePrice"
-                  value={formData.salePrice}
-                  onChange={handleInputChange}
-                  className={`w-full border ${errors.salePrice ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-                  placeholder="예: 300000000"
+                  name="price"
+                  value={form.price}
+                  onChange={onChange}
+                  className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                  placeholder="예: 500000000"
                 />
-                {errors.salePrice && (
-                  <p className="mt-1 text-sm text-red-600">{errors.salePrice}</p>
-                )}
+                {errors.price && <p className="text-sm text-red-600 mt-1">{errors.price}</p>}
               </div>
             )}
-            
-            {/* Deposit (보증금) */}
-            {(formData.transactionType === '전세' || formData.transactionType === '월세' || !formData.transactionType) && (
+
+            {(form.transactionType === '전세' || form.transactionType === '월세') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  보증금 {['전세', '월세'].includes(formData.transactionType) && <span className="text-red-500">*</span>}
+                  보증금 <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
                   name="deposit"
-                  value={formData.deposit}
-                  onChange={handleInputChange}
+                  value={form.deposit}
+                  onChange={onChange}
                   className={`w-full border ${errors.deposit ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
                   placeholder="예: 50000000"
                 />
-                {errors.deposit && (
-                  <p className="mt-1 text-sm text-red-600">{errors.deposit}</p>
-                )}
+                {errors.deposit && <p className="text-sm text-red-600 mt-1">{errors.deposit}</p>}
               </div>
             )}
-            
-            {/* Monthly Rent (월세) */}
-            {(formData.transactionType === '월세' || !formData.transactionType) && (
+
+            {form.transactionType === '월세' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  월세 {formData.transactionType === '월세' && <span className="text-red-500">*</span>}
+                  월세 <span className="text-gray-500 text-xs">(선택)</span>
                 </label>
                 <input
-                  type="text"
-                  name="monthlyRent"
-                  value={formData.monthlyRent}
-                  onChange={handleInputChange}
-                  className={`w-full border ${errors.monthlyRent ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
-                  placeholder="예: 1500000"
+                  name="monthly"
+                  value={form.monthly}
+                  onChange={onChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                  placeholder="예: 800000"
                 />
-                {errors.monthlyRent && (
-                  <p className="mt-1 text-sm text-red-600">{errors.monthlyRent}</p>
-                )}
               </div>
             )}
-            
-            {/* Maintenance Fee (관리비) */}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                관리비
+                관리비 <span className="text-gray-500 text-xs">(선택)</span>
               </label>
               <input
-                type="text"
-                name="maintenanceFee"
-                value={formData.maintenanceFee}
-                onChange={handleInputChange}
+                name="maintenance"
+                value={form.maintenance}
+                onChange={onChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="예: 100000"
+                placeholder="예: 150000"
               />
+              <p className="text-xs text-gray-500 mt-1">월 관리비를 입력하세요</p>
             </div>
           </div>
         </div>
-        
-        {/* Area Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">면적 정보</h2>
-          
+
+        {/* Property Details */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">매물 상세 정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Exclusive Area (전용면적) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                전용면적 (㎡)
+                면적 (㎡) <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
-                name="exclusiveArea"
-                value={formData.exclusiveArea}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                name="area"
+                value={form.area}
+                onChange={onChange}
+                className={`w-full border ${errors.area ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
                 placeholder="예: 84.5"
               />
+              {errors.area && <p className="text-sm text-red-600 mt-1">{errors.area}</p>}
             </div>
-            
-            {/* Supply Area (공급면적) */}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                공급면적 (㎡)
+                방 수 <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
-                name="supplyArea"
-                value={formData.supplyArea}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="예: 102.3"
-              />
-            </div>
-          </div>
-        </div>
-        
-        {/* Building Information */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">건물 정보</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Floor (층) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                층
-              </label>
-              <input
-                type="text"
-                name="floor"
-                value={formData.floor}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="예: 5"
-              />
-            </div>
-            
-            {/* Total Floors (총 층수) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                총 층수
-              </label>
-              <input
-                type="text"
-                name="totalFloors"
-                value={formData.totalFloors}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="예: 20"
-              />
-            </div>
-            
-            {/* Rooms (방 수) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                방 수
-              </label>
-              <input
-                type="text"
                 name="rooms"
-                value={formData.rooms}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                value={form.rooms}
+                onChange={onChange}
+                className={`w-full border ${errors.rooms ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
                 placeholder="예: 3"
               />
+              {errors.rooms && <p className="text-sm text-red-600 mt-1">{errors.rooms}</p>}
             </div>
-            
-            {/* Bathrooms (화장실 수) */}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                화장실 수
+                욕실 수 <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
                 name="bathrooms"
-                value={formData.bathrooms}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                value={form.bathrooms}
+                onChange={onChange}
+                className={`w-full border ${errors.bathrooms ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
                 placeholder="예: 2"
               />
+              {errors.bathrooms && <p className="text-sm text-red-600 mt-1">{errors.bathrooms}</p>}
             </div>
-            
-            {/* Parking Available (주차 가능 여부) */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                name="parkingAvailable"
-                checked={formData.parkingAvailable}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
-              />
-              <label className="ml-2 block text-sm text-gray-700">
-                주차 가능
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                층수 <span className="text-red-500">*</span>
               </label>
+              <input
+                name="floor"
+                value={form.floor}
+                onChange={onChange}
+                className={`w-full border ${errors.floor ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="예: 5층"
+              />
+              {errors.floor && <p className="text-sm text-red-600 mt-1">{errors.floor}</p>}
             </div>
           </div>
         </div>
-        
-        {/* Additional Details */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">추가 정보</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Completion Year (준공년도) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                준공년도
-              </label>
-              <input
-                type="text"
-                name="completionYear"
-                value={formData.completionYear}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="예: 2015"
-              />
-            </div>
-            
-            {/* Direction (방향) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                방향
-              </label>
-              <select
-                name="direction"
-                value={formData.direction}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-              >
-                <option value="">선택하세요</option>
-                {directions.map(direction => (
-                  <option key={direction} value={direction}>{direction}</option>
-                ))}
-              </select>
-            </div>
-            
-            {/* Additional Options (checkbox list) */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                추가 옵션
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-                {additionalOptions.map(option => (
-                  <div key={option.id} className="flex items-center">
+
+        {/* C. Facilities Section - Collapsible */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <button
+            type="button"
+            onClick={() => setShowFacilities(!showFacilities)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <h2 className="text-lg font-semibold text-gray-900">편의시설</h2>
+            <svg
+              className={`w-5 h-5 text-gray-500 transform transition-transform ${showFacilities ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showFacilities && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 mb-4">
+                매물에 포함된 편의시설을 선택하세요. (선택 사항)
+              </p>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {facilitiesOptions.map((facility) => (
+                  <label
+                    key={facility.id}
+                    className="flex items-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
                     <input
                       type="checkbox"
-                      id={option.id}
-                      checked={formData.options.includes(option.id)}
-                      onChange={() => handleOptionChange(option.id)}
-                      className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
+                      checked={form.amenities.includes(facility.id)}
+                      onChange={() => handleFacilityToggle(facility.id)}
+                      className="h-4 w-4 text-dabang-primary focus:ring-dabang-primary border-gray-300 rounded"
                     />
-                    <label htmlFor={option.id} className="ml-2 block text-sm text-gray-700">
-                      {option.label}
-                    </label>
-                  </div>
+                    <span className="text-sm">{facility.icon}</span>
+                    <span className="text-sm text-gray-700">{facility.label}</span>
+                  </label>
                 ))}
               </div>
+
+              {/* Other facility input */}
+              <div className="flex gap-2 pt-2 border-t border-gray-200">
+                <input
+                  type="text"
+                  value={otherFacility}
+                  onChange={(e) => setOtherFacility(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddOtherFacility())}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                  placeholder="기타 편의시설 (예: 옥상정원, 스파)"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddOtherFacility}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  추가
+                </button>
+              </div>
+
+              {/* Selected facilities display */}
+              {form.amenities.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs text-gray-500 mb-2">선택된 편의시설:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {form.amenities.map((amenityId) => {
+                      const facility = facilitiesOptions.find((f) => f.id === amenityId);
+                      const label = facility ? facility.label : amenityId;
+                      return (
+                        <span
+                          key={amenityId}
+                          className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            
-            {/* Description (설명) */}
-            <div className="md:col-span-2">
+          )}
+        </div>
+
+        {/* D. Contact Information Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">연락처 정보</h2>
+          <p className="text-xs text-gray-500 mb-4">
+            이 정보는 매물 상세 페이지에 표시됩니다.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                설명
+                담당자 이름 <span className="text-red-500">*</span>
               </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={4}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                placeholder="매물에 대한 상세 설명을 입력하세요"
+              <input
+                name="contactName"
+                value={form.contactName}
+                onChange={onChange}
+                className={`w-full border ${errors.contactName ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="담당자 이름"
               />
+              {errors.contactName && <p className="text-sm text-red-600 mt-1">{errors.contactName}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                담당자 이메일 <span className="text-gray-500 text-xs">(선택)</span>
+              </label>
+              <input
+                name="contactEmail"
+                type="email"
+                value={form.contactEmail}
+                onChange={onChange}
+                className={`w-full border ${errors.contactEmail ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="email@example.com"
+              />
+              {errors.contactEmail && <p className="text-sm text-red-600 mt-1">{errors.contactEmail}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                담당자 연락처 <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="contactPhone"
+                value={form.contactPhone}
+                onChange={onChange}
+                className={`w-full border ${errors.contactPhone ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                placeholder="010-1234-5678"
+              />
+              {errors.contactPhone && <p className="text-sm text-red-600 mt-1">{errors.contactPhone}</p>}
             </div>
           </div>
         </div>
-        
-        {/* Image Upload */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">이미지</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Thumbnail Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                썸네일 이미지
-              </label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                  {imagePreviews.thumbnail ? (
-                    <img 
-                      src={imagePreviews.thumbnail} 
-                      alt="Thumbnail preview" 
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                      </svg>
-                      <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">썸네일 업로드</span></p>
-                      <p className="text-xs text-gray-500">PNG, JPG (MAX. 10MB)</p>
-                    </div>
-                  )}
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept=".png,.jpg,.jpeg"
-                    onChange={handleThumbnailUpload}
-                  />
+
+        {/* E. Additional Details Section - Collapsible */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <button
+            type="button"
+            onClick={() => setShowAdditionalDetails(!showAdditionalDetails)}
+            className="flex items-center justify-between w-full text-left mb-4"
+          >
+            <h2 className="text-lg font-semibold text-gray-900">추가 정보</h2>
+            <svg
+              className={`w-5 h-5 text-gray-500 transform transition-transform ${showAdditionalDetails ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showAdditionalDetails && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  상세 설명 <span className="text-red-500">*</span>
                 </label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={onChange}
+                  rows={4}
+                  className={`w-full border ${errors.description ? 'border-red-500' : 'border-gray-300'} rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary`}
+                  placeholder="매물 특징, 주변 환경, 주차/엘리베이터 여부 등을 상세히 적어주세요."
+                />
+                {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  내부 메모 <span className="text-gray-500 text-xs">(파트너 전용)</span>
+                </label>
+                <textarea
+                  name="internalMemo"
+                  value={form.internalMemo}
+                  onChange={onChange}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-dabang-primary"
+                  placeholder="파트너만 볼 수 있는 메모입니다. 고객에게는 노출되지 않습니다."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">이미지</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-sm text-gray-500 bg-gray-50 text-center">
+                  이미지 업로드 UI는 추후 연동됩니다.
+                  <p className="text-xs text-gray-400 mt-2">(현재는 플레이스홀더)</p>
+                </div>
               </div>
             </div>
-            
-            {/* Multiple Images Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                매물 사진들
-              </label>
-              <div className="flex items-center justify-center w-full">
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
-                  {imagePreviews.images.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-2 p-2 w-full h-full">
-                      {imagePreviews.images.map((preview, index) => (
-                        <img 
-                          key={index}
-                          src={preview} 
-                          alt={`Preview ${index}`} 
-                          className="w-full h-20 object-cover rounded"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <svg className="w-8 h-8 mb-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                      </svg>
-                      <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">사진들 업로드</span></p>
-                      <p className="text-xs text-gray-500">PNG, JPG (여러 장 선택 가능, MAX. 10MB each)</p>
-                    </div>
-                  )}
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept=".png,.jpg,.jpeg"
-                    onChange={handleImagesUpload}
-                    multiple
-                  />
-                </label>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
-        
-        {/* Sticky Footer Actions */}
-        <div className="fixed bottom-0 left-64 right-0 bg-white border-t border-gray-200 p-4">
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dabang-primary"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dabang-primary"
-            >
-              {isEditMode ? '매물 수정' : '매물 등록'}
-            </button>
-          </div>
+
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={() => navigate('/business/real-estate/listings')}
+            className="px-6 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={(e) => handleSubmit(e, true)}
+            disabled={submitting}
+            className="px-6 py-2.5 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-70"
+          >
+            임시저장
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="px-6 py-2.5 border border-transparent text-sm font-medium rounded-lg text-white bg-dabang-primary hover:bg-dabang-primary/90 transition-colors disabled:opacity-70 shadow-sm"
+          >
+            {submitting ? '저장 중...' : '저장'}
+          </button>
         </div>
       </form>
     </div>

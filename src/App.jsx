@@ -4,6 +4,7 @@ import { ListingsProvider } from './context/ListingsContext';
 import { ReservationsProvider } from './context/ReservationsContext';
 import { DeliveryQuotesProvider } from './context/DeliveryQuotesContext';
 import { I18nProvider } from './context/I18nContext';
+import { BannerProvider } from './context/BannerContext';
 import { seedBannersIfEmpty } from './store/bannersStore';
 
 function App() {
@@ -14,13 +15,15 @@ function App() {
 
   return (
     <I18nProvider>
-      <DeliveryQuotesProvider>
-        <ListingsProvider>
-          <ReservationsProvider>
-            <AppRouter />
-          </ReservationsProvider>
-        </ListingsProvider>
-      </DeliveryQuotesProvider>
+      <BannerProvider>
+        <DeliveryQuotesProvider>
+          <ListingsProvider>
+            <ReservationsProvider>
+              <AppRouter />
+            </ReservationsProvider>
+          </ListingsProvider>
+        </DeliveryQuotesProvider>
+      </BannerProvider>
     </I18nProvider>
   );
 }

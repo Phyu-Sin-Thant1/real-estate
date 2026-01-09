@@ -1,107 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { getListings, updateListing } from '../../store/realEstateListingsStore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { getListings } from '../../store/realEstateListingsStore';
 import { getBusinessAccounts } from '../../store/businessAccountsStore';
+import RealEstateReviewModal from '../../components/admin/RealEstateReviewModal';
+import Badge from '../../components/ui/Badge';
+import Button from '../../components/ui/Button';
+import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
+import Toast from '../../components/delivery/Toast';
+import { addAuditLog } from '../../lib/auditLog';
+import { useUnifiedAuth } from '../../context/UnifiedAuthContext';
 
 const AdminRealEstateOversightPage = () => {
+  const { user } = useUnifiedAuth();
   const [listings, setListings] = useState([]);
   const [partners, setPartners] = useState([]);
-  const [selectedListings, setSelectedListings] = useState([]);
-  const [dateRange, setDateRange] = useState('ALL');
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [toast, setToast] = useState({ isVisible: false, message: '', type: 'info' });
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState('PENDING_APPROVAL');
   const [partnerFilter, setPartnerFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedListing, setSelectedListing] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    setListings(getListings());
-    setPartners(getBusinessAccounts().filter(p => p.role === 'BUSINESS_REAL_ESTATE'));
+    // Load listings and filter out DRAFT status (admin shouldn't see drafts)
+    const allListings = getListings().filter(l => l.status !== 'DRAFT');
+    
+    // Map old statuses to new ones for backward compatibility
+    const mappedListings = allListings.map(listing => {
+      let status = listing.status;
+      // Map old statuses to new ones
+      if (status === 'PENDING' || status === 'PENDING_REVIEW') {
+        status = 'PENDING_APPROVAL';
+      } else if (status === 'LIVE') {
+        status = 'APPROVED';
+      } else if (status === 'HIDDEN') {
+        // Keep HIDDEN as is, but we'll treat it as REJECTED for admin oversight
+        status = 'REJECTED';
+      }
+      return { ...listing, status };
+    });
+    
+    setListings(mappedListings);
+    
+    // Load partners
+    const allPartners = getBusinessAccounts().filter(p => p.role === 'BUSINESS_REAL_ESTATE');
+    setPartners(allPartners);
   }, []);
 
-  const statuses = ['ALL', 'LIVE', 'HIDDEN', 'PENDING', 'REJECTED'];
+  // Filtered listings
+  const filteredListings = useMemo(() => {
+    let filtered = [...listings];
 
-  // Filter listings based on filters
-  const filteredListings = listings.filter(listing => {
-    const statusMatch = statusFilter === 'ALL' || listing.status === statusFilter;
-    const partnerMatch = partnerFilter === 'ALL' || listing.partnerEmail === partnerFilter || listing.partnerId === partnerFilter;
-    return statusMatch && partnerMatch;
-  });
+    // Status filter
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(listing => listing.status === statusFilter);
+    }
 
-  const handleSelectListing = (listingId) => {
-    setSelectedListings(prev => 
-      prev.includes(listingId) 
-        ? prev.filter(id => id !== listingId)
-        : [...prev, listingId]
-    );
+    // Partner filter
+    if (partnerFilter !== 'ALL') {
+      filtered = filtered.filter(listing => 
+        listing.partnerEmail === partnerFilter || 
+        listing.partnerId === partnerFilter ||
+        listing.partnerName === partnerFilter
+      );
+    }
+
+    // Search filter (title, location, partner name)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(listing => {
+        const title = (listing.title || '').toLowerCase();
+        const location = (listing.address || listing.locationText || listing.city || '').toLowerCase();
+        const partnerName = (listing.partnerName || listing.partnerEmail || '').toLowerCase();
+        return title.includes(query) || location.includes(query) || partnerName.includes(query);
+      });
+    }
+
+    return filtered;
+  }, [listings, statusFilter, partnerFilter, searchQuery]);
+
+  const handleReview = (property) => {
+    setSelectedProperty(property);
+    setIsReviewModalOpen(true);
   };
 
-  const handleSelectAll = () => {
-    if (selectedListings.length === filteredListings.length) {
-      setSelectedListings([]);
-    } else {
-      setSelectedListings(filteredListings.map(l => l.id));
+  const handleStatusUpdate = async (updatedProperty) => {
+    try {
+      // Update local state (store is already updated by API functions)
+      setListings(prev => prev.map(p => 
+        p.id === updatedProperty.id ? updatedProperty : p
+      ));
+
+      // Create audit log entry
+      const action = updatedProperty.status === 'APPROVED' ? 'PROPERTY_APPROVED' : 'PROPERTY_REJECTED';
+      addAuditLog({
+        action,
+        targetId: String(updatedProperty.id),
+        metadata: {
+          partnerId: updatedProperty.partnerId || updatedProperty.partnerEmail,
+          partnerName: updatedProperty.partnerName,
+          propertyTitle: updatedProperty.title
+        },
+        user: user?.name || 'Admin',
+        details: `${action.replace(/_/g, ' ')}: ${updatedProperty.title}`
+      });
+
+      // Show toast
+      setToast({
+        isVisible: true,
+        message: updatedProperty.status === 'APPROVED' 
+          ? 'Property approved successfully. It is now visible on the public website.'
+          : 'Property rejected successfully.',
+        type: updatedProperty.status === 'APPROVED' ? 'success' : 'info'
+      });
+
+      // Close modal
+      setIsReviewModalOpen(false);
+      setSelectedProperty(null);
+    } catch (error) {
+      console.error('Error updating property status:', error);
+      setToast({
+        isVisible: true,
+        message: 'Failed to update property status. Please try again.',
+        type: 'error'
+      });
     }
   };
 
-  const handleViewDetails = (listing) => {
-    setSelectedListing(listing);
-    setIsDrawerOpen(true);
+  const handleResetFilters = () => {
+    setStatusFilter('PENDING_APPROVAL');
+    setPartnerFilter('ALL');
+    setSearchQuery('');
   };
 
-  const handleToggleVisibility = (listingId) => {
-    const listing = listings.find(l => l.id === listingId || String(l.id) === String(listingId));
-    if (!listing) return;
-
-    const newStatus = listing.status === 'HIDDEN' ? 'LIVE' : 'HIDDEN';
-    updateListing(listingId, { status: newStatus });
-    setListings(getListings());
-    if (selectedListing && (selectedListing.id === listingId || String(selectedListing.id) === String(listingId))) {
-      setSelectedListing({ ...selectedListing, status: newStatus });
-    }
-  };
-
-  const getStatusClass = (status) => {
+  const getStatusBadge = (status) => {
     switch (status) {
-      case 'LIVE': return 'bg-green-100 text-green-800';
-      case 'HIDDEN': return 'bg-yellow-100 text-yellow-800';
-      case 'PENDING_REVIEW': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'PENDING_APPROVAL':
+        return <Badge variant="warning">Pending Approval</Badge>;
+      case 'APPROVED':
+        return <Badge variant="success">Approved</Badge>;
+      case 'REJECTED':
+        return <Badge variant="danger">Rejected</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
   };
 
-  const getStatusLabel = (status) => {
-    switch (status) {
-      case 'LIVE': return '노출중';
-      case 'HIDDEN': return '비노출';
-      case 'PENDING_REVIEW': return '검토중';
-      default: return status;
+  const formatPrice = (listing) => {
+    if (listing.transactionType === '매매' && listing.price) {
+      const price = typeof listing.price === 'string' 
+        ? parseInt(listing.price.replace(/[^0-9]/g, '')) 
+        : listing.price;
+      return `${price.toLocaleString()}원`;
     }
+    if (listing.transactionType === '전세' && listing.deposit) {
+      const deposit = typeof listing.deposit === 'string' 
+        ? parseInt(listing.deposit.replace(/[^0-9]/g, '')) 
+        : listing.deposit;
+      return `전세 ${deposit.toLocaleString()}원`;
+    }
+    if (listing.transactionType === '월세') {
+      const parts = [];
+      if (listing.deposit) {
+        const deposit = typeof listing.deposit === 'string' 
+          ? parseInt(listing.deposit.replace(/[^0-9]/g, '')) 
+          : listing.deposit;
+        parts.push(`보증금 ${deposit.toLocaleString()}원`);
+      }
+      if (listing.monthly) {
+        const monthly = typeof listing.monthly === 'string' 
+          ? parseInt(listing.monthly.replace(/[^0-9]/g, '')) 
+          : listing.monthly;
+        parts.push(`월세 ${monthly.toLocaleString()}원`);
+      }
+      return parts.join(' / ') || '가격 정보 없음';
+    }
+    return '가격 정보 없음';
   };
 
-  // Calculate summary stats
-  const totalListings = listings.length;
-  const pendingListings = listings.filter(l => l.status === 'PENDING').length;
-  const hiddenListings = listings.filter(l => l.status === 'HIDDEN').length;
+  // Calculate stats
+  const stats = useMemo(() => {
+    return {
+      total: listings.length,
+      pending: listings.filter(l => l.status === 'PENDING_APPROVAL').length,
+      approved: listings.filter(l => l.status === 'APPROVED').length,
+      rejected: listings.filter(l => l.status === 'REJECTED').length
+    };
+  }, [listings]);
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Real-Estate Oversight</h1>
-        <p className="text-gray-600 mt-1">Monitor and moderate property listings</p>
+        <p className="text-gray-600 mt-1">Review and approve partner-uploaded properties before publishing.</p>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0 p-3 rounded-lg bg-blue-100 text-blue-800">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z" />
               </svg>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Total Listings</h3>
-              <p className="text-2xl font-semibold text-gray-900">{totalListings}</p>
+              <h3 className="text-sm font-medium text-gray-500">Total Properties</h3>
+              <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 p-3 rounded-lg bg-amber-100 text-amber-800">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-gray-500">Pending Review</h3>
+              <p className="text-2xl font-semibold text-gray-900">{stats.pending}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0 p-3 rounded-lg bg-green-100 text-green-800">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <h3 className="text-sm font-medium text-gray-500">Approved</h3>
+              <p className="text-2xl font-semibold text-gray-900">{stats.approved}</p>
             </div>
           </div>
         </div>
@@ -110,26 +246,12 @@ const AdminRealEstateOversightPage = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0 p-3 rounded-lg bg-red-100 text-red-800">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V5a2 2 0 00-2-2H6a2 2 0 00-2 2v8m16 0v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6m8 0V9m0 4v4m-4-4v4m8-4v4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Pending Review</h3>
-              <p className="text-2xl font-semibold text-gray-900">{pendingListings}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 p-3 rounded-lg bg-yellow-100 text-yellow-800">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <h3 className="text-sm font-medium text-gray-500">Hidden Listings</h3>
-              <p className="text-2xl font-semibold text-gray-900">{hiddenListings}</p>
+              <h3 className="text-sm font-medium text-gray-500">Rejected</h3>
+              <p className="text-2xl font-semibold text-gray-900">{stats.rejected}</p>
             </div>
           </div>
         </div>
@@ -139,81 +261,73 @@ const AdminRealEstateOversightPage = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              <option value="ALL">All Time</option>
-              <option value="TODAY">Today</option>
-              <option value="WEEK">This Week</option>
-              <option value="MONTH">This Month</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Partner</label>
-            <select
-              value={partnerFilter}
-              onChange={(e) => setPartnerFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              <option value="ALL">All Partners</option>
-              {partners.map(partner => (
-                <option key={partner.email} value={partner.email}>
-                  {partner.companyName || partner.email}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select
+            <Select
+              label="Status"
+              id="status-filter"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full rounded-md border-gray-300 shadow-sm focus:border-dabang-primary focus:ring-dabang-primary"
-            >
-              {statuses.map(status => (
-                <option key={status} value={status}>
-                  {status === 'ALL' ? 'All Statuses' : getStatusLabel(status)}
-                </option>
-              ))}
-            </select>
+              options={[
+                { value: 'ALL', label: 'All Statuses' },
+                { value: 'PENDING_APPROVAL', label: 'Pending Approval' },
+                { value: 'APPROVED', label: 'Approved' },
+                { value: 'REJECTED', label: 'Rejected' }
+              ]}
+            />
           </div>
+          
+          <div>
+            <Select
+              label="Partner"
+              id="partner-filter"
+              value={partnerFilter}
+              onChange={(e) => setPartnerFilter(e.target.value)}
+              options={[
+                { value: 'ALL', label: 'All Partners' },
+                ...partners.map(p => ({
+                  value: p.email,
+                  label: p.companyName || p.email
+                }))
+              ]}
+            />
+          </div>
+          
+          <div>
+            <Input
+              label="Search"
+              id="search"
+              type="text"
+              placeholder="Title, location, partner..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
           <div className="flex items-end">
-            <button
-              onClick={() => {
-                setDateRange('ALL');
-                setPartnerFilter('ALL');
-                setStatusFilter('ALL');
-              }}
-              className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            <Button
+              variant="outline"
+              onClick={handleResetFilters}
+              className="w-full"
             >
               Reset Filters
-            </button>
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Listings Table */}
+      {/* Properties Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <input
-                    type="checkbox"
-                    checked={selectedListings.length === filteredListings.length && filteredListings.length > 0}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
-                  />
+                  Property
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Title
+                  Partner
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
+                  Type
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Price
@@ -222,7 +336,7 @@ const AdminRealEstateOversightPage = () => {
                   Status
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Partner
+                  Submitted At
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -233,55 +347,45 @@ const AdminRealEstateOversightPage = () => {
               {filteredListings.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
-                    No listings found
+                    No properties found matching the current filters.
                   </td>
                 </tr>
               ) : (
                 filteredListings.map((listing) => (
-                  <tr key={listing.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleViewDetails(listing)}>
-                    <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedListings.includes(listing.id)}
-                        onChange={() => handleSelectListing(listing.id)}
-                        className="h-4 w-4 text-dabang-primary border-gray-300 rounded focus:ring-dabang-primary"
-                      />
+                  <tr key={listing.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-gray-900">{listing.title || 'Untitled Property'}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {listing.address || listing.locationText || listing.city || 'No location'}
+                      </div>
                     </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{listing.title || 'N/A'}</div>
-                    <div className="text-xs text-gray-500">{listing.partnerName || listing.partnerEmail || 'Unknown Partner'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {listing.address || listing.city || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {listing.price ? `${listing.price}원` : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(listing.status)}`}>
-                      {getStatusLabel(listing.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {listing.partnerName || listing.partnerEmail || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
-                      <button 
-                        onClick={() => handleViewDetails(listing)}
-                        className="text-dabang-primary hover:text-dabang-primary/80"
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {listing.partnerName || listing.partnerEmail || 'Unknown Partner'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {listing.propertyType || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatPrice(listing)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(listing.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {listing.submittedAt || listing.createdAt
+                        ? new Date(listing.submittedAt || listing.createdAt).toLocaleDateString()
+                        : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Button
+                        variant="primary"
+                        size="small"
+                        onClick={() => handleReview(listing)}
                       >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => handleToggleVisibility(listing.id)}
-                        className="text-yellow-600 hover:text-yellow-800"
-                      >
-                        {listing.status === 'HIDDEN' ? 'Unhide' : 'Hide'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                        Review
+                      </Button>
+                    </td>
+                  </tr>
                 ))
               )}
             </tbody>
@@ -289,91 +393,24 @@ const AdminRealEstateOversightPage = () => {
         </div>
       </div>
 
-      {/* Detail Drawer */}
-      {isDrawerOpen && selectedListing && (
-        <div className="fixed inset-0 overflow-hidden z-50">
-          <div className="absolute inset-0 overflow-hidden">
-            <div 
-              className="absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-              onClick={() => setIsDrawerOpen(false)}
-            ></div>
-            <div className="fixed inset-y-0 right-0 max-w-full flex">
-              <div className="relative w-screen max-w-md">
-                <div className="h-full flex flex-col bg-white shadow-xl">
-                  <div className="flex-1 overflow-y-auto">
-                    <div className="px-4 py-6 sm:px-6">
-                      <div className="flex items-start justify-between">
-                        <h2 className="text-lg font-medium text-gray-900">Listing Details</h2>
-                        <button
-                          onClick={() => setIsDrawerOpen(false)}
-                          className="ml-3 h-7 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                        >
-                          <svg className="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-                      <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                        <div className="sm:col-span-2">
-                          <dt className="text-sm font-medium text-gray-500">Title</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.title || 'N/A'}</dd>
-                        </div>
-                        <div className="sm:col-span-1">
-                          <dt className="text-sm font-medium text-gray-500">Location</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.address || selectedListing.city || 'N/A'}</dd>
-                        </div>
-                        <div className="sm:col-span-1">
-                          <dt className="text-sm font-medium text-gray-500">Price</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.price ? `${selectedListing.price}원` : 'N/A'}</dd>
-                        </div>
-                        <div className="sm:col-span-1">
-                          <dt className="text-sm font-medium text-gray-500">Status</dt>
-                          <dd className="mt-1">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(selectedListing.status)}`}>
-                              {getStatusLabel(selectedListing.status)}
-                            </span>
-                          </dd>
-                        </div>
-                        <div className="sm:col-span-1">
-                          <dt className="text-sm font-medium text-gray-500">Partner</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.partnerName || selectedListing.partnerEmail || 'N/A'}</dd>
-                        </div>
-                        <div className="sm:col-span-2">
-                          <dt className="text-sm font-medium text-gray-500">Description</dt>
-                          <dd className="mt-1 text-sm text-gray-900">{selectedListing.description || 'N/A'}</dd>
-                        </div>
-                      </dl>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 px-4 py-4 flex justify-end space-x-3 border-t border-gray-200">
-                    <button
-                      type="button"
-                      onClick={() => setIsDrawerOpen(false)}
-                      className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                      Close
-                    </button>
-                    {(selectedListing.status === 'LIVE' || selectedListing.status === 'HIDDEN') && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleVisibility(selectedListing.id);
-                        }}
-                        className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700"
-                      >
-                        {selectedListing.status === 'HIDDEN' ? 'Unhide Listing' : 'Hide Listing'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Review Modal */}
+      <RealEstateReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setSelectedProperty(null);
+        }}
+        property={selectedProperty}
+        onStatusUpdate={handleStatusUpdate}
+      />
+
+      {/* Toast */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   );
 };

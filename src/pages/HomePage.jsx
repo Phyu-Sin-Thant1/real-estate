@@ -15,6 +15,7 @@ import FinalCTA from '../components/home/FinalCTA'
 import AnnouncementBanner from '../components/home/AnnouncementBanner'
 import EventSection from '../components/home/EventSection'
 import PromotionBanner from '../components/promotions/PromotionBanner'
+import BannerSlotV2 from '../components/banners/BannerSlotV2'
 import { useNavigate } from 'react-router-dom'
 import {
   trendingListings,
@@ -70,7 +71,13 @@ const HomePage = () => {
       <PromotionBanner />
       <Header />
       
+      {/* Global Top Banner */}
+      <BannerSlotV2 pageScope="HOME" slot="GLOBAL_TOP" />
+      
       <main className="space-y-16 md:space-y-20">
+        {/* Page Top Banner */}
+        <BannerSlotV2 pageScope="HOME" slot="PAGE_TOP" />
+        
         {/* 1) HERO */}
         <EnhancedSearchHero />
 
@@ -95,6 +102,11 @@ const HomePage = () => {
         <section className="py-12 md:py-16">
       <ServiceGrid />
         </section>
+
+        {/* Inline Banner 1 */}
+        <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+          <BannerSlotV2 pageScope="HOME" slot="INLINE_1" />
+        </div>
 
         {/* 3.5) EVENTS & PROMOTIONS */}
         <section className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-12 md:py-16 bg-gradient-to-b from-white via-slate-50/30 to-white">
@@ -594,6 +606,11 @@ const HomePage = () => {
           }}
         />
       </main>
+
+      {/* Page Bottom Banner */}
+      <div className="px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6">
+        <BannerSlotV2 pageScope="HOME" slot="PAGE_BOTTOM" />
+      </div>
 
       {/* 10) FOOTER */}
       <Footer />
