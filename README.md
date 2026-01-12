@@ -40,8 +40,9 @@ A premium Korean real estate portal built with modern web technologies, featurin
 
 1. **Clone the repository**
    ```bash
-   git clone http://202.131.248.107:8899/mytmon123/real-estate.git
-   cd real-estate
+  git clone https://github.com/Phyu-Sin-Thant1/real-estate.git
+cd real-estate
+
    ```
 
 2. **Install dependencies**
