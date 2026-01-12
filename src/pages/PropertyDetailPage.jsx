@@ -6,6 +6,7 @@ import { useUnifiedAuth } from '../context/UnifiedAuthContext';
 import { useReservations } from '../context/ReservationsContext';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
+import BannerSlotV2 from '../components/banners/BannerSlotV2';
 import { useFavorites } from '../hooks/useFavorites';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -538,7 +539,9 @@ const PropertyDetailPage = () => {
             </div>
             
             {/* Agent Info - Right Column */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6">
+              {/* Sidebar Banner */}
+              <BannerSlotV2 pageScope="PROPERTY_DETAIL" slot="SIDEBAR" domain="REAL_ESTATE" />
               <div className="bg-white rounded-lg shadow-sm p-6 sticky top-24">
                 <div className="text-center mb-6">
                   <div className="w-16 h-16 rounded-full bg-dabang-primary/10 flex items-center justify-center mx-auto mb-3">
@@ -617,6 +620,11 @@ const PropertyDetailPage = () => {
                 </div>
               )}
             </div>
+          </div>
+          
+          {/* Page Bottom Banner */}
+          <div className="mt-8">
+            <BannerSlotV2 pageScope="PROPERTY_DETAIL" slot="PAGE_BOTTOM" domain="REAL_ESTATE" />
           </div>
         </div>
       </main>

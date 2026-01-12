@@ -4,6 +4,7 @@ import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 import { addListing } from '../../../store/realEstateListingsStore';
 import { addApproval } from '../../../store/approvalsStore';
 import { getCustomersByPartner, seedMockCustomers } from '../../../store/realEstateCustomersStore';
+import { getRealEstateCategoryOptions } from '../../../lib/utils/commonCodes';
 
 const initialForm = {
   // Basic Information
@@ -44,7 +45,9 @@ const initialForm = {
   images: [],
 };
 
-const propertyTypes = [
+// Property types are now loaded from Common Codes
+// Fallback to hardcoded values if common codes are not available
+const defaultPropertyTypes = [
   { label: '아파트', value: 'apartment' },
   { label: '주택', value: 'house' },
   { label: '오피스텔', value: 'office' },
@@ -83,6 +86,7 @@ const RealEstateListingCreatePage = () => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [ownerCustomers, setOwnerCustomers] = useState([]);
+  const [propertyTypes, setPropertyTypes] = useState(defaultPropertyTypes);
   
   // Progressive disclosure states
   const [showFacilities, setShowFacilities] = useState(false);
@@ -91,6 +95,23 @@ const RealEstateListingCreatePage = () => {
 
   const partnerEmail = user?.email || '';
   const createdBy = user?.name || partnerEmail || 'Partner';
+
+  // Load property types from common codes
+  useEffect(() => {
+    try {
+      const categories = getRealEstateCategoryOptions();
+      if (categories.length > 0) {
+        // Map numeric codes to lowercase for backward compatibility
+        // e.g., "100-01" -> "100-01" (keep as is, or map to legacy format if needed)
+        setPropertyTypes(categories.map(cat => ({
+          label: cat.label,
+          value: cat.value, // Use numeric code directly (e.g., "100-01")
+        })));
+      }
+    } catch (error) {
+      console.warn('Failed to load property types from common codes, using defaults', error);
+    }
+  }, []);
 
   // Load owner customers
   useEffect(() => {

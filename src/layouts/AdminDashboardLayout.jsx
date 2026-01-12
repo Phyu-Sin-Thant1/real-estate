@@ -25,6 +25,7 @@ const menuItems = [
   { key: 'reviews', translationKey: 'nav.reviews', path: '/admin/reviews', icon: '⭐' },
   { key: 'discounts', translationKey: 'nav.discounts', path: '/admin/marketing/discounts', icon: '🎫' },
   { key: 'promotions', translationKey: 'nav.promotions', path: '/admin/marketing/promotions', icon: '📢' },
+  { key: 'commonCodes', translationKey: 'nav.categoryManagement', path: '/admin/common-codes', icon: '📋' },
   { key: 'settings', translationKey: 'nav.settings', path: '/admin/settings', icon: '⚙️' }
 ];
 

@@ -27,6 +27,8 @@ export const translations = {
       discounts: '할인/쿠폰',
       promotions: '광고 / 프로모션',
       marketing: '마케팅',
+      commonCodes: '카테고리 관리',
+      categoryManagement: '카테고리 관리',
       settings: '설정',
       // Business menu
       contracts: '계약 내역',

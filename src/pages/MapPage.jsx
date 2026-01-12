@@ -619,23 +619,39 @@ const MapPage = () => {
                 </div>
 
                 {/* List column */}
-                <MapPropertyList 
-                  properties={properties}
-                  isFavorite={isFavorite}
-                  handleToggleFavorite={handleToggleFavorite}
-                  handlePropertyDetail={handlePropertyDetail}
-                  isAuthenticated={isAuthenticated}
-                  navigate={navigate}
-                  setSearchQuery={setSearchQuery}
-                  setSelectedDealType={setSelectedDealType}
-                  setSelectedPropertyType={setSelectedPropertyType}
-                  setSearchParams={setSearchParams}
-                />
+                <div className="w-full lg:w-1/3 flex flex-col gap-4">
+                  {/* Sidebar Banner */}
+                  <BannerSlotV2 pageScope="MAP_SEARCH" slot="SIDEBAR" domain="REAL_ESTATE" />
+                  
+                  <MapPropertyList 
+                    properties={properties}
+                    isFavorite={isFavorite}
+                    handleToggleFavorite={handleToggleFavorite}
+                    handlePropertyDetail={handlePropertyDetail}
+                    isAuthenticated={isAuthenticated}
+                    navigate={navigate}
+                    setSearchQuery={setSearchQuery}
+                    setSelectedDealType={setSelectedDealType}
+                    setSelectedPropertyType={setSelectedPropertyType}
+                    setSearchParams={setSearchParams}
+                  />
+                </div>
+              </div>
+              
+              {/* Inline Banner 1 */}
+              <div className="px-4 pt-4">
+                <BannerSlotV2 pageScope="MAP_SEARCH" slot="INLINE_1" domain="REAL_ESTATE" />
               </div>
             </section>
           </div>
         </div>
       </div>
+      
+      {/* Page Bottom Banner */}
+      <div className='container mx-auto px-4 py-4'>
+        <BannerSlotV2 pageScope="MAP_SEARCH" slot="PAGE_BOTTOM" domain="REAL_ESTATE" />
+      </div>
+      
       <Footer />
     </div>
   )

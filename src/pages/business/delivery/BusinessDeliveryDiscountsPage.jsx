@@ -3,7 +3,7 @@ import { useI18n } from '../../../context/I18nContext';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 import { getPlatformCampaigns, seedPlatformCampaigns } from '../../../store/platformCampaignsStore';
 import { getDiscountToggleState, setDiscountToggleState } from '../../../store/discountToggleStore';
-import { getCouponToggleState, setCouponToggleState } from '../../../store/couponToggleStore';
+import { isDiscountEnabledForPartner, toggleDiscountForPartner } from '../../../store/partnerDiscountUsageStore';
 
 const BusinessDeliveryDiscountsPage = () => {
   const { t } = useI18n();
@@ -25,22 +25,42 @@ const BusinessDeliveryDiscountsPage = () => {
   }, []);
 
   useEffect(() => {
-    // Load individual coupon toggle states when coupons change
+    // Load individual coupon toggle states from PartnerDiscountUsage
     const states = {};
+    const partnerId = user?.email;
     availableCoupons.forEach((coupon) => {
-      states[coupon.id] = getCouponToggleState(coupon.id);
+      states[coupon.id] = isDiscountEnabledForPartner(coupon.id, partnerId);
     });
     setCouponToggleStates(states);
-  }, [availableCoupons]);
+  }, [availableCoupons, user?.email]);
 
   const loadData = () => {
-    // Load platform campaigns (admin-created discounts) for DELIVERY scope
+    // Load only PARTNER owner discounts for DELIVERY scope
     const allCampaigns = getPlatformCampaigns();
+    const partnerId = user?.email;
+    
     const deliveryCampaigns = allCampaigns.filter((campaign) => {
-      // Show campaigns that are LIVE and for DELIVERY or ALL scope
-      return (campaign.scope === 'DELIVERY' || campaign.scope === 'ALL') && 
-             campaign.status === 'LIVE';
+      // Only show PARTNER owner discounts
+      if (campaign.owner !== 'PARTNER') return false;
+      
+      // Must be for DELIVERY scope
+      if (campaign.scope !== 'DELIVERY') return false;
+      
+      // Must be ACTIVE status
+      if (campaign.status !== 'ACTIVE') return false;
+      
+      // Check partner eligibility
+      if (campaign.eligiblePartnerMode === 'ALL_PARTNERS_IN_DOMAIN') {
+        return true; // All partners in domain are eligible
+      } else if (campaign.eligiblePartnerMode === 'SELECT_PARTNERS') {
+        // Check if this partner is in the selected list
+        const partnerIds = campaign.partnerIds || [];
+        return partnerIds.includes(partnerId) || partnerIds.includes(user?.id);
+      }
+      
+      return false;
     });
+    
     setAvailableCoupons(deliveryCampaigns);
   };
 
@@ -80,11 +100,20 @@ const BusinessDeliveryDiscountsPage = () => {
   };
 
   const handleCouponToggle = (couponId, enabled) => {
-    setCouponToggleState(couponId, enabled);
+    const partnerId = user?.email;
+    if (!partnerId) return;
+    
+    // Use PartnerDiscountUsage store
+    toggleDiscountForPartner(couponId, partnerId);
+    
     setCouponToggleStates((prev) => ({
       ...prev,
       [couponId]: enabled,
     }));
+    
+    // Reload data to refresh states
+    loadData();
+    
     // Show feedback message
     if (enabled) {
       console.log(`Coupon ${couponId} is now ENABLED.`);

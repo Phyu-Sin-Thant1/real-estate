@@ -2,6 +2,7 @@ import { getPartnerDiscounts } from '../../store/partnerDiscountsStore';
 import { getPlatformCampaigns } from '../../store/platformCampaignsStore';
 import { getDiscountToggleState } from '../../store/discountToggleStore';
 import { isCouponEnabled } from '../../store/couponToggleStore';
+import { isDiscountEnabledForPartner } from '../../store/partnerDiscountUsageStore';
 
 /**
  * Get applicable discount for a given context
@@ -19,7 +20,62 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
 
   const currentDate = now instanceof Date ? now : new Date(now);
 
-  // Priority 1: Check Platform Campaigns (admin-controlled)
+  // Priority 1: Check PLATFORM owner discounts (apply directly to web/app)
+  try {
+    const platformCampaigns = getPlatformCampaigns();
+    const applicableCampaign = platformCampaigns.find((campaign) => {
+      // Only PLATFORM owner discounts apply here
+      if (campaign.owner !== 'PLATFORM') return false;
+      
+      // Must be ACTIVE
+      if (campaign.status !== 'ACTIVE') return false;
+
+      // Check date range
+      const startAt = campaign.startAt ? new Date(campaign.startAt) : null;
+      const endAt = campaign.endAt ? new Date(campaign.endAt) : null;
+      if (startAt && currentDate < startAt) return false;
+      if (endAt && currentDate > endAt) return false;
+
+      // Check scope
+      if (campaign.scope !== scope) return false;
+
+      // Check target mode for PLATFORM discounts
+      if (campaign.targetMode === 'NEW_USERS_ONLY') {
+        // TODO: Check if user is new (requires user context)
+        // For now, skip this check
+      } else if (campaign.targetMode === 'CATEGORY' || campaign.targetMode === 'SERVICE') {
+        // Check if targetIds match entity
+        if (campaign.targetIds && campaign.targetIds.length > 0) {
+          // TODO: Implement category/service matching
+          // For now, skip this check
+        }
+      }
+
+      // Check usage limit
+      if (campaign.usageLimit && campaign.usedCount >= campaign.usageLimit) return false;
+
+      return true;
+    });
+
+    if (applicableCampaign) {
+      return {
+        id: applicableCampaign.id,
+        title: applicableCampaign.title,
+        description: applicableCampaign.description,
+        discountType: applicableCampaign.discountType,
+        value: applicableCampaign.value || applicableCampaign.discountValue,
+        minAmount: applicableCampaign.minAmount,
+        maxDiscount: applicableCampaign.maxDiscount,
+        stacking: applicableCampaign.stacking || 'NONE',
+        type: 'PLATFORM_CAMPAIGN',
+      };
+    }
+  } catch (e) {
+    // Platform campaigns store might not exist yet
+    console.warn('Error reading platform campaigns:', e);
+  }
+
+  // Priority 2: Check PARTNER owner discounts (only if enabled by partner)
   // For DELIVERY scope, check if discount usage is enabled globally
   if (scope === 'DELIVERY') {
     const isDiscountEnabled = getDiscountToggleState();
@@ -31,8 +87,11 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
   try {
     const platformCampaigns = getPlatformCampaigns();
     const applicableCampaign = platformCampaigns.find((campaign) => {
-      // Must be LIVE
-      if (campaign.status !== 'LIVE') return false;
+      // Only PARTNER owner discounts apply here
+      if (campaign.owner !== 'PARTNER') return false;
+      
+      // Must be ACTIVE
+      if (campaign.status !== 'ACTIVE') return false;
 
       // Check date range
       const startAt = campaign.startAt ? new Date(campaign.startAt) : null;
@@ -41,14 +100,24 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
       if (endAt && currentDate > endAt) return false;
 
       // Check scope
-      if (campaign.scope !== 'ALL' && campaign.scope !== scope) return false;
+      if (campaign.scope !== scope) return false;
 
-      // Check target mode
-      if (campaign.targetMode === 'PARTNER_IDS') {
-        if (!campaign.partnerIds || !campaign.partnerIds.includes(partnerId)) return false;
-      } else if (campaign.targetMode === 'CATEGORY') {
-        // Category matching logic (if needed)
-        // For now, skip category filtering
+      // Check partner eligibility
+      if (campaign.eligiblePartnerMode === 'ALL_PARTNERS_IN_DOMAIN') {
+        // All partners in domain are eligible
+      } else if (campaign.eligiblePartnerMode === 'SELECT_PARTNERS') {
+        // Check if this partner is in the selected list
+        const partnerIds = campaign.partnerIds || [];
+        if (!partnerIds.includes(partnerId) && !partnerIds.includes(partnerId.split('@')[0])) {
+          return false;
+        }
+      } else {
+        return false; // Invalid eligibility mode
+      }
+
+      // CRITICAL: Check if partner has enabled this discount
+      if (!isDiscountEnabledForPartner(campaign.id, partnerId)) {
+        return false; // Partner has not enabled this discount
       }
 
       // Check usage limit
@@ -58,27 +127,20 @@ export function getApplicableDiscount({ partnerId, scope, entityType, entityId, 
     });
 
     if (applicableCampaign) {
-      // Check if this specific coupon is enabled by the delivery agency
-      if (!isCouponEnabled(applicableCampaign.id)) {
-        // Skip this coupon if it's disabled
-        return null;
-      }
-
       return {
         id: applicableCampaign.id,
         title: applicableCampaign.title,
         description: applicableCampaign.description,
         discountType: applicableCampaign.discountType,
-        value: applicableCampaign.value,
+        value: applicableCampaign.value || applicableCampaign.discountValue,
         minAmount: applicableCampaign.minAmount,
         maxDiscount: applicableCampaign.maxDiscount,
         stacking: applicableCampaign.stacking || 'NONE',
-        type: 'PLATFORM_CAMPAIGN',
+        type: 'PARTNER_CAMPAIGN',
       };
     }
   } catch (e) {
-    // Platform campaigns store might not exist yet
-    console.warn('Error reading platform campaigns:', e);
+    console.warn('Error reading partner campaigns:', e);
   }
 
   // Priority 2: Check Partner Discounts

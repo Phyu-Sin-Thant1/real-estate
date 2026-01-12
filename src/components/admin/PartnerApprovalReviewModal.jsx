@@ -493,3 +493,4 @@ Please log in and change your password immediately.`}
 
 export default PartnerApprovalReviewModal;
 
+

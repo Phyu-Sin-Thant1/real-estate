@@ -105,6 +105,7 @@ import AdminReviewsPage from '../pages/admin/AdminReviewsPage'
 import AdminBannersPage from '../pages/admin/AdminBannersPage'
 import AdminDiscountsPage from '../pages/admin/AdminDiscountsPage'
 import AdminPromotionsPage from '../pages/admin/AdminPromotionsPage'
+import AdminCommonCodesPage from '../pages/admin/AdminCommonCodesPage'
 import RealEstateReviewsPage from '../pages/business/real-estate/RealEstateReviewsPage'
 import BusinessReviewsPage from '../pages/business/delivery/BusinessReviewsPage'
 import BusinessRealEstateDiscountsPage from '../pages/business/real-estate/BusinessRealEstateDiscountsPage'
@@ -212,6 +213,7 @@ const AppRouter = () => {
           <Route path="reviews" element={<AdminReviewsPage />} />
           <Route path="marketing/discounts" element={<AdminDiscountsPage />} />
           <Route path="marketing/promotions" element={<AdminPromotionsPage />} />
+          <Route path="common-codes" element={<AdminCommonCodesPage />} />
           {/* Legacy routes for backward compatibility */}
           <Route path="discounts" element={<AdminDiscountsPage />} />
           <Route path="promotions" element={<AdminPromotionsPage />} />

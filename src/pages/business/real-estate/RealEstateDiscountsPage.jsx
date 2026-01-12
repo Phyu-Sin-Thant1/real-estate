@@ -2,8 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getPlatformCampaigns, seedPlatformCampaigns } from '../../../store/platformCampaignsStore';
 import { getRealEstateDiscountToggleState, setRealEstateDiscountToggleState } from '../../../store/realEstateDiscountToggleStore';
 import { getRealEstateCouponToggleState, setRealEstateCouponToggleState } from '../../../store/realEstateCouponToggleStore';
+import { isDiscountEnabledForPartner, toggleDiscountForPartner } from '../../../store/partnerDiscountUsageStore';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateDiscountsPage = () => {
+  const { user } = useUnifiedAuth();
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
   const [couponToggleStates, setCouponToggleStates] = useState({});
@@ -21,22 +24,42 @@ const RealEstateDiscountsPage = () => {
   }, []);
 
   useEffect(() => {
-    // Load individual coupon toggle states when coupons change
+    // Load individual coupon toggle states from PartnerDiscountUsage
     const states = {};
+    const partnerId = user?.email;
     availableCoupons.forEach((coupon) => {
-      states[coupon.id] = getRealEstateCouponToggleState(coupon.id);
+      states[coupon.id] = isDiscountEnabledForPartner(coupon.id, partnerId);
     });
     setCouponToggleStates(states);
-  }, [availableCoupons]);
+  }, [availableCoupons, user?.email]);
 
   const loadData = () => {
-    // Load platform campaigns (admin-created discounts) for REAL_ESTATE scope
+    // Load only PARTNER owner discounts for REAL_ESTATE scope
     const allCampaigns = getPlatformCampaigns();
+    const partnerId = user?.email;
+    
     const realEstateCampaigns = allCampaigns.filter((campaign) => {
-      // Show campaigns that are LIVE and for REAL_ESTATE or ALL scope
-      return (campaign.scope === 'REAL_ESTATE' || campaign.scope === 'ALL') && 
-             campaign.status === 'LIVE';
+      // Only show PARTNER owner discounts
+      if (campaign.owner !== 'PARTNER') return false;
+      
+      // Must be for REAL_ESTATE scope
+      if (campaign.scope !== 'REAL_ESTATE') return false;
+      
+      // Must be ACTIVE status
+      if (campaign.status !== 'ACTIVE') return false;
+      
+      // Check partner eligibility
+      if (campaign.eligiblePartnerMode === 'ALL_PARTNERS_IN_DOMAIN') {
+        return true; // All partners in domain are eligible
+      } else if (campaign.eligiblePartnerMode === 'SELECT_PARTNERS') {
+        // Check if this partner is in the selected list
+        const partnerIds = campaign.partnerIds || [];
+        return partnerIds.includes(partnerId) || partnerIds.includes(user?.id);
+      }
+      
+      return false;
     });
+    
     setAvailableCoupons(realEstateCampaigns);
   };
 
@@ -75,11 +98,20 @@ const RealEstateDiscountsPage = () => {
   };
 
   const handleCouponToggle = (couponId, enabled) => {
-    setRealEstateCouponToggleState(couponId, enabled);
+    const partnerId = user?.email;
+    if (!partnerId) return;
+    
+    // Use PartnerDiscountUsage store
+    toggleDiscountForPartner(couponId, partnerId);
+    
     setCouponToggleStates((prev) => ({
       ...prev,
       [couponId]: enabled,
     }));
+    
+    // Reload data to refresh states
+    loadData();
+    
     // Show feedback message
     if (enabled) {
       console.log(`Coupon ${couponId} is now ENABLED.`);

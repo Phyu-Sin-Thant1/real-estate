@@ -2,35 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { loadDiscounts, addDiscount, updateDiscount, deleteDiscount, getDiscountsByPartner, seedMockDiscounts } from '../../../store/discountsStore';
 import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 import { addApproval } from '../../../store/approvalsStore';
+import DiscountCampaignForm from '../../../components/discounts/DiscountCampaignForm';
+import Modal from '../../../components/common/Modal';
+import { convertCampaignToLegacy, convertLegacyToCampaign } from '../../../lib/types/discountCampaign';
 
-const TYPE_OPTIONS = [
-  { value: 'PERCENT', label: '퍼센트 할인' },
-  { value: 'FIXED', label: '고정 금액 할인' },
-  { value: 'FREE_DELIVERY', label: '무료 배송' },
-];
-
-const APPLIES_TO_OPTIONS = [
-  { value: 'ALL', label: '전체' },
-  { value: 'ORDER', label: '주문' },
-];
+// TYPE_OPTIONS and APPLIES_TO_OPTIONS removed - using shared DiscountCampaignForm
 
 const BusinessDiscountsPage = () => {
   const { user } = useUnifiedAuth();
   const [discounts, setDiscounts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState(null);
-  const [form, setForm] = useState({
-    code: '',
-    name: '',
-    type: 'PERCENT',
-    value: 0,
-    minSpend: '',
-    maxDiscount: '',
-    appliesTo: 'ALL',
-    appliesToIds: '',
-    startAt: '',
-    endAt: '',
-  });
+  // Form state removed - using DiscountCampaignForm
 
   useEffect(() => {
     seedMockDiscounts();
@@ -48,32 +31,8 @@ const BusinessDiscountsPage = () => {
   const handleOpenModal = (discount = null) => {
     if (discount && (discount.partnerId === user?.email || discount.createdBy === user?.email)) {
       setEditingDiscount(discount);
-      setForm({
-        code: discount.code || '',
-        name: discount.name || '',
-        type: discount.type || 'PERCENT',
-        value: discount.value || 0,
-        minSpend: discount.minSpend || '',
-        maxDiscount: discount.maxDiscount || '',
-        appliesTo: discount.appliesTo || 'ALL',
-        appliesToIds: discount.appliesToIds ? discount.appliesToIds.join(', ') : '',
-        startAt: discount.startAt ? discount.startAt.split('T')[0] : '',
-        endAt: discount.endAt ? discount.endAt.split('T')[0] : '',
-      });
     } else {
       setEditingDiscount(null);
-      setForm({
-        code: '',
-        name: '',
-        type: 'PERCENT',
-        value: 0,
-        minSpend: '',
-        maxDiscount: '',
-        appliesTo: 'ALL',
-        appliesToIds: '',
-        startAt: '',
-        endAt: '',
-      });
     }
     setShowModal(true);
   };
@@ -81,37 +40,18 @@ const BusinessDiscountsPage = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingDiscount(null);
-    setForm({
-      code: '',
-      name: '',
-      type: 'PERCENT',
-      value: 0,
-      minSpend: '',
-      maxDiscount: '',
-      appliesTo: 'ALL',
-      appliesToIds: '',
-      startAt: '',
-      endAt: '',
-    });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
+  const handleSubmit = (campaignData) => {
+    // Convert new schema to legacy format for store
+    const legacyData = convertCampaignToLegacy(campaignData);
+    
+    // Add delivery-specific fields
     const discountData = {
-      code: form.code.toUpperCase().trim(),
-      name: form.name.trim(),
+      ...legacyData,
+      code: legacyData.code || `DEL-${Date.now()}`,
+      name: legacyData.title,
       service: 'DELIVERY',
-      type: form.type,
-      value: Number(form.value),
-      minSpend: form.minSpend ? Number(form.minSpend) : undefined,
-      maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : undefined,
-      appliesTo: form.appliesTo,
-      appliesToIds: form.appliesToIds
-        ? form.appliesToIds.split(',').map((id) => id.trim()).filter(Boolean)
-        : undefined,
-      startAt: form.startAt ? `${form.startAt}T00:00:00` : null,
-      endAt: form.endAt ? `${form.endAt}T23:59:59` : null,
       status: 'PENDING', // Business partners need admin approval
       partnerId: user?.email,
       createdBy: user?.email || '',
@@ -351,153 +291,24 @@ const BusinessDiscountsPage = () => {
 
       {/* Create/Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              {editingDiscount ? '쿠폰 수정' : '쿠폰 추가'}
-            </h3>
-            <p className="text-sm text-yellow-600 mb-4 bg-yellow-50 p-2 rounded">
-              쿠폰 생성 후 관리자 승인이 필요합니다.
-            </p>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">코드 *</label>
-                  <input
-                    type="text"
-                    value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    placeholder="WELCOME10"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이름 *</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    placeholder="신규 가입 10% 할인"
-                    required
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">타입 *</label>
-                  <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    required
-                  >
-                    {TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">할인 값 *</label>
-                  <input
-                    type="number"
-                    value={form.value}
-                    onChange={(e) => setForm({ ...form, value: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">최소 구매액</label>
-                  <input
-                    type="number"
-                    value={form.minSpend}
-                    onChange={(e) => setForm({ ...form, minSpend: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    min="0"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">최대 할인액</label>
-                <input
-                  type="number"
-                  value={form.maxDiscount}
-                  onChange={(e) => setForm({ ...form, maxDiscount: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                  min="0"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">적용 대상</label>
-                <select
-                  value={form.appliesTo}
-                  onChange={(e) => setForm({ ...form, appliesTo: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                >
-                  {APPLIES_TO_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {form.appliesTo !== 'ALL' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    적용 대상 ID (쉼표로 구분)
-                  </label>
-                  <input
-                    type="text"
-                    value={form.appliesToIds}
-                    onChange={(e) => setForm({ ...form, appliesToIds: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                    placeholder="id1, id2, id3"
-                  />
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">시작일</label>
-                  <input
-                    type="date"
-                    value={form.startAt}
-                    onChange={(e) => setForm({ ...form, startAt: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">종료일</label>
-                  <input
-                    type="date"
-                    value={form.endAt}
-                    onChange={(e) => setForm({ ...form, endAt: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-dabang-primary"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-dabang-primary hover:bg-dabang-primary/90"
-                >
-                  {editingDiscount ? '수정' : '추가'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          title={editingDiscount ? '쿠폰 수정' : '쿠폰 추가'}
+          size="large"
+        >
+          <p className="text-sm text-yellow-600 mb-4 bg-yellow-50 p-2 rounded">
+            쿠폰 생성 후 관리자 승인이 필요합니다.
+          </p>
+          <DiscountCampaignForm
+            mode={editingDiscount ? 'edit' : 'create'}
+            initialValue={editingDiscount ? convertLegacyToCampaign(editingDiscount) : {}}
+            onSubmit={handleSubmit}
+            onCancel={handleCloseModal}
+            showStatus={false}
+            defaultScope="DELIVERY"
+          />
+        </Modal>
       )}
     </div>
   );

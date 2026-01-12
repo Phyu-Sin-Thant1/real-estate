@@ -14,7 +14,10 @@ import {
   approvePartnerDiscount,
   rejectPartnerDiscount,
 } from '../../store/partnerDiscountsStore';
-import DiscountDrawer from '../../components/discounts/DiscountDrawer';
+import DiscountCampaignForm from '../../components/discounts/DiscountCampaignForm';
+import Modal from '../../components/common/Modal';
+import { convertLegacyToCampaign, convertCampaignToLegacy } from '../../lib/types/discountCampaign';
+import Toast from '../../components/delivery/Toast';
 
 const AdminDiscountsPage = () => {
   const { t } = useI18n();
@@ -24,6 +27,7 @@ const AdminDiscountsPage = () => {
   const [partnerDiscounts, setPartnerDiscounts] = useState([]);
   const [showDrawer, setShowDrawer] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [toast, setToast] = useState({ isVisible: false, message: '', type: 'success' });
   const [filters, setFilters] = useState({
     status: 'ALL',
     scope: 'ALL',
@@ -69,7 +73,7 @@ const AdminDiscountsPage = () => {
     const now = new Date();
     return {
       live: campaigns.filter((c) => {
-        if (c.status !== 'LIVE') return false;
+        if (c.status !== 'ACTIVE' && c.status !== 'LIVE') return false;
         const startAt = c.startAt ? new Date(c.startAt) : null;
         const endAt = c.endAt ? new Date(c.endAt) : null;
         if (startAt && now < startAt) return false;
@@ -79,7 +83,7 @@ const AdminDiscountsPage = () => {
       draft: campaigns.filter((c) => c.status === 'DRAFT').length,
       paused: campaigns.filter((c) => c.status === 'PAUSED').length,
       endingSoon: campaigns.filter((c) => {
-        if (c.status !== 'LIVE') return false;
+        if (c.status !== 'ACTIVE' && c.status !== 'LIVE') return false;
         const endAt = c.endAt ? new Date(c.endAt) : null;
         if (!endAt) return false;
         const daysUntilEnd = (endAt - now) / (1000 * 60 * 60 * 24);
@@ -100,13 +104,34 @@ const AdminDiscountsPage = () => {
   };
 
   const handleSaveCampaign = (data) => {
-    if (editingItem) {
-      updatePlatformCampaign(editingItem.id, { ...data, createdBy: user?.email || 'admin@tofu.com' });
-    } else {
-      createPlatformCampaign({ ...data, createdBy: user?.email || 'admin@tofu.com' });
+    try {
+      // Convert new schema to legacy format for store
+      const legacyData = convertCampaignToLegacy(data);
+      if (editingItem) {
+        updatePlatformCampaign(editingItem.id, { ...legacyData, createdBy: user?.email || 'admin@tofu.com' });
+        setToast({
+          isVisible: true,
+          message: '캠페인이 성공적으로 수정되었습니다.',
+          type: 'success'
+        });
+      } else {
+        createPlatformCampaign({ ...legacyData, createdBy: user?.email || 'admin@tofu.com' });
+        setToast({
+          isVisible: true,
+          message: '캠페인이 성공적으로 생성되었습니다.',
+          type: 'success'
+        });
+      }
+      loadData();
+      handleCloseDrawer();
+    } catch (error) {
+      console.error('Error saving campaign:', error);
+      setToast({
+        isVisible: true,
+        message: '캠페인 저장 중 오류가 발생했습니다.',
+        type: 'error'
+      });
     }
-    loadData();
-    handleCloseDrawer();
   };
 
   const handleDeleteCampaign = (id) => {
@@ -268,6 +293,7 @@ const AdminDiscountsPage = () => {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
                   <option value="ALL">전체</option>
+                  <option value="ACTIVE">{t('discounts.active')}</option>
                   <option value="LIVE">{t('discounts.live')}</option>
                   <option value="DRAFT">{t('discounts.draft')}</option>
                   <option value="PAUSED">{t('discounts.paused')}</option>
@@ -322,6 +348,7 @@ const AdminDiscountsPage = () => {
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('discounts.form.title')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">소유자</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('discounts.form.scope')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('discounts.form.discountType')}</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('discounts.form.value')}</th>
@@ -334,18 +361,29 @@ const AdminDiscountsPage = () => {
               <tbody className="bg-white divide-y divide-gray-100">
                 {filteredCampaigns.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
                       {t('discounts.noCampaigns')}
                     </td>
                   </tr>
                 ) : (
-                  filteredCampaigns.map((campaign) => (
+                  filteredCampaigns.map((campaign) => {
+                    const owner = campaign.owner || 'PLATFORM';
+                    return (
                     <tr key={campaign.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{campaign.title}</div>
                         {campaign.description && (
                           <div className="text-xs text-gray-500">{campaign.description}</div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          owner === 'PLATFORM' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-purple-100 text-purple-800'
+                        }`}>
+                          {owner === 'PLATFORM' ? '플랫폼' : '파트너'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {t(`discounts.scopes.${campaign.scope}`)}
@@ -370,7 +408,7 @@ const AdminDiscountsPage = () => {
                         >
                           {t('discounts.edit')}
                         </button>
-                        {campaign.status === 'LIVE' && (
+                        {(campaign.status === 'ACTIVE' || campaign.status === 'LIVE') && (
                           <button
                             onClick={() => handleSetStatus(campaign.id, 'PAUSED')}
                             className="text-yellow-600 hover:text-yellow-800"
@@ -380,13 +418,13 @@ const AdminDiscountsPage = () => {
                         )}
                         {campaign.status === 'PAUSED' && (
                           <button
-                            onClick={() => handleSetStatus(campaign.id, 'LIVE')}
+                            onClick={() => handleSetStatus(campaign.id, 'ACTIVE')}
                             className="text-green-600 hover:text-green-800"
                           >
                             {t('discounts.resume')}
                           </button>
                         )}
-                        {campaign.status === 'LIVE' && (
+                        {(campaign.status === 'ACTIVE' || campaign.status === 'LIVE') && (
                           <button
                             onClick={() => handleEndCampaign(campaign.id)}
                             className="text-red-600 hover:text-red-800"
@@ -402,7 +440,8 @@ const AdminDiscountsPage = () => {
                         </button>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -535,16 +574,31 @@ const AdminDiscountsPage = () => {
         </div>
       )}
 
-      {/* Drawer */}
+      {/* Create/Edit Modal */}
       {showDrawer && activeTab === 'campaigns' && (
-        <DiscountDrawer
+        <Modal
           isOpen={showDrawer}
           onClose={handleCloseDrawer}
-          onSave={handleSaveCampaign}
-          discount={editingItem}
-          mode="campaign"
-        />
+          title={editingItem ? '캠페인 수정' : '캠페인 생성'}
+          size="large"
+        >
+          <DiscountCampaignForm
+            mode={editingItem ? 'edit' : 'create'}
+            initialValue={editingItem ? convertLegacyToCampaign(editingItem) : {}}
+            onSubmit={handleSaveCampaign}
+            onCancel={handleCloseDrawer}
+            showStatus={true}
+          />
+        </Modal>
       )}
+
+      {/* Toast Notification */}
+      <Toast
+        isVisible={toast.isVisible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   );
 };

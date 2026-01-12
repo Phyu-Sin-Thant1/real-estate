@@ -39,7 +39,9 @@ const initialForm = {
   images: [],
 };
 
-const propertyTypes = [
+// Property types are now loaded from Common Codes
+// Fallback to hardcoded values if common codes are not available
+const defaultPropertyTypes = [
   { label: '아파트', value: 'apartment' },
   { label: '주택', value: 'house' },
   { label: '오피스텔', value: 'office' },
@@ -79,11 +81,28 @@ const RealEstateNewListingPage = () => {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [propertyTypes, setPropertyTypes] = useState(defaultPropertyTypes);
   
   // Progressive disclosure states
   const [showFacilities, setShowFacilities] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   const [otherFacility, setOtherFacility] = useState('');
+
+  // Load property types from common codes
+  useEffect(() => {
+    try {
+      const categories = getRealEstateCategoryOptions();
+      if (categories.length > 0) {
+        // Map numeric codes directly
+        setPropertyTypes(categories.map(cat => ({
+          label: cat.label,
+          value: cat.value, // Use numeric code directly (e.g., "100-01")
+        })));
+      }
+    } catch (error) {
+      console.warn('Failed to load property types from common codes, using defaults', error);
+    }
+  }, []);
 
   // Load existing listing data for edit mode
   useEffect(() => {

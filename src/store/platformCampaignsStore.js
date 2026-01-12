@@ -41,12 +41,25 @@ export const createPlatformCampaign = (campaign) => {
     id: `pc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     usedCount: 0,
     status: campaign.status || 'DRAFT',
+    owner: campaign.owner || 'PLATFORM', // Default to PLATFORM
     createdAt: now,
     updatedAt: now,
     ...campaign,
   };
   const nextCampaigns = [newCampaign, ...campaigns];
   safeWrite(STORAGE_KEY, nextCampaigns);
+  
+  // Initialize partner discount usage if owner is PARTNER
+  if (newCampaign.owner === 'PARTNER' && newCampaign.scope && newCampaign.eligiblePartnerMode) {
+    const { initializeDiscountUsage } = require('./partnerDiscountUsageStore');
+    initializeDiscountUsage(
+      newCampaign.id,
+      newCampaign.scope,
+      newCampaign.eligiblePartnerMode,
+      newCampaign.partnerIds || []
+    );
+  }
+  
   return newCampaign;
 };
 
