@@ -42,7 +42,6 @@ const StatusBadge = ({ status, type = 'property', size = 'medium', className = '
         case '검토 완료':
           return { label: '검토 완료', color: 'bg-blue-100 text-blue-700', icon: '👀' };
         case 'Signed':
-        case 'Signed':
         case '서명 완료':
           return { label: '서명 완료', color: 'bg-purple-100 text-purple-700', icon: '✍️' };
         case 'Completed':
