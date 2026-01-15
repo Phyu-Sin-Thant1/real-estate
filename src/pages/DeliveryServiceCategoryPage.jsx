@@ -4,6 +4,8 @@ import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import { getServiceTypeById, getServicesByTypeAndAgency, deliveryServices, deliveryServiceTypes } from '../mock/deliveryServices';
 import { getAllAgencies } from '../mock/agencies';
+import { getAgencyVerificationStatus, getVerifiedAgencies } from '../lib/helpers/agencyVerification';
+import VerifiedBadge from '../components/common/VerifiedBadge';
 import Modal from '../components/common/Modal';
 
 const DeliveryServiceCategoryPage = () => {
@@ -29,7 +31,7 @@ const DeliveryServiceCategoryPage = () => {
   const serviceType = getServiceTypeById(serviceTypeId);
   const agencies = getAllAgencies('moving');
   const filteredAgencies = verifiedAgenciesOnly 
-    ? agencies.filter(agency => agency.verified)
+    ? getVerifiedAgencies(agencies)
     : agencies;
 
   // Get services - either all services or filtered by type
@@ -40,7 +42,7 @@ const DeliveryServiceCategoryPage = () => {
   const services = verifiedAgenciesOnly
     ? filteredServices.filter(s => {
         const agency = agencies.find(a => a.id === s.agencyId);
-        return agency?.verified;
+        return getAgencyVerificationStatus(agency);
       })
     : filteredServices;
 
@@ -318,13 +320,12 @@ const DeliveryServiceCategoryPage = () => {
                                   alt={agency.name}
                                   className="w-12 h-12 rounded-xl object-cover border-2 border-gray-200 shadow-md group-hover:border-dabang-primary transition-colors duration-300"
                                 />
-                                {agency.verified && (
-                                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                  </div>
-                                )}
+                                <div className="absolute -top-1 -right-1">
+                                  <VerifiedBadge 
+                                    isVerified={getAgencyVerificationStatus(agency)} 
+                                    size="sm" 
+                                  />
+                                </div>
                               </div>
                             </div>
                           )}

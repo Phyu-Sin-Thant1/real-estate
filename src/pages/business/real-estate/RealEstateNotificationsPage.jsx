@@ -32,3 +32,7 @@ const RealEstateNotificationsPage = () => {
 export default RealEstateNotificationsPage;
 
 
+
+
+
+

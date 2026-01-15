@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { getBusinessAccounts, updateBusinessAccount } from '../../store/businessAccountsStore';
+import { updateDeliveryPartnerVerificationAPI } from '../../lib/api/partners';
+import { useUnifiedAuth } from '../../context/UnifiedAuthContext';
+import Toast from '../../components/delivery/Toast';
 
 const AdminPartnersPage = () => {
+  const { user } = useUnifiedAuth();
   const [partners, setPartners] = useState([]);
   const [activeTab, setActiveTab] = useState('ALL');
   const [selectedPartners, setSelectedPartners] = useState([]);
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [showDetailDrawer, setShowDetailDrawer] = useState(false);
+  const [toast, setToast] = useState({ isVisible: false, message: '', type: 'info' });
+  const [isUpdatingVerification, setIsUpdatingVerification] = useState(false);
 
   useEffect(() => {
     setPartners(getBusinessAccounts());
@@ -58,6 +64,45 @@ const AdminPartnersPage = () => {
       if (selectedPartner?.email === email) {
         setSelectedPartner(getBusinessAccounts().find(p => p.email === email));
       }
+    }
+  };
+
+  const handleVerificationToggle = async (email, currentVerified) => {
+    if (isUpdatingVerification) return;
+    
+    setIsUpdatingVerification(true);
+    try {
+      const adminId = user?.email || user?.id || 'admin@tofu.com';
+      const result = await updateDeliveryPartnerVerificationAPI(email, !currentVerified, adminId);
+      
+      if (result.success) {
+        setPartners(getBusinessAccounts());
+        if (selectedPartner?.email === email) {
+          setSelectedPartner(getBusinessAccounts().find(p => p.email === email));
+        }
+        setToast({
+          isVisible: true,
+          message: !currentVerified 
+            ? 'Delivery partner verified successfully' 
+            : 'Verification removed successfully',
+          type: 'success',
+        });
+      } else {
+        setToast({
+          isVisible: true,
+          message: result.error || 'Failed to update verification status',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      console.error('Error updating verification:', error);
+      setToast({
+        isVisible: true,
+        message: 'Failed to update verification status',
+        type: 'error',
+      });
+    } finally {
+      setIsUpdatingVerification(false);
     }
   };
 
@@ -267,6 +312,67 @@ const AdminPartnersPage = () => {
                   {selectedPartner.createdAt ? new Date(selectedPartner.createdAt).toLocaleString() : 'N/A'}
                 </p>
               </div>
+              
+              {/* Verification Section - Only for Delivery Partners */}
+              {selectedPartner.role === 'BUSINESS_DELIVERY' && (
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Verification Status</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {selectedPartner.isVerified ? (
+                          <span className="text-blue-600 font-semibold">✓ Verified (Blue Badge)</span>
+                        ) : (
+                          <span className="text-gray-500">Not Verified</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {selectedPartner.isVerified && (
+                    <div className="space-y-2 mb-4">
+                      {selectedPartner.verifiedAt && (
+                        <div>
+                          <p className="text-xs text-gray-500">Verified At</p>
+                          <p className="text-sm text-gray-700">
+                            {new Date(selectedPartner.verifiedAt).toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                      {selectedPartner.verifiedBy && (
+                        <div>
+                          <p className="text-xs text-gray-500">Verified By</p>
+                          <p className="text-sm text-gray-700">{selectedPartner.verifiedBy}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedPartner.isVerified || false}
+                      onChange={() => handleVerificationToggle(selectedPartner.email, selectedPartner.isVerified)}
+                      disabled={
+                        isUpdatingVerification || 
+                        selectedPartner.status !== 'ACTIVE' ||
+                        selectedPartner.role !== 'BUSINESS_DELIVERY'
+                      }
+                      className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        Verified (Blue Badge)
+                      </span>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {selectedPartner.status !== 'ACTIVE' 
+                          ? 'Partner must be ACTIVE to enable verification'
+                          : 'Enable blue verified badge for this delivery agency'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-gray-200/60 bg-gradient-to-b from-gray-50/50 to-white">
@@ -297,6 +403,14 @@ const AdminPartnersPage = () => {
           </div>
         </div>
       )}
+      
+      {/* Toast Notification */}
+      <Toast
+        isVisible={toast.isVisible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   );
 };

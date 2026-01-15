@@ -3,10 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getAgencyById } from '../mock/agencies';
 import { mockProperties } from '../mock/properties';
 import { getServicesByAgency, deliveryServiceTypes } from '../mock/deliveryServices';
+import { getBusinessAccounts } from '../store/businessAccountsStore';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
 import ListingCard from '../components/home/ListingCard';
 import Modal from '../components/common/Modal';
+import VerifiedBadge from '../components/common/VerifiedBadge';
 
 const AgencyProfilePage = () => {
   const { id, type } = useParams();
@@ -33,6 +35,7 @@ const AgencyProfilePage = () => {
     message: ''
   });
   const [likedProperties, setLikedProperties] = useState(new Set());
+  const [isVerified, setIsVerified] = useState(false);
 
   const agencyType = type || 'real-estate';
 
@@ -45,6 +48,28 @@ const AgencyProfilePage = () => {
     }
     
     setAgency(agencyData);
+    
+    // For delivery agencies, check verification status from business accounts
+    if (agencyType === 'moving') {
+      const businessAccounts = getBusinessAccounts();
+      // Try to find matching business account by company name or email
+      const matchingAccount = businessAccounts.find(
+        acc => acc.role === 'BUSINESS_DELIVERY' && 
+        (acc.companyName === agencyData.name || 
+         acc.email?.toLowerCase().includes(agencyData.name.toLowerCase()) ||
+         agencyData.name.toLowerCase().includes(acc.companyName?.toLowerCase()))
+      );
+      
+      if (matchingAccount) {
+        setIsVerified(matchingAccount.isVerified || false);
+      } else {
+        // Fallback to agency.verified if no business account match
+        setIsVerified(agencyData.verified || false);
+      }
+    } else {
+      // For real estate, use agency.verified
+      setIsVerified(agencyData.verified || false);
+    }
     
     // Get listings for this agency
     if (agencyType === 'real-estate') {
@@ -186,7 +211,12 @@ const AgencyProfilePage = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h1 className="text-2xl font-bold text-gray-900">{agency.name}</h1>
-                  {agency.verified && (
+                  {/* Show verified badge for delivery agencies */}
+                  {agencyType === 'moving' && (
+                    <VerifiedBadge isVerified={isVerified} size="md" />
+                  )}
+                  {/* Legacy verified badge for real estate (if needed) */}
+                  {agencyType === 'real-estate' && agency.verified && (
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

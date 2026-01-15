@@ -1,37 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getContractById } from '../../../mock/realEstateData';
+import { getContractById, updateContract, getContracts, seedMockContracts } from '../../../store/realEstateContractsStore';
+import { useUnifiedAuth } from '../../../context/UnifiedAuthContext';
 
 const RealEstateContractDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useUnifiedAuth();
   const [contract, setContract] = useState(null);
   const [newNote, setNewNote] = useState('');
   const [localActivityHistory, setLocalActivityHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchedContract = getContractById(id);
+    if (!id) {
+      navigate('/business/real-estate/contracts');
+      return;
+    }
+    
+    // Ensure contracts are seeded
+    if (user?.email) {
+      seedMockContracts(user.email);
+    }
+    
+    // Try to find the contract
+    let fetchedContract = getContractById(id);
+    
+    // If not found, try loading all contracts and searching again
+    if (!fetchedContract) {
+      const allContracts = getContracts();
+      console.log('All contracts:', allContracts.map(c => ({ id: c.id, type: typeof c.id })));
+      fetchedContract = allContracts.find(c => 
+        String(c.id) === String(id) || 
+        Number(c.id) === Number(id) ||
+        c.id === id
+      );
+    }
+    
+    console.log('Contract Detail - ID:', id, 'Type:', typeof id, 'Found:', !!fetchedContract);
+    
     if (fetchedContract) {
       setContract(fetchedContract);
-      setLocalActivityHistory([...fetchedContract.activityHistory]);
+      setLocalActivityHistory(fetchedContract.activityHistory || []);
+      setLoading(false);
     } else {
       // Handle contract not found
-      navigate('/business/real-estate/contracts');
+      console.warn('Contract not found for ID:', id);
+      console.warn('Available contract IDs:', getContracts().map(c => c.id));
+      setLoading(false);
+      setTimeout(() => {
+        navigate('/business/real-estate/contracts');
+      }, 2000);
     }
-  }, [id, navigate]);
+  }, [id, navigate, user?.email]);
 
-  if (!contract) {
-    return <div>Loading...</div>;
+  if (loading || !contract) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          {loading ? (
+            <>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-dabang-primary mx-auto mb-4"></div>
+              <p className="text-gray-600">계약 정보를 불러오는 중...</p>
+            </>
+          ) : (
+            <>
+              <p className="text-red-600 mb-2">계약을 찾을 수 없습니다.</p>
+              <p className="text-sm text-gray-500">잠시 후 목록으로 돌아갑니다.</p>
+            </>
+          )}
+          {id && (
+            <p className="text-sm text-gray-500 mt-2">ID: {id} (Type: {typeof id})</p>
+          )}
+        </div>
+      </div>
+    );
   }
 
   // Get status badge color
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case '진행중':
+      case 'Pending':
+      case 'Drafted':
+      case 'Reviewed':
         return 'bg-blue-100 text-blue-800';
       case '완료':
+      case 'Completed':
+      case 'Signed':
         return 'bg-green-100 text-green-800';
       case '취소':
+      case 'Cancelled':
+      case 'REJECTED':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -40,18 +100,29 @@ const RealEstateContractDetailPage = () => {
 
   // Handle status change
   const handleStatusChange = (newStatus) => {
-    const updatedContract = { ...contract, status: newStatus };
-    setContract(updatedContract);
-    
     // Add activity entry
     const newActivity = {
       id: localActivityHistory.length + 1,
       timestamp: new Date().toISOString(),
       actor: '현재 사용자',
-      message: `계약 상태가 "${newStatus}"로 변경됨`
+      message: `계약 상태가 "${newStatus}"로 변경됨`,
+      type: 'contract'
     };
     
-    setLocalActivityHistory(prev => [...prev, newActivity]);
+    const updatedHistory = [...localActivityHistory, newActivity];
+    setLocalActivityHistory(updatedHistory);
+    
+    // Update contract in store
+    const updatedContract = {
+      ...contract,
+      status: newStatus,
+      activityHistory: updatedHistory
+    };
+    setContract(updatedContract);
+    updateContract(id, {
+      status: newStatus,
+      activityHistory: updatedHistory
+    });
   };
 
   // Handle adding a new note
@@ -61,10 +132,23 @@ const RealEstateContractDetailPage = () => {
         id: localActivityHistory.length + 1,
         timestamp: new Date().toISOString(),
         actor: '현재 사용자',
-        message: newNote
+        message: newNote,
+        type: 'note'
       };
       
-      setLocalActivityHistory(prev => [...prev, newActivity]);
+      const updatedHistory = [...localActivityHistory, newActivity];
+      setLocalActivityHistory(updatedHistory);
+      
+      // Update contract in store
+      const updatedContract = {
+        ...contract,
+        activityHistory: updatedHistory
+      };
+      setContract(updatedContract);
+      updateContract(id, {
+        activityHistory: updatedHistory
+      });
+      
       setNewNote('');
     }
   };
@@ -104,22 +188,28 @@ const RealEstateContractDetailPage = () => {
           </button>
           <div className="flex gap-1">
             <button 
-              onClick={() => handleStatusChange('진행중')}
-              className={`px-3 py-2 text-sm rounded-lg ${contract.status === '진행중' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              onClick={() => handleStatusChange('Drafted')}
+              className={`px-3 py-2 text-sm rounded-lg ${contract.status === 'Drafted' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
             >
-              진행중
+              초안
             </button>
             <button 
-              onClick={() => handleStatusChange('완료')}
-              className={`px-3 py-2 text-sm rounded-lg ${contract.status === '완료' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              onClick={() => handleStatusChange('Reviewed')}
+              className={`px-3 py-2 text-sm rounded-lg ${contract.status === 'Reviewed' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              검토 완료
+            </button>
+            <button 
+              onClick={() => handleStatusChange('Signed')}
+              className={`px-3 py-2 text-sm rounded-lg ${contract.status === 'Signed' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              서명 완료
+            </button>
+            <button 
+              onClick={() => handleStatusChange('Completed')}
+              className={`px-3 py-2 text-sm rounded-lg ${contract.status === 'Completed' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
             >
               완료
-            </button>
-            <button 
-              onClick={() => handleStatusChange('취소')}
-              className={`px-3 py-2 text-sm rounded-lg ${contract.status === '취소' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              취소
             </button>
           </div>
         </div>
@@ -138,11 +228,11 @@ const RealEstateContractDetailPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
             <p className="text-sm text-gray-600">매물</p>
-            <p className="font-medium">{contract.listing.title}</p>
+            <p className="font-medium">{contract.listing?.title || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">고객</p>
-            <p className="font-medium">{contract.customer.name}</p>
+            <p className="font-medium">{contract.customer?.name || contract.buyerTenant?.name || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">계약 유형</p>
@@ -165,23 +255,23 @@ const RealEstateContractDetailPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <p className="text-sm text-gray-600">고객명</p>
-            <p className="font-medium">{contract.customer.name}</p>
+            <p className="font-medium">{contract.customer?.name || contract.buyerTenant?.name || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">연락처</p>
-            <p className="font-medium">{contract.customer.phone}</p>
+            <p className="font-medium">{contract.customer?.phone || contract.buyerTenantPhone || contract.buyerTenant?.phone || '-'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">이메일</p>
-            <p className="font-medium">{contract.customer.email || '-'}</p>
+            <p className="font-medium">{contract.customer?.email || contract.buyerTenantEmail || contract.buyerTenant?.email || '-'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">고객 유형</p>
-            <p className="font-medium">{contract.customer.type}</p>
+            <p className="font-medium">{contract.customer?.role || contract.buyerTenant?.role || contract.type || '-'}</p>
           </div>
           <div className="md:col-span-2 lg:col-span-4">
             <p className="text-sm text-gray-600">메모</p>
-            <p className="font-medium">{contract.customer.memo || '-'}</p>
+            <p className="font-medium">{contract.notes || contract.internalMemo || '-'}</p>
           </div>
         </div>
       </div>
@@ -192,15 +282,15 @@ const RealEstateContractDetailPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <p className="text-sm text-gray-600">매물명</p>
-            <p className="font-medium">{contract.listing.title}</p>
+            <p className="font-medium">{contract.listing?.title || 'N/A'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600">매물 유형</p>
-            <p className="font-medium">{contract.listing.type}</p>
+            <p className="font-medium">{contract.listing?.type || contract.listing?.propertyType || 'N/A'}</p>
           </div>
           <div className="md:col-span-2">
             <p className="text-sm text-gray-600">주소</p>
-            <p className="font-medium">{contract.listing.address}</p>
+            <p className="font-medium">{contract.listing?.address || 'N/A'}</p>
           </div>
         </div>
       </div>
@@ -227,7 +317,11 @@ const RealEstateContractDetailPage = () => {
           </div>
           <div>
             <p className="text-sm text-gray-600">계약 기간</p>
-            <p className="font-medium">{contract.term || '-'}</p>
+            <p className="font-medium">
+              {contract.contractStartDate && contract.contractEndDate 
+                ? `${formatDate(contract.contractStartDate)} ~ ${formatDate(contract.contractEndDate)}`
+                : contract.term || '-'}
+            </p>
           </div>
           <div>
             <p className="text-sm text-gray-600">담당자</p>
@@ -289,20 +383,26 @@ const RealEstateContractDetailPage = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">활동 내역</h2>
         <div className="space-y-4">
-          {localActivityHistory.map((activity) => (
-            <div key={activity.id} className="flex">
-              <div className="flex flex-col items-center mr-4">
-                <div className="w-3 h-3 rounded-full bg-dabang-primary"></div>
-                {activity.id !== localActivityHistory[localActivityHistory.length - 1].id && (
-                  <div className="w-0.5 h-full bg-gray-200 mt-1"></div>
-                )}
+          {localActivityHistory.length > 0 ? (
+            localActivityHistory.map((activity, index) => (
+              <div key={activity.id || index} className="flex">
+                <div className="flex flex-col items-center mr-4">
+                  <div className="w-3 h-3 rounded-full bg-dabang-primary"></div>
+                  {index < localActivityHistory.length - 1 && (
+                    <div className="w-0.5 h-full bg-gray-200 mt-1"></div>
+                  )}
+                </div>
+                <div className="pb-4">
+                  <p className="text-sm font-medium text-gray-900">{activity.message || '-'}</p>
+                  <p className="text-xs text-gray-500">
+                    {formatDate(activity.timestamp)} {activity.actor ? `by ${activity.actor}` : ''}
+                  </p>
+                </div>
               </div>
-              <div className="pb-4">
-                <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                <p className="text-xs text-gray-500">{formatDate(activity.timestamp)} by {activity.actor}</p>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-500 text-sm">활동 내역이 없습니다.</p>
+          )}
           
           {/* Add New Note */}
           <div className="mt-6 pt-4 border-t border-gray-200">

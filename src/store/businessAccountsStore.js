@@ -52,8 +52,11 @@ const initializeMockData = () => {
         password: 'BusanDel456!',
         isTempPassword: false,
         status: 'ACTIVE',
+        isVerified: true,
+        verifiedAt: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), // Verified 15 days ago
+        verifiedBy: 'admin@tofu.com',
         createdAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20 days ago
-        updatedAt: new Date(now.getTime() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(now.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(),
       },
       {
         id: 'biz-3',
@@ -76,6 +79,9 @@ const initializeMockData = () => {
         password: 'DaeguMove321!',
         isTempPassword: false,
         status: 'ACTIVE',
+        isVerified: false,
+        verifiedAt: null,
+        verifiedBy: null,
         createdAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
         updatedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(),
       },
@@ -100,6 +106,9 @@ const initializeMockData = () => {
         password: 'Suspended123!',
         isTempPassword: false,
         status: 'SUSPENDED',
+        isVerified: false, // Auto-disabled when suspended
+        verifiedAt: null,
+        verifiedBy: null,
         createdAt: new Date(now.getTime() - 25 * 24 * 60 * 60 * 1000).toISOString(), // 25 days ago
         updatedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), // Suspended 5 days ago
       },
@@ -193,11 +202,30 @@ export const upsertBusinessAccount = (account) => {
  */
 export const updateBusinessAccount = (email, patch) => {
   const accounts = getBusinessAccounts();
-  const nextAccounts = accounts.map((acc) =>
-    acc.email === email
-      ? { ...acc, ...patch, updatedAt: new Date().toISOString() }
-      : acc
-  );
+  const nextAccounts = accounts.map((acc) => {
+    if (acc.email !== email) return acc;
+    
+    const updated = { ...acc, ...patch, updatedAt: new Date().toISOString() };
+    
+    // Auto-disable verification if status changes away from ACTIVE
+    // Only for DELIVERY partners
+    if (acc.role === 'BUSINESS_DELIVERY' && patch.status && patch.status !== 'ACTIVE') {
+      if (acc.isVerified) {
+        updated.isVerified = false;
+        updated.verifiedAt = null;
+        updated.verifiedBy = null;
+      }
+    }
+    
+    // Ensure verification is only possible when status is ACTIVE
+    if (acc.role === 'BUSINESS_DELIVERY' && patch.isVerified === true && updated.status !== 'ACTIVE') {
+      updated.isVerified = false;
+      updated.verifiedAt = null;
+      updated.verifiedBy = null;
+    }
+    
+    return updated;
+  });
   safeWrite(STORAGE_KEY, nextAccounts);
   return nextAccounts;
 };
@@ -319,5 +347,50 @@ export const updateBusinessAccountPassword = (email, newPassword) => {
     isTempPassword: false,
     updatedAt: new Date().toISOString(),
   });
+};
+
+/**
+ * Update delivery partner verification status
+ * @param {string} email - Partner email
+ * @param {boolean} isVerified - Verification status
+ * @param {string} verifiedBy - Admin user identifier (email/uuid)
+ * @returns {Object|null} Updated account or null if not found/invalid
+ */
+export const updateDeliveryPartnerVerification = (email, isVerified, verifiedBy) => {
+  const account = getBusinessAccountByEmail(email);
+  
+  if (!account) {
+    console.warn(`Account not found: ${email}`);
+    return null;
+  }
+  
+  // Only allow verification for DELIVERY partners
+  if (account.role !== 'BUSINESS_DELIVERY') {
+    console.warn(`Verification only available for DELIVERY partners. Account role: ${account.role}`);
+    return null;
+  }
+  
+  // Can only verify if status is ACTIVE
+  if (isVerified && account.status !== 'ACTIVE') {
+    console.warn(`Cannot verify partner with status: ${account.status}. Status must be ACTIVE.`);
+    return null;
+  }
+  
+  const updateData = {
+    isVerified,
+    verifiedAt: isVerified ? new Date().toISOString() : null,
+    verifiedBy: isVerified ? verifiedBy : null,
+  };
+  
+  updateBusinessAccount(email, updateData);
+  return getBusinessAccountByEmail(email);
+};
+
+/**
+ * Get delivery partners (filtered by role)
+ * @returns {Array} Array of delivery partner accounts
+ */
+export const getDeliveryPartners = () => {
+  return getBusinessAccountsByRole('BUSINESS_DELIVERY');
 };
 

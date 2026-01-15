@@ -13,8 +13,9 @@ const RealEstateContractsPage = () => {
 
   // Load partner's contracts
   useEffect(() => {
-    seedMockContracts();
     if (user?.email) {
+      // Seed mock contracts for the current user
+      seedMockContracts(user.email);
       const contracts = getContractsByPartner(user.email);
       setPartnerContracts(contracts);
     }
@@ -43,6 +44,7 @@ const RealEstateContractsPage = () => {
   };
 
   const handleViewDetails = (contractId) => {
+    console.log('Navigating to contract detail:', contractId);
     navigate(`/business/real-estate/contracts/${contractId}`);
   };
 
@@ -214,8 +216,13 @@ const RealEstateContractsPage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button 
-                        onClick={() => handleViewDetails(contract.id)}
-                        className="text-dabang-primary hover:text-dabang-primary/80 font-medium"
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleViewDetails(contract.id);
+                        }}
+                        className="text-dabang-primary hover:text-dabang-primary/80 font-medium cursor-pointer"
                       >
                         상세보기
                       </button>
